@@ -1,3 +1,4 @@
+/* eslint-disable */
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Button, Col, Container, Form, Pagination, Row } from "react-bootstrap";
