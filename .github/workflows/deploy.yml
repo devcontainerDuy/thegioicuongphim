@@ -28,11 +28,11 @@ jobs:
       - name: Install Bats
         run: npm install -g bats
 
-      - name: Check folder build
-        run: find build/ -print
-
       - run: npm run build
       - run: bats -v
+
+      - name: Check folder build
+        run: find build/ -print
 
       - name: Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
