@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm install bats
+      - name: Install Bats
+        run: npm install -g bats
+
       - run: npm run build
       - run: bats -v
 
