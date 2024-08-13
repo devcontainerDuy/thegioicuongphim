@@ -227,7 +227,7 @@ function Cate() {
 				</aside>
 			</section>
 			<section className="container pb-4">
-				<h3 className="py-2 text-primary border-bottom border-primary">Danh sách phim</h3>
+				<h3 className="py-2 text-primary border-bottom border-primary fw-bold">Danh sách phim</h3>
 				<div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
 					{isLoading && <div>Đang tải...</div>}
 					{!isLoading && products.length > 0 ? (
