@@ -10,38 +10,41 @@ on:
 
 jobs:
   deploy:
+    name: 🎉 Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository code
+      - name: 🚚 Get latest code
         uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: "npm"
 
-      - name: Install dependencies
+      - name: 🔧 Install dependencies
         run: npm install
 
       - name: Install Bats
         run: npm install -g bats
 
-      - run: npm run build
+      - name: 🔨 Build Project
+        run: npm run build
+
       - run: bats -v
 
-      - name: Check folder build
+      - name: List output files
         run: find build/ -print
 
-      - name: Sync files
+      - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
           server: ${{ secrets.SERVER }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           local-dir: build/
-          remote-dir: public_html/
+          server-dir: ${{ secrets.SERVER_DIR }}
           exclude: |
             **/.git**
             **/.git*/**
