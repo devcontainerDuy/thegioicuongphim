@@ -7,47 +7,30 @@ import axios from "axios";
 import Video from "../containers/Video";
 
 function Watch() {
-	const { slug } = useParams();
-	const { episode: selectedEpisodeSlug } = useParams();
+	const { slug, episode: selectedEpisodeSlug } = useParams();
+	const [openContent, setOpenContent] = useState(true);
+	const [openEpisodes, setOpenEpisodes] = useState(true);
 	const [data, setData] = useState(null);
 	const [iframeUrl, setIframeUrl] = useState(null);
-	const [openEpisodes, setOpenEpisodes] = useState(true);
 
 	useEffect(() => {
-		axios
-			.get(`https://phim.nguonc.com/api/film/${slug}`)
-			.then((res) => {
-				setData(res.data.movie);
-				if (res.data.movie.episodes) {
-					const initialEpisode = res.data.movie.episodes
-						.flatMap((episode) =>
-							episode.items.map((item) => ({
-								slug: item.slug,
-								embed: item.embed,
-							}))
-						)
-						.find((item) => item.slug === selectedEpisodeSlug);
+		const fetchData = async () => {
+			try {
+				const res = await axios.get(`https://phim.nguonc.com/api/film/${slug}`);
+				const movieData = res.data.movie;
+				setData(movieData);
+
+				if (movieData.episodes) {
+					const initialEpisode = movieData.episodes.flatMap((episode) => episode.items).find((item) => item.slug === selectedEpisodeSlug);
 					setIframeUrl(initialEpisode?.embed || null);
 				}
-			})
-			.catch((err) => {
-				console.log(err);
-			});
-	}, [slug, selectedEpisodeSlug]);
+			} catch (err) {
+				console.error(err);
+			}
+		};
 
-	useEffect(() => {
-		if (data && selectedEpisodeSlug) {
-			const episode = data.episodes
-				.flatMap((episode) =>
-					episode.items.map((item) => ({
-						slug: item.slug,
-						embed: item.embed,
-					}))
-				)
-				.find((item) => item.slug === selectedEpisodeSlug);
-			setIframeUrl(episode?.embed || null);
-		}
-	}, [data, selectedEpisodeSlug]);
+		fetchData();
+	}, [slug, selectedEpisodeSlug]);
 
 	if (!data) {
 		return <p>Loading...</p>;
@@ -55,7 +38,7 @@ function Watch() {
 
 	const episodes =
 		data.episodes?.flatMap((episode) =>
-			episode.items?.map((item) => ({
+			episode.items.map((item) => ({
 				name: item.name,
 				slug: item.slug,
 				embed: item.embed,
@@ -68,6 +51,11 @@ function Watch() {
 			<main className="pt-5">
 				<Container className="pt-4">
 					<Row>
+						<Col lg={12}>
+							<h3 className="text-uppercase text-lg text-primary text-truncate">
+								<i className="bi bi-play-circle text-black" /> {data.name} - {data.original_name}
+							</h3>
+						</Col>
 						<Col lg={12}>
 							<Video embed={iframeUrl} />
 						</Col>
@@ -97,7 +85,6 @@ function Watch() {
 													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}
 													onClick={() => setIframeUrl(e.embed)} // Cập nhật URL của iframe khi chọn tập
 												>
-													Tập {e.name}
 												</Link>
 											</div>
 										))}
