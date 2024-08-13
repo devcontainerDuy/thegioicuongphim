@@ -118,7 +118,7 @@ function Header() {
 									<InputGroup aria-label="Tìm kiếm">
 										<Form.Control type="search" placeholder="Tìm kiếm phim..." aria-label="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
 										<Dropdown>
-											<Dropdown.Toggle variant="success" type="submit">
+											<Dropdown.Toggle className="bg-danger" variant="danger" type="submit">
 												<i className="bi bi-search" />
 											</Dropdown.Toggle>
 											<Dropdown.Menu>
@@ -140,7 +140,7 @@ function Header() {
 										</Link>
 									</Nav.Item>
 									<Nav.Item>
-										<Link to="/danh-muc" className="nav-link">
+										<Link to="/dang-ky" className="nav-link">
 											Đăng ký
 										</Link>
 									</Nav.Item>

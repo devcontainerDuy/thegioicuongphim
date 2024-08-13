@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+
 function Nav() {
 	return (
 		<nav className="container pt-5">

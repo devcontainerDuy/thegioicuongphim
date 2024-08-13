@@ -76,7 +76,7 @@ function Watch() {
 				<Container className="my-4">
 					<Card className="mb-3">
 						<Card.Body>
-							<Button variant="primary" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
+							<Button variant="danger	" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
 								Xem Phim
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +94,7 @@ function Watch() {
 											<div key={i} className="col-12 col-sm-6 col-md-4 col-lg-3">
 												<Link
 													to={`/xem-phim/${slug}/${e.slug}`}
-													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-primary" : "btn-secondary"}`}
+													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}
 													onClick={() => setIframeUrl(e.embed)} // Cập nhật URL của iframe khi chọn tập
 												>
 													Tập {e.name}

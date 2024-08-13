@@ -6,11 +6,14 @@ import Cate from "./pages/Cate";
 import Detail from "./pages/Detail";
 import Watch from "./pages/Watch";
 import Category from "./pages/Category";
+import "./css/App.css";
+import SignUp from "./pages/SignUp";
 
 function App() {
 	return (
 		<BrowserRouter className="App" basename="/">
 			<Routes>
+				<Route path="/dang-ky" element={<SignUp />} />
 				<Route path="/" element={<Home />} />
 				<Route path="/danh-sach-phim" element={<Cate />} />
 				<Route path="/danh-sach-phim/:slug" element={<Category />} />

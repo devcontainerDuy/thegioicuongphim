@@ -51,55 +51,55 @@ function Detail() {
 						<Col lg={9}>
 							<div className="container">
 								<div className="text-center rounded">
-									<h3 className="text-uppercase text-lg fw-bold text-primary">{data.name}</h3>
-									<h5 className="fst-italic text-info">{data.original_name}</h5>
+									<h3 className="text-danger text-lg fw-bold text-primary">{data.name}</h3>
+									<h5 className="fst-italic">{data.original_name}</h5>
 								</div>
 								<div className="overflow-auto">
 									<table className="table table-borderless text-start">
 										<tbody>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Trạng thái</td>
-												<td className="py-1 ps-2 text-primary">{data.current_episode}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Trạng thái</td>
+												<td className="py-1 ps-2 text-white">{data.current_episode}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Số tập</td>
-												<td className="py-1 ps-2 text-primary">{data.total_episodes}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Số tập</td>
+												<td className="py-1 ps-2 text-white">{data.total_episodes}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Thời Lượng</td>
-												<td className="py-1 ps-2 text-primary">{data.time}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Thời Lượng</td>
+												<td className="py-1 ps-2 text-white">{data.time}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Chất Lượng</td>
-												<td className="py-1 ps-2 text-primary">{data.quality}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Chất Lượng</td>
+												<td className="py-1 ps-2 text-white">{data.quality}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Ngôn Ngữ</td>
-												<td className="py-1 ps-2 text-primary">{data.language}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Ngôn Ngữ</td>
+												<td className="py-1 ps-2 text-white">{data.language}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Đạo Diễn</td>
-												<td className="py-1 ps-2 text-primary">{data.director}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Đạo Diễn</td>
+												<td className="py-1 ps-2 text-white">{data.director}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Diễn Viên</td>
-												<td className="py-1 ps-2 text-primary">{data.casts}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Diễn Viên</td>
+												<td className="py-1 ps-2 text-white">{data.casts}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Danh sách</td>
-												<td className="py-1 ps-2 text-primary">{data.category[1]?.list[0]?.name || "N/A"}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Danh sách</td>
+												<td className="py-1 ps-2 text-white">{data.category[1]?.list[0]?.name || "N/A"}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Thể loại</td>
-												<td className="py-1 ps-2 text-primary">{categoryList}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Thể loại</td>
+												<td className="py-1 ps-2 text-white">{categoryList}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Năm phát hành</td>
-												<td className="py-1 ps-2 text-primary">{releaseYear}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Năm phát hành</td>
+												<td className="py-1 ps-2 text-white">{releaseYear}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-info">Quốc gia</td>
-												<td className="py-1 ps-2 text-primary">{country}</td>
+												<td className="py-1 pe-2 text-white fw-bold">Quốc gia</td>
+												<td className="py-1 ps-2 text-white">{country}</td>
 											</tr>
 										</tbody>
 									</table>
@@ -111,7 +111,7 @@ function Detail() {
 				<Container className="my-4">
 					<Card className="mb-3">
 						<Card.Body>
-							<Button variant="primary" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
+							<Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
 								Nội dung phim
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +132,7 @@ function Detail() {
 
 					<Card className="mb-3">
 						<Card.Body>
-							<Button variant="primary" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
+							<Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
 								Xem Phim
 								<svg
 									xmlns="http://www.w3.org/2000/svg"

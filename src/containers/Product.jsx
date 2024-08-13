@@ -11,11 +11,11 @@ function Product({ name, slug, image, totalEpisodes, currentEpisode, time }) {
 					<div className="card-body">
 						<div className="card-text text-truncate">
 							<Link to={`/phim/${slug}`} className="link-offset-2-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">
-								<p>{name}</p>
+								<p className="fw-bold text-body-secondary">{name}</p>
 							</Link>
 						</div>
 						<div className="d-flex justify-content-between align-items-center">
-							<small className="text-body-secondary">
+							<small className="text-danger">
 								{currentEpisode}/{totalEpisodes}
 							</small>
 							<small className="text-body-secondary">{time}</small>
