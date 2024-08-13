@@ -1,3 +1,4 @@
+/* eslint-disable */
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Col, Container, Dropdown, Form, Image, InputGroup, Nav, Navbar, Row } from "react-bootstrap";

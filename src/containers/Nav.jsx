@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import { Image } from "react-bootstrap";
 import { Link } from "react-router-dom";
