@@ -1,10 +1,11 @@
 /* eslint-disable */
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Button, Col, Container, Form, Pagination, Row } from "react-bootstrap";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Product from "../containers/Product";
+import Pagi from "../containers/Pagi";
 
 function Cate() {
 	let data = [
@@ -152,7 +153,7 @@ function Cate() {
 		setCurrentPage(1);
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = (e, page) => {
 		if (e) e.preventDefault();
 		setIsLoading(true);
 
@@ -160,7 +161,7 @@ function Cate() {
 		if (subcategory && subcategory !== "0") {
 			url += `/${subcategory}`;
 		}
-		url += `?page=${currentPage}`;
+		url += `?page=${page}`;
 
 		axios
 			.get(url)
@@ -183,7 +184,7 @@ function Cate() {
 
 	const handlePageChange = (pageNumber) => {
 		setCurrentPage(pageNumber);
-		handleSubmit(); // Gọi lại hàm lọc khi người dùng thay đổi trang
+		handleSubmit(null, pageNumber); // Gọi lại hàm lọc khi người dùng thay đổi trang
 	};
 
 	return (
@@ -236,29 +237,7 @@ function Cate() {
 						<p>Không có phim nào được tìm thấy.</p>
 					)}
 				</div>
-				<Pagination className="justify-content-center mt-2">
-					<Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-					<Pagination.Prev onClick={() => handlePageChange(currentPage > 1 ? currentPage - 1 : 1)} disabled={currentPage === 1} />
-					{currentPage > 3 && (
-						<>
-							<Pagination.Item onClick={() => handlePageChange(1)}>1</Pagination.Item>
-							<Pagination.Ellipsis />
-						</>
-					)}
-
-					{currentPage > 1 && <Pagination.Item onClick={() => handlePageChange(currentPage - 1)}>{currentPage - 1}</Pagination.Item>}
-					<Pagination.Item active>{currentPage}</Pagination.Item>
-					{currentPage < totalPage && <Pagination.Item onClick={() => handlePageChange(currentPage + 1)}>{currentPage + 1}</Pagination.Item>}
-
-					{currentPage < totalPage - 2 && (
-						<>
-							<Pagination.Ellipsis />
-							<Pagination.Item onClick={() => handlePageChange(totalPage)}>{totalPage}</Pagination.Item>
-						</>
-					)}
-					<Pagination.Next onClick={() => handlePageChange(currentPage < totalPage ? currentPage + 1 : totalPage)} disabled={currentPage === totalPage} />
-					<Pagination.Last onClick={() => handlePageChange(totalPage)} disabled={currentPage === totalPage} />
-				</Pagination>
+				<Pagi current={currentPage} total={totalPage} handle={handlePageChange} />
 			</section>
 
 			<Footer />

@@ -117,17 +117,27 @@ function Header() {
 							<Col md={4}>
 								<Form className="d-flex" onSubmit={handleSubmit}>
 									<InputGroup aria-label="Tìm kiếm">
-										<Form.Control type="search" placeholder="Tìm kiếm phim..." aria-label="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+										<Form.Control type="search" placeholder="Tìm kiếm phim..." aria-label="Search" list="films" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+										<datalist id="films">
+											<option value="Nhà bà nữ"></option>
+											<option value="Black Adam"></option>
+											<option value="Kẻ Trộm Mặt Trăng 4"></option>
+											<option value="Re:Zero kara Hajimeru Isekai Seikatsu 3rd Season"></option>
+										</datalist>
 										<Dropdown>
 											<Dropdown.Toggle className="bg-danger" variant="danger" type="submit">
 												<i className="bi bi-search" />
 											</Dropdown.Toggle>
 											<Dropdown.Menu>
-												{films.map((film) => (
-													<Dropdown.Item key={film.slug} href={`/phim/${film.slug}`}>
-														{film.name}
-													</Dropdown.Item>
-												))}
+												{films.length > 0 ? (
+													films.map((film) => (
+														<Dropdown.Item key={film.slug} href={`/phim/${film.slug}`}>
+															{film.name}
+														</Dropdown.Item>
+													))
+												) : (
+													<Dropdown.Item disabled>Không có kết quả trùng khớp</Dropdown.Item>
+												)}
 											</Dropdown.Menu>
 										</Dropdown>
 									</InputGroup>

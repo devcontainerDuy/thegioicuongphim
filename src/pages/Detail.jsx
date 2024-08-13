@@ -59,48 +59,48 @@ function Detail() {
 									<table className="table table-borderless text-start">
 										<tbody>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Trạng thái</td>
-												<td className="py-1 ps-2 text-white">{data.current_episode}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Trạng thái</td>
+												<td className="py-1 ps-2 text-body">{data.current_episode}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Số tập</td>
-												<td className="py-1 ps-2 text-white">{data.total_episodes}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Số tập</td>
+												<td className="py-1 ps-2 text-body">{data.total_episodes}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Thời Lượng</td>
-												<td className="py-1 ps-2 text-white">{data.time}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Thời Lượng</td>
+												<td className="py-1 ps-2 text-body">{data.time}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Chất Lượng</td>
-												<td className="py-1 ps-2 text-white">{data.quality}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Chất Lượng</td>
+												<td className="py-1 ps-2 text-body">{data.quality}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Ngôn Ngữ</td>
-												<td className="py-1 ps-2 text-white">{data.language}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Ngôn Ngữ</td>
+												<td className="py-1 ps-2 text-body">{data.language}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Đạo Diễn</td>
-												<td className="py-1 ps-2 text-white">{data.director}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Đạo Diễn</td>
+												<td className="py-1 ps-2 text-body">{data.director}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Diễn Viên</td>
-												<td className="py-1 ps-2 text-white">{data.casts}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Diễn Viên</td>
+												<td className="py-1 ps-2 text-body">{data.casts}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Danh sách</td>
-												<td className="py-1 ps-2 text-white">{data.category[1]?.list[0]?.name || "N/A"}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Danh sách</td>
+												<td className="py-1 ps-2 text-body">{data.category[1]?.list[0]?.name || "N/A"}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Thể loại</td>
-												<td className="py-1 ps-2 text-white">{categoryList}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Thể loại</td>
+												<td className="py-1 ps-2 text-body">{categoryList}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Năm phát hành</td>
-												<td className="py-1 ps-2 text-white">{releaseYear}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Năm phát hành</td>
+												<td className="py-1 ps-2 text-body">{releaseYear}</td>
 											</tr>
 											<tr className="border-top">
-												<td className="py-1 pe-2 text-white fw-bold">Quốc gia</td>
-												<td className="py-1 ps-2 text-white">{country}</td>
+												<td className="py-1 pe-2 text-body fw-bold">Quốc gia</td>
+												<td className="py-1 ps-2 text-body">{country}</td>
 											</tr>
 										</tbody>
 									</table>

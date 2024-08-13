@@ -53,7 +53,7 @@ function Watch() {
 				<Container className="pt-4">
 					<Row>
 						<Col lg={12}>
-							<h3 className="text-uppercase text-lg text-primary text-truncate">
+							<h3 className="my-2 text-danger text-truncate">
 								<i className="bi bi-play-circle text-black" /> {data.name} - {data.original_name}
 							</h3>
 						</Col>
@@ -63,6 +63,26 @@ function Watch() {
 					</Row>
 				</Container>
 				<Container className="my-4">
+					<Card className="mb-3">
+						<Card.Body>
+							<Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
+								Nội dung phim
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									className={`bi bi-caret-down ${openContent ? "rotate-180" : ""}`}
+									style={{ width: "20px", height: "20px" }}>
+									<path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+								</svg>
+							</Button>
+							<Collapse in={openContent}>
+								<div className="mt-2">
+									<p>{data.description}</p>
+								</div>
+							</Collapse>
+						</Card.Body>
+					</Card>
 					<Card className="mb-3">
 						<Card.Body>
 							<Button variant="danger	" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
@@ -86,6 +106,7 @@ function Watch() {
 													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}
 													onClick={() => setIframeUrl(e.embed)} // Cập nhật URL của iframe khi chọn tập
 												>
+													{e.name}
 												</Link>
 											</div>
 										))}
