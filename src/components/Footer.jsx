@@ -42,7 +42,7 @@ function Footer() {
 								Địa chỉ email
 							</label>
 							<input id="newsletter1" type="text" className="form-control" placeholder="Nhập địa chỉ email của bạn..." />
-							<button className="btn btn-primary" type="button">
+							<button className="btn btn-danger" type="button">
 								Gửi!
 							</button>
 						</div>

@@ -64,27 +64,7 @@ function Watch() {
 				<Container className="my-4">
 					<Card className="mb-3">
 						<Card.Body>
-							<Button variant="primary" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
-								Nội dung phim
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 20 20"
-									fill="currentColor"
-									className={`bi bi-caret-down ${openContent ? "rotate-180" : ""}`}
-									style={{ width: "20px", height: "20px" }}>
-									<path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-								</svg>
-							</Button>
-							<Collapse in={openContent}>
-								<div className="mt-2">
-									<p>{data.description}</p>
-								</div>
-							</Collapse>
-						</Card.Body>
-					</Card>
-					<Card className="mb-3">
-						<Card.Body>
-							<Button variant="primary" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
+							<Button variant="danger	" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
 								Xem Phim
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -102,9 +82,9 @@ function Watch() {
 											<div key={i} className="col-12 col-sm-6 col-md-4 col-lg-3">
 												<Link
 													to={`/xem-phim/${slug}/${e.slug}`}
-													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-primary" : "btn-secondary"}`}
-													onClick={() => setIframeUrl(e.embed)}>
-													Tập {e.name}
+													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}
+													onClick={() => setIframeUrl(e.embed)} // Cập nhật URL của iframe khi chọn tập
+												>
 												</Link>
 											</div>
 										))}
