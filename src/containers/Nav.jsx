@@ -5,10 +5,9 @@ import { Link } from "react-router-dom";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-
 function Nav() {
 	return (
-		<nav className="container pt-5">
+		<nav className="container pt-5 mt-2">
 			<Swiper style={{ width: "100%" }} modules={[Navigation, Pagination, Autoplay]} spaceBetween={50} slidesPerView={1} navigation autoplay={{ delay: 3000 }} pagination={{ clickable: true }}>
 				<SwiperSlide>
 					<Link to="/phim/mai">

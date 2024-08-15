@@ -34,7 +34,7 @@ function Home() {
 		<>
 			<Header />
 			<Nav />
-			<main className="py-4">
+			<main className="py-3">
 				<section className="container">
 					<h3 className="py-2 text-danger border-bottom border-danger fw-bold">Phim mới cập nhật</h3>
 					<div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
@@ -45,7 +45,7 @@ function Home() {
 						)}
 					</div>
 				</section>
-				<section className="container py-4">
+				<section className="container py-3">
 					<h3 className="py-2 text-danger border-bottom border-danger">Phim Việt Nam</h3>
 					<div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
 						{vietnam.length > 0 ? (

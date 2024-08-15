@@ -85,8 +85,22 @@ function Header() {
 			<Navbar expand="lg" className="bg-body-tertiary" sticky="top">
 				<Container>
 					<Navbar.Brand href="/">
-						<Image src="http://localhost/thegioicuongphim/src/assets/logo/logo.png" alt="Logo" className="logo" width={200} height={40} />
+						<div className="d-flex align-items-center text-uppercase border border-success rounded">
+							<div className="fw-bold text-bg-danger px-2 rounded-start">
+								<span>THẾ</span>
+							</div>
+							<div className="fw-bold bg-secondary text-warning px-2">
+								<span>GIỚI</span>
+							</div>
+							<div className="fw-bold text-bg-danger px-2">
+								<span>CUỒNG</span>
+							</div>
+							<div className="fw-bold bg-secondary text-warning px-2 rounded-end">
+								<span>PHIM</span>
+							</div>
+						</div>
 					</Navbar.Brand>
+
 					<Navbar.Toggle aria-controls="basic-navbar-nav" />
 					<Navbar.Collapse className="justify-content-end" id="basic-navbar-nav">
 						<Row className="w-100">

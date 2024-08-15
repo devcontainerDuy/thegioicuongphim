@@ -146,9 +146,9 @@ function Detail() {
 							</Button>
 							<Collapse in={openEpisodes}>
 								<div className="mt-2">
-									<div className="row g-2">
+									<div className="row g-2 overflow-auto" style={{ maxHeight: "230px" }}>
 										{episodes.map((episode, i) => (
-											<div key={i} className="col-12 col-sm-6 col-md-4 col-lg-3">
+											<div key={i} className="col-3 col-sm-3 col-md-2 col-lg-2">
 												<Link to={`/xem-phim/${slug}/${episode.slug}`} className="btn btn-secondary w-100 text-truncate">
 													Tập {episode.name}
 												</Link>
