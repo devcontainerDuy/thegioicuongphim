@@ -1,14 +1,30 @@
 /* eslint-disable */
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button, Card, Col, Collapse, Container, Image, Row } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
+import { addFavorite, removeFavorite } from "../store/reducers/favoritesSlice";
 
 function Detail() {
 	const { slug } = useParams();
 	const [data, setData] = useState(null);
+
+	const dispatch = useDispatch();
+	const favoriteList = useSelector((state) => state.favorites.items); // Truy cập state từ slice
+	let isFavorite = favoriteList.some((film) => film.id === data?.id);
+
+	const handleFavoriteClick = () => {
+		if (data) {
+			if (isFavorite) {
+				dispatch(removeFavorite(data.id));
+			} else {
+				dispatch(addFavorite(data));
+			}
+		}
+	};
 
 	const [openContent, setOpenContent] = useState(true);
 	const [openEpisodes, setOpenEpisodes] = useState(true);
@@ -44,15 +60,24 @@ function Detail() {
 		<>
 			<Header />
 			<main className="pt-5">
-				<Container className="pt-4">
+				<Container className="pt-2">
 					<Row>
 						<Col lg={3}>
 							<Image className="w-100 h-100 object-fit-contain" src={data.thumb_url} />
 						</Col>
-						<Col lg={9}>
+						<Col lg={9} className="pt-3">
 							<div className="container">
 								<div className="text-center rounded">
-									<h3 className="text-danger text-lg fw-bold text-primary">{data.name}</h3>
+									<Row>
+										<Col>
+											<h3 className="text-danger text-lg fw-bold text-primary">{data.name}</h3>
+										</Col>
+										<Col xs="1" className="text-end">
+											<Button type="button" className="float-end" variant="outline-success" title="Thêm yêu thích" onClick={handleFavoriteClick}>
+												<i className={`bi ${favoriteList.some((film) => film.id === data.id) ? "bi-bookmark-fill" : "bi-bookmark"}`} />
+											</Button>
+										</Col>
+									</Row>
 									<h5 className="fst-italic">{data.original_name}</h5>
 								</div>
 								<div className="overflow-auto">

@@ -100,7 +100,7 @@ function Watch() {
 								<div className="mt-2">
 									<div className="row g-2">
 										{episodes.map((e, i) => (
-											<div key={i} className="col-12 col-sm-6 col-md-4 col-lg-3">
+											<div key={i} className="col-3 col-sm-3 col-md-2 col-lg-2">
 												<Link
 													to={`/xem-phim/${slug}/${e.slug}`}
 													className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}

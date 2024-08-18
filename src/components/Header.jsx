@@ -1,7 +1,8 @@
 /* eslint-disable */
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Col, Container, Dropdown, Form, Image, InputGroup, Nav, Navbar, Row } from "react-bootstrap";
+import { Button, Col, Container, Dropdown, Form, Image, InputGroup, Nav, Navbar, OverlayTrigger, Popover, Row } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 function useTheme() {
@@ -52,6 +53,7 @@ function toSlug(str) {
 }
 
 function Header() {
+	const favoriteCount = useSelector((state) => state.favorites.items.length);
 	const [theme, toggleTheme] = useTheme();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [films, setFilms] = useState([]);
@@ -67,7 +69,6 @@ function Header() {
 		axios
 			.get(url)
 			.then((response) => {
-				console.log(response.data);
 				setFilms(response.data.items);
 			})
 			.catch((error) => {
@@ -80,8 +81,37 @@ function Header() {
 		searchFilms(searchTerm);
 	};
 
+	const handleScrollToTop = () => {
+		window.scrollTo({
+			top: 0,
+			behavior: "smooth",
+		});
+	};
+
+	const popover = (
+		<Popover id="popover-basic">
+			<Popover.Header as="h3" className="text-center">
+				Tài khoản
+			</Popover.Header>
+			<Popover.Body className="p-2 text-center">
+				<Nav className="flex-column">
+					<Nav.Item>
+						<Link to="/dang-nhap" className="nav-link">
+							Đăng nhập
+						</Link>
+					</Nav.Item>
+					<Nav.Item>
+						<Link to="/dang-ky" className="nav-link">
+							Đăng ký
+						</Link>
+					</Nav.Item>
+				</Nav>
+			</Popover.Body>
+		</Popover>
+	);
+
 	return (
-		<header className="header fixed-top">
+		<header className="header fixed-top border-1 border-bottom border-body">
 			<Navbar expand="lg" className="bg-body-tertiary" sticky="top">
 				<Container>
 					<Navbar.Brand href="/">
@@ -105,7 +135,7 @@ function Header() {
 					<Navbar.Collapse className="justify-content-end" id="basic-navbar-nav">
 						<Row className="w-100">
 							<Col md={5}>
-								<Nav className="me-auto">
+								<Nav className="me-auto fw-bold">
 									<Nav.Item>
 										<Link to="/" className="nav-link active">
 											Trang chủ
@@ -146,7 +176,20 @@ function Header() {
 												{films.length > 0 ? (
 													films.map((film) => (
 														<Dropdown.Item key={film.slug} href={`/phim/${film.slug}`}>
-															{film.name}
+															<div className="d-flex flex-grow-1">
+																<div className="me-2">
+																	{film.thumb_url ? (
+																		<Image src={film.thumb_url} className="rounded" style={{ width: "80px", height: "120px" }} />
+																	) : (
+																		<Col className="rounded bg-secondary" style={{ width: "80px", height: "120px" }} />
+																	)}
+																</div>
+																<div className="d-flex flex-column">
+																	<h6 className="fw-bold text-truncate">{film.name}</h6>
+																	<span className="text-truncate">{new Date(film.created).toLocaleDateString()}</span>
+																	<p className="text-truncate">{film.current_episode}</p>
+																</div>
+															</div>
 														</Dropdown.Item>
 													))
 												) : (
@@ -158,16 +201,17 @@ function Header() {
 								</Form>
 							</Col>
 							<Col>
-								<Nav className="d-flex justify-content-end">
+								<Nav className="d-flex justify-content-end align-items-center fw-bold">
 									<Nav.Item>
-										<Link to="/" className="nav-link">
-											Đăng nhập
+										<Link to="/danh-sach-yeu-thich" className="nav-link position-relative">
+											<i className="bi bi-heart text-body fs-5" />
+											<small class="position-absolute start-75 translate-middle badge rounded-pill bg-danger">{favoriteCount}</small>
 										</Link>
 									</Nav.Item>
-									<Nav.Item>
-										<Link to="/dang-ky" className="nav-link">
-											Đăng ký
-										</Link>
+									<Nav.Item className="ms-2">
+										<OverlayTrigger trigger="click" placement="bottom" overlay={popover}>
+											<i className="bi bi-person-circle fs-5" />
+										</OverlayTrigger>
 									</Nav.Item>
 								</Nav>
 							</Col>
@@ -175,9 +219,13 @@ function Header() {
 					</Navbar.Collapse>
 				</Container>
 			</Navbar>
-			<div className="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
-				<button
-					className="btn btn-primary py-2 dropdown-toggle d-flex align-items-center"
+			<div className="dropdown btn-group dropup position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
+				<Button variant="danger" type="button" title="Lên đầu trang" onClick={handleScrollToTop}>
+					<i className="bi bi-chevron-up" />
+				</Button>
+				<Button
+					variant="body"
+					className="py-2 dropdown-toggle d-flex align-items-center border-1 border-danger"
 					id="bd-theme"
 					type="button"
 					aria-expanded="false"
@@ -189,7 +237,7 @@ function Header() {
 					<span className="visually-hidden" id="bd-theme-text">
 						Toggle theme
 					</span>
-				</button>
+				</Button>
 				<ul className="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
 					<li>
 						<button
