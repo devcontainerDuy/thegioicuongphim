@@ -6,12 +6,12 @@ function Footer() {
 	return (
 		<footer className="bg-body-secondary">
 			<div className="container">
-				<div className="row">
+				<div className="row py-5">
 					<div className="col-6 col-md-3 mb-3">
 						<h2>Thegioicuongphim</h2>
 					</div>
 					<div className="col-6 col-md-3 mb-3">
-						<h5>Section</h5>
+						<h5>Doanh mục</h5>
 						<ul className="nav flex-column">
 							<li className="nav-item mb-2">
 								<Link to="/" className="nav-link p-0 text-body-secondary">
