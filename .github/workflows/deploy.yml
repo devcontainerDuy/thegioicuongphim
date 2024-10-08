@@ -44,7 +44,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           local-dir: build/
-          server-dir: ${{ secrets.SERVER_DIR }}
           exclude: |
             **/.git**
             **/.git*/**
