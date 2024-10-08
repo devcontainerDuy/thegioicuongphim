@@ -8,11 +8,11 @@ import axios from "axios";
 function Home() {
   const [products, setProducts] = useState([]);
   const [vietnam, setVietnam] = useState([]);
-  const [page, setPage] = useState(1);
+  //   const [page, setPage] = useState(1);
 
   useEffect(() => {
     axios
-      .get("https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=" + page)
+      .get("https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=" + 1)
       .then((res) => {
         setProducts(res.data.items);
       })
@@ -21,14 +21,14 @@ function Home() {
       });
 
     axios
-      .get("https://phim.nguonc.com/api/films/quoc-gia/viet-nam?page=" + page)
+      .get("https://phim.nguonc.com/api/films/quoc-gia/viet-nam?page=" + 1)
       .then((res) => {
         setVietnam(res.data.items);
       })
       .catch((err) => {
         console.log(err);
       });
-  }, [page]);
+  }, []);
   return (
     <>
       <Header />

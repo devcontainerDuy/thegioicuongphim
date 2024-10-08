@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Col, Container, Dropdown, Form, Image, InputGroup, Nav, Navbar, Offcanvas, OverlayTrigger, Popover, Row } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -109,10 +109,10 @@ function Header() {
     </Popover>
   );
 
-  const [show, setShow] = useState(false);
+  //   const [show, setShow] = useState(false);
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  //   const handleClose = () => setShow(false);
+  //   const handleShow = () => setShow(true);
 
   return (
     <header className="header fixed-top border-1 border-bottom border-body">
