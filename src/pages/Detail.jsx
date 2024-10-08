@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { Button, Card, Col, Collapse, Container, Image, Row } from "react-bootstrap";
+import { Button, Card, Col, Collapse, Container, Image, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { addFavorite, removeFavorite } from "../store/reducers/favoritesSlice";
