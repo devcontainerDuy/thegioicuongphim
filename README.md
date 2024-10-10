@@ -9,4 +9,4 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 ### Deployment
 
-See the section about, you can access at [deployment](https://thegioicuongphim.codingfs.com/) for more information.
+See the section about, you can access at [thegioicuongpim](https://thegioicuongphim.codingfs.com/) for more information.
