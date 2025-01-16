@@ -1,6 +1,6 @@
 import Dropdowns from "components/ui/Dropdowns";
 import React, { useState } from "react";
-import { Form, InputGroup, Dropdown, Image, Col } from "react-bootstrap";
+import { Form, InputGroup, Image, Col } from "react-bootstrap";
 import { searchFilms } from "services/search";
 
 const SearchForm = () => {
