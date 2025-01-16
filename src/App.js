@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Error from "./pages/errors/Error";
 import Cate from "./pages/Cate";
@@ -11,20 +11,18 @@ import SignUp from "./pages/SignUp";
 import Favorites from "./pages/Favorites";
 
 function App() {
-	return (
-		<BrowserRouter className="App" basename="/">
-			<Routes>
-				<Route path="/dang-ky" element={<SignUp />} />
-				<Route path="/" element={<Home />} />
-				<Route path="/danh-sach-phim" element={<Cate />} />
-				<Route path="/danh-sach-phim/:slug" element={<Category />} />
-				<Route path="/phim/:slug" element={<Detail />} />
-				<Route path="/xem-phim/:slug/:episode" element={<Watch />} />
-				<Route path="/danh-sach-yeu-thich" element={<Favorites />} />
-				<Route path="*" element={<Error />} />
-			</Routes>
-		</BrowserRouter>
-	);
+  return (
+    <Routes>
+      <Route path="/dang-ky" element={<SignUp />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/danh-sach-phim" element={<Cate />} />
+      <Route path="/danh-sach-phim/:slug" element={<Category />} />
+      <Route path="/phim/:slug" element={<Detail />} />
+      <Route path="/xem-phim/:slug/:episode" element={<Watch />} />
+      <Route path="/danh-sach-yeu-thich" element={<Favorites />} />
+      <Route path="*" element={<Error />} />
+    </Routes>
+  );
 }
 
 export default App;

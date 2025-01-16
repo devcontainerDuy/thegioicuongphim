@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 import Product from "../containers/Product";
 import Pagi from "../containers/Pagi";
 import { Spinner } from "react-bootstrap";
@@ -55,7 +55,11 @@ function Category() {
               <span>Đang tải dữ liệu...</span>
             </>
           )}
-          {!isLoading && products.length > 0 ? products.map((p, i) => <Product key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />) : <p>Không có phim nào được tìm thấy.</p>}
+          {!isLoading && products.length > 0 ? (
+            products.map((p, i) => <Product key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
+          ) : (
+            <p>Không có phim nào được tìm thấy.</p>
+          )}
         </div>
         <Pagi current={currentPage} total={totalPage} handle={handlePageChange} />
       </section>

@@ -32,9 +32,24 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+.dropdown-custom::after {
+  display: none !important;
+}
+
+.text-title {
+  display: -webkit-box;
+  /* -webkit-line-clamp: 2; */
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 3rem;
 }
 
 /* src/styles/SwiperCustom.css */
@@ -42,22 +57,26 @@
 /* Đổi màu cho nút next và prev */
 .swiper-button-next,
 .swiper-button-prev {
-  color: #dc3545 !important; /* Màu danger */
+  color: #dc3545 !important;
+  /* Màu danger */
 }
 
 /* Đổi màu cho các chỉ báo phân trang */
 .swiper-pagination-bullet {
-  background-color: #dc3545 !important; /* Màu danger */
+  background-color: #dc3545 !important;
+  /* Màu danger */
 }
 
 .swiper-pagination-bullet-active {
-  background-color: #c82333 !important; /* Màu danger đậm hơn */
+  background-color: #c82333 !important;
+  /* Màu danger đậm hơn */
 }
 
 /* Thay đổi màu khi hover */
 .swiper-button-next:hover,
 .swiper-button-prev:hover {
-  color: #c82333 !important; /* Màu danger đậm hơn khi hover */
+  color: #c82333 !important;
+  /* Màu danger đậm hơn khi hover */
 }
 
 
@@ -67,17 +86,22 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Full viewport height */
-  background-color: #f8f9fa; /* Light background color */
+  height: 100vh;
+  /* Full viewport height */
+  background-color: #f8f9fa;
+  /* Light background color */
 }
 
 .signup-form {
   width: 100%;
-  max-width: 400px; /* Adjust width as needed */
+  max-width: 400px;
+  /* Adjust width as needed */
   padding: 20px;
-  border: 1px solid grey; /* Danger color border */
+  border: 1px solid grey;
+  /* Danger color border */
   border-radius: 8px;
-  background-color: #fff; /* White background for the form */
+  background-color: #fff;
+  /* White background for the form */
 }
 
 .signup-form h2 {
@@ -98,6 +122,6 @@
 }
 
 .signup-form .text-danger {
-  font-size: 0.875rem; /* Slightly smaller text for errors */
+  font-size: 0.875rem;
+  /* Slightly smaller text for errors */
 }
-

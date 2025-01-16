@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
 import { Button, Card, Col, Collapse, Container, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
@@ -72,7 +72,13 @@ function Watch() {
             <Card.Body>
               <Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
                 Nội dung phim
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`bi bi-caret-down ${openContent ? "rotate-180" : ""}`} style={{ width: "20px", height: "20px" }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={`bi bi-caret-down ${openContent ? "rotate-180" : ""}`}
+                  style={{ width: "20px", height: "20px" }}
+                >
                   <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
               </Button>
@@ -87,7 +93,13 @@ function Watch() {
             <Card.Body>
               <Button variant="danger	" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
                 Xem Phim
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`bi bi-caret-down ${openEpisodes ? "rotate-180" : ""}`} style={{ width: "20px", height: "20px" }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={`bi bi-caret-down ${openEpisodes ? "rotate-180" : ""}`}
+                  style={{ width: "20px", height: "20px" }}
+                >
                   <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
               </Button>

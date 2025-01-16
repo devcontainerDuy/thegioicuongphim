@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import Nav from "../containers/Nav";
-import Product from "../containers/Product";
+import Header from "components/common/Header";
+import Footer from "components/common/Footer";
+import Nav from "containers/Nav";
+import Product from "containers/Product";
 import axios from "axios";
+import Template from "components/layout/Template";
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -32,9 +33,9 @@ function Home() {
 
   return (
     <>
-      <Header />
-      <Nav />
-      <main className="py-3">
+      <Template>
+        <Nav />
+
         <section className="container">
           <h3 className="py-2 text-danger border-bottom border-danger fw-bold">Phim mới cập nhật</h3>
           <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
@@ -55,9 +56,7 @@ function Home() {
             )}
           </div>
         </section>
-      </main>
-
-      <Footer />
+      </Template>
     </>
   );
 }
