@@ -1,4 +1,4 @@
-name: Deploy
+name: 🚀 Deploy on push to main
 
 on:
   push:
@@ -23,16 +23,13 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: 🔧 Install dependencies
-        run: npm install
+      - name: 📝 Set environment variables
+        run: echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
 
-      - name: Install Bats
-        run: npm install -g bats
-
-      - name: 🔨 Build Project
-        run: npm run build
-
-      - run: bats -v
+      - name: 🔧 Install dependencies and 🔨 Build Project
+        run: |
+          npm install -g bats
+          npm run build
 
       - name: List output files
         run: find build/ -print
