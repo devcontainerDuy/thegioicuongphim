@@ -28,7 +28,7 @@ jobs:
 
       - name: 🔧 Install dependencies and 🔨 Build Project
         run: |
-          npm install -g bats
+          npm install 
           npm run build
 
       - name: List output files
