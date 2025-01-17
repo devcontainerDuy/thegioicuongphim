@@ -28,6 +28,7 @@ const SearchForm = () => {
           <option value="Kẻ Trộm Mặt Trăng 4"></option>
           <option value="Re:Zero kara Hajimeru Isekai Seikatsu 3rd Season"></option>
         </datalist>
+
         <Dropdowns className="dropdown-custom" variant="danger" type="submit" align="start" trigger={<i className="bi bi-search" />}>
           {films.length > 0 ? (
             films.map((film) => (
