@@ -31,7 +31,7 @@ function Home() {
               <i className="bi bi-chevron-double-right fs-6" />
             </Link>
           </div>
-          <Row xs={2} sm={3} md={4} lg={5} className="row-hover g-2">
+          <Row xs={2} sm={2} md={3} lg={4} xl={5} className="row-hover g-2">
             {products.length > 0 ? (
               products.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
             ) : (
@@ -49,7 +49,7 @@ function Home() {
               <i className="bi bi-chevron-double-right fs-6" />
             </Link>
           </div>
-          <Row xs={2} sm={3} md={4} lg={5} className="row-hover g-2">
+          <Row xs={2} sm={2} md={3} lg={4} xl={5} className="row-hover g-2">
             {vietnam.length > 0 ? (
               vietnam.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
             ) : (
