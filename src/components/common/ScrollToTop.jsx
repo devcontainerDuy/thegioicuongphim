@@ -16,14 +16,14 @@ function ScrollToTop() {
       {/* Hoặc class position-fixed bottom-0 start-0 */}
       <div className="fixed-bottom m-3">
         {/* Lên đầu trang */}
-        <Buttons className="mb-2 border border-body" variant="outline-body" type="button" title="Lên đầu trang" onClick={scrollToTop}>
+        <Buttons className={`mb-2 border border-${theme === "light" ? "dark" : "light"}`} variant="body" type="button" title="Lên đầu trang" onClick={scrollToTop}>
           <i className="bi bi-chevron-up" />
         </Buttons>
         {/* Lên đầu trang */}
         <Dropdowns
           className={`bd-mode-toggle dropdown-custom ${theme === "light" ? "btn-dark" : "btn-light"}`}
           id="bd-theme-text"
-          trigger={<i className={"bi bi-" + (theme === "light" ? "sun-fill" : "moon-stars-fill")} />}
+          trigger={<i className={"bi bi-" + (theme === "light" ? "sun-fill" : theme === "auto" ? "circle-half" : "moon-stars-fill")} />}
         >
           <Dropdowns.Item
             onClick={() => handleThemeClick("light")}

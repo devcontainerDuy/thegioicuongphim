@@ -1,18 +1,37 @@
 /* eslint-disable */
 import React from "react";
-import { Image } from "react-bootstrap";
+import { Card, Container, Image } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 function Nav() {
   return (
-    <nav className="container mt-5">
-      <Swiper style={{ width: "100%" }} modules={[Navigation, Pagination, Autoplay]} spaceBetween={50} slidesPerView={1} navigation autoplay={{ delay: 3000 }} pagination={{ clickable: true }}>
+    <Container as={"nav"} className="mt-5">
+      <Swiper
+        style={{ width: "auto", maxHeight: "100vh" }}
+        modules={[Navigation, Pagination, Autoplay]}
+        spaceBetween={50}
+        slidesPerView={1}
+        navigation
+        autoplay={{ delay: 3000 }}
+        pagination={{ clickable: true }}
+      >
         <SwiperSlide>
-          <Link to="/phim/mai">
-            <Image className="w-100 object-fit-contain" src="https://phim.nguonc.com/public/images/Film/zZ6nRdNQNxRnZ1LQ2ttPBZl9AXV.jpg" fluid />
-          </Link>
+          <Card as={Link} to="/phim/mai" className="text-white shadow bg-fill">
+            <Card.Img className="object-fit-contain" src="https://phim.nguonc.com/public/images/Film/zZ6nRdNQNxRnZ1LQ2ttPBZl9AXV.jpg" fluid alt="Card image" />
+            <Card.ImgOverlay className="m-5 p-5 d-flex flex-column justify-content-end">
+              <Card.Title className="fw-bold fs-1">MAI - Một bộ phim của Trấn Thành</Card.Title>
+              <Card.Text>
+                MAI xoay quanh câu chuyện về cuộc đời của một người phụ nữ cùng tên với bộ phim. Trên First-look Poster, Phương Anh Đào tạo ấn tượng mạnh với cái nhìn tĩnh lặng, xuyên thấu, đặc biệt,
+                trên bờ môi nữ diễn viên là hình ảnh cô đang nằm nghiêng trên mặt nước. Được phủ một màn sương mờ ảo, poster đậm chất nghệ thuật của Mai gây tò mò với lời tựa: “Quá khứ chưa ngủ yên,
+                ngày mai liệu sẽ đến?”.
+              </Card.Text>
+              <Card.Text>
+                <strong>Thể loại:</strong> Chính Kịch, Lãng Mạn
+              </Card.Text>
+            </Card.ImgOverlay>
+          </Card>
         </SwiperSlide>
         <SwiperSlide>
           <Link to="phim/gap-lai-chi-bau">
@@ -35,7 +54,7 @@ function Nav() {
           </Link>
         </SwiperSlide>
       </Swiper>
-    </nav>
+    </Container>
   );
 }
 

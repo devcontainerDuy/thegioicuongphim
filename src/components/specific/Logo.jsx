@@ -3,7 +3,7 @@ import React from "react";
 function Logo() {
   return (
     <>
-      <div className="d-flex align-items-center text-uppercase border border-success rounded">
+      <div className="d-flex align-items-center text-uppercase rounded ">
         <div className="fw-bold text-bg-danger px-2 rounded-start">
           <span>THẾ</span>
         </div>
