@@ -23,7 +23,7 @@ function Watch() {
   }, [slug, selectedEpisodeSlug]);
 
   const episodes =
-    data.episodes?.flatMap((episode) =>
+    data?.episodes?.flatMap((episode) =>
       episode.items.map((item) => ({
         name: item.name,
         slug: item.slug,
@@ -39,7 +39,7 @@ function Watch() {
             <Row>
               <Col lg={12}>
                 <h3 className="my-2 text-danger text-truncate">
-                  <i className="bi bi-play-circle text-black" /> {data.name} - {data.original_name}
+                  <i className="bi bi-play-circle text-black" /> {data?.name} - {data?.original_name}
                 </h3>
               </Col>
               <Col lg={12}>
@@ -64,7 +64,7 @@ function Watch() {
                 </Button>
                 <Collapse in={openContent}>
                   <div className="mt-2">
-                    <p>{data.description}</p>
+                    <p>{data?.description}</p>
                   </div>
                 </Collapse>
               </Card.Body>
