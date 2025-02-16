@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const getFilms = async (endpoint, page = 1) => {
+export const getFilm = async (endpoint) => {
   return await axios
-    .get(process.env.REACT_APP_API_URL + `/films/${endpoint}?page=${page}`)
+    .get(process.env.REACT_APP_API_URL + `/film/${endpoint}`)
     .then((res) => res.data)
     .catch((err) => {
       console.error("Không thể tải films:", err);

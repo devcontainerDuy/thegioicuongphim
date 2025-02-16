@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import { Card, Col, Placeholder } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-function Cards({ name, slug, image, totalEpisodes, currentEpisode, time }) {
-  const [loading, setLoading] = useState(true);
+function Cards({ name, slug, image, totalEpisodes, currentEpisode, time, loader = true }) {
+  const [loading, setLoading] = useState(loader);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -38,9 +38,7 @@ function Cards({ name, slug, image, totalEpisodes, currentEpisode, time }) {
               </Card.Text>
               <div className="d-lg-flex d-block justify-content-lg-between">
                 <div className="text-danger">
-                  <small>
-                    {currentEpisode}/{totalEpisodes}
-                  </small>
+                  <small>{currentEpisode && totalEpisodes ? `${currentEpisode}/${totalEpisodes}` : "N/A"}</small>
                 </div>
                 <div className="text-body-secondary">
                   <small>{time}</small>

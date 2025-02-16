@@ -8,12 +8,12 @@ import { Container, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 function Home() {
-  const [products, setProducts] = useState([]);
+  const [films, setFilms] = useState([]);
   const [vietnam, setVietnam] = useState([]);
 
   useEffect(() => {
-    getFilms(categories[0].slug).then((res) => setProducts(res));
-    getFilms(categories[3].slug + "/" + categories[3].item[4].slug).then((res) => setVietnam(res));
+    getFilms(categories[0].slug).then((res) => setFilms(res.items));
+    getFilms(categories[3].slug + "/" + categories[3].item[4].slug).then((res) => setVietnam(res.items));
   }, []);
 
   return (
@@ -32,8 +32,8 @@ function Home() {
             </Link>
           </div>
           <Row xs={2} sm={2} md={3} lg={4} xl={5} className="row-hover g-2">
-            {products.length > 0 ? (
-              products.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
+            {films.length > 0 ? (
+              films.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
             ) : (
               <p className="text-danger">Không có phim nào được tìm thấy.</p>
             )}
@@ -44,7 +44,7 @@ function Home() {
             <h3 className="m-0 text-danger fw-bold">
               <span>Phim Việt Nam</span>
             </h3>
-            <Link to="/danh-sach-phim" className="m-0 fs-5 text-danger">
+            <Link to="/danh-sach-phim?category=quoc-gia&sub=viet-nam&page=1" className="m-0 fs-5 text-danger">
               <span>Xem thêm</span>
               <i className="bi bi-chevron-double-right fs-6" />
             </Link>

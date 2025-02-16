@@ -61,7 +61,7 @@
 
 .card-hover:hover {
   transform: translateY(-1%);
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid RGBA(var(--bs-danger-rgb), var(--bs-bg-opacity, 1)) !important;
   box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.1) !important;
   opacity: 1;
 }

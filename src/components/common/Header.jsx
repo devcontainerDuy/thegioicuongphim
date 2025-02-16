@@ -55,12 +55,12 @@ function Header() {
                       <NavLink to="/danh-sach-phim" active={useIsActive("/danh-sach-phim")}>
                         Danh sách phim
                       </NavLink>
-                      <NavLink to="/danh-sach-phim/phim-le" active={useIsActive("/danh-sach-phim/phim-le")}>
+                      {/* <NavLink to="/danh-sach-phim?category=danh-sach&sub=phim-le&page=1" active={useIsActive("/danh-sach-phim?category=danh-sach&sub=phim-le&page=1")}>
                         Phim lẻ
                       </NavLink>
                       <NavLink to="/danh-sach-phim/phim-bo" active={useIsActive("/danh-sach-phim/phim-bo")}>
                         Phim bộ
-                      </NavLink>
+                      </NavLink> */}
                     </Nav>
                   </Col>
                   <Col xs={12} xl={4}>
