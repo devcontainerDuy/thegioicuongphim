@@ -48,12 +48,12 @@ function Header() {
               <div className="d-flex justify-content-end flex-grow-1">
                 <Row className="w-100">
                   <Col xs={12} xl={5}>
-                    <Nav className="me-auto fw-bold">
+                    <Nav className="me-auto fw-bold text-uppercase">
                       <NavLink to="/" active={useIsActive("/")}>
-                        Trang chủ
+                        <span className="mb-0">Trang chủ</span>
                       </NavLink>
                       <NavLink to="/danh-sach-phim" active={useIsActive("/danh-sach-phim")}>
-                        Danh sách phim
+                        <span className="mb-0">Danh sách phim</span>
                       </NavLink>
                       {/* <NavLink to="/danh-sach-phim?category=danh-sach&sub=phim-le&page=1" active={useIsActive("/danh-sach-phim?category=danh-sach&sub=phim-le&page=1")}>
                         Phim lẻ

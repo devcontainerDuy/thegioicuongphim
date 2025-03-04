@@ -9,6 +9,7 @@ import { categories } from "utils/categories";
 import NavLink from "components/ui/NavLink";
 import { getFilms } from "services/getFilms";
 import { useSearchParams } from "react-router-dom";
+import { useIsActive } from "lib/navigation";
 
 function Cate() {
   const [open, setOpen] = useState({});
@@ -82,7 +83,7 @@ function Cate() {
                                           {item.item.map((sub, j) => (
                                             <Nav.Item key={j}>
                                               <NavLink to={`/danh-sach-phim?category=${item.slug}&sub=${sub.slug}&page=${currentPage}`} className="d-flex justify-content-between text-body">
-                                                {sub.name}
+                                                <span className="mb-0">{sub.name}</span>
                                               </NavLink>
                                             </Nav.Item>
                                           ))}
@@ -90,8 +91,12 @@ function Cate() {
                                       </Collapse>
                                     </>
                                   ) : (
-                                    <NavLink to={`/danh-sach-phim?category=${item.slug}&page=${currentPage}`} className="text-decoration-none d-flex justify-content-between text-body">
-                                      <p className="mb-0">{item.name}</p>
+                                    <NavLink
+                                      to={`/danh-sach-phim?category=${item.slug}&page=${currentPage}`}
+                                      className="text-decoration-none d-flex justify-content-between text-body"
+                                      active={useIsActive("/danh-sach-phim" + (item.slug === category ? "" : `?category=${item.slug}`) + (page === 1 ? "" : `&page=${page}`))}
+                                    >
+                                      <span className="mb-0">{item.name}</span>
                                     </NavLink>
                                   )}
                                 </Fragment>
