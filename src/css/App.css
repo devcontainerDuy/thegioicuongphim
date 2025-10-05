@@ -1,45 +1,28 @@
-.App {
-  text-align: center;
+﻿:root {
+  --app-navbar-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 249, 250, 0.9));
+  --app-navbar-border: rgba(15, 23, 42, 0.08);
+  --app-navbar-shadow: 0 18px 34px -22px rgba(15, 23, 42, 0.35);
+  --app-navlink-color: rgba(33, 37, 41, 0.72);
+  --app-navlink-active: #dc3545;
+  --app-quickfilter-bg: rgba(248, 249, 250, 0.9);
+  --app-quickfilter-border: rgba(15, 23, 42, 0.06);
+  --app-rail-card-shadow: 0 14px 24px -18px rgba(15, 23, 42, 0.45);
+  --app-spotlight-overlay: linear-gradient(180deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.72) 100%);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+:root[data-bs-theme="dark"] {
+  --app-navbar-bg: linear-gradient(135deg, rgba(20, 20, 31, 0.85), rgba(48, 24, 32, 0.88));
+  --app-navbar-border: rgba(255, 255, 255, 0.12);
+  --app-navbar-shadow: 0 18px 34px -16px rgba(0, 0, 0, 0.6);
+  --app-navlink-color: rgba(241, 245, 249, 0.76);
+  --app-navlink-active: rgba(255, 142, 163, 1);
+  --app-quickfilter-bg: rgba(42, 42, 56, 0.82);
+  --app-quickfilter-border: rgba(255, 255, 255, 0.06);
+  --app-rail-card-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.75);
+  --app-spotlight-overlay: linear-gradient(180deg, rgba(5, 5, 8, 0.05) 0%, rgba(5, 5, 8, 0.82) 100%);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Custom */
-
+/* Base overrides */
 .dropdown-custom::after {
   display: none !important;
 }
@@ -56,29 +39,29 @@
 
 .card-hover {
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
 .card-hover:hover {
-  transform: translateY(-1%);
-  border: 1px solid RGBA(var(--bs-danger-rgb), var(--bs-bg-opacity, 1)) !important;
-  box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
+  border: 1px solid rgba(var(--bs-danger-rgb), 0.25) !important;
+  box-shadow: 0 12px 24px -18px rgba(15, 23, 42, 0.45) !important;
   opacity: 1;
 }
 
-.row-hover:hover> :not(:hover) {
+.row-hover:hover > :not(:hover) {
   transform: translateY(0);
-  opacity: 0.5;
+  opacity: 0.48;
   transition: opacity 0.3s ease;
 }
 
 .card-img-hover {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .card-img-hover:hover {
   transform: scale(1.03);
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 0.5rem !important;
 }
 
@@ -88,78 +71,338 @@
   background-size: cover !important;
 }
 
-/* End Custom */
-
-/* src/styles/SwiperCustom.css */
-
-/* Đổi màu cho nút next và prev */
-.swiper-button-next,
-.swiper-button-prev {
-  color: #dc3545 !important;
-  /* Màu danger */
+/* Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
 }
 
-/* Đổi màu cho các chỉ báo phân trang */
-.swiper-pagination-bullet {
-  background-color: #dc3545 !important;
-  /* Màu danger */
+.app-navbar {
+  background: var(--app-navbar-bg);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--app-navbar-border);
+  box-shadow: var(--app-navbar-shadow);
 }
 
-.swiper-pagination-bullet-active {
-  background-color: #c82333 !important;
-  /* Màu danger đậm hơn */
+.app-navbar .navbar-brand,
+.app-navbar .navbar-toggler {
+  color: var(--bs-body-color);
 }
 
-/* Thay đổi màu khi hover */
-.swiper-button-next:hover,
-.swiper-button-prev:hover {
-  color: #c82333 !important;
-  /* Màu danger đậm hơn khi hover */
+.app-navbar-toggle {
+  background-color: rgba(var(--bs-body-color-rgb), 0.12) !important;
+  border-radius: 999px;
 }
 
+.app-navbar-offcanvas {
+  background: var(--app-navbar-bg);
+  color: var(--bs-body-color);
+}
 
-/* src/pages/SignUp.css */
+.app-navbar-offcanvas .offcanvas-title,
+.app-navbar-offcanvas .offcanvas-body {
+  color: inherit;
+}
 
+.app-navbar-links .nav-link {
+  color: var(--app-navlink-color);
+  position: relative;
+  transition: color 0.2s ease;
+  font-weight: 600;
+}
+
+.app-navbar-links .nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 0;
+  height: 2px;
+  background: var(--app-navlink-active);
+  transition: width 0.3s ease;
+}
+
+.app-navbar-links .nav-link:hover,
+.app-navbar-links .nav-link.active {
+  color: var(--bs-emphasis-color);
+}
+
+.app-navbar-links .nav-link:hover::after,
+.app-navbar-links .nav-link.active::after {
+  width: 100%;
+}
+
+.app-navbar-actions .nav-link {
+  color: var(--bs-emphasis-color);
+  font-size: 1.35rem;
+}
+
+.app-navbar-actions .nav-link .badge {
+  font-size: 0.65rem;
+  min-width: 22px;
+}
+
+.header-account-popover {
+  border-radius: 1rem;
+  border: 1px solid var(--app-navbar-border);
+  overflow: hidden;
+}
+
+.header-account-popover .popover-header {
+  background: rgba(var(--bs-danger-rgb), 0.9);
+  color: var(--bs-light);
+}
+
+.header-account-popover .nav-link {
+  color: var(--bs-body-color);
+  display: block;
+  font-weight: 600;
+}
+
+@media (max-width: 991.98px) {
+  .app-navbar-actions {
+    justify-content: flex-start !important;
+  }
+
+  .app-navbar-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Hero section */
+.hero-spotlight-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid var(--app-navbar-border);
+  background-color: var(--bs-body-bg);
+}
+
+.hero-spotlight-backdrop {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: brightness(0.58);
+  transform: scale(1);
+  transition: transform 0.6s ease;
+}
+
+.hero-spotlight-card:hover .hero-spotlight-backdrop {
+  transform: scale(1.05);
+}
+
+.hero-spotlight-title {
+  font-size: clamp(1.8rem, 2.5vw + 1rem, 3rem);
+  letter-spacing: 0.01em;
+}
+
+.hero-spotlight-meta {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  opacity: 0.72;
+}
+
+.hero-spotlight-description {
+  max-width: 32rem;
+  opacity: 0.88;
+}
+
+.hero-trending-list {
+  border-radius: 1.25rem;
+  border: 1px solid var(--app-navbar-border);
+  background-color: var(--bs-body-bg);
+}
+
+.hero-trending-items .list-group-item {
+  background-color: transparent;
+  border-color: rgba(var(--bs-body-color-rgb), 0.08);
+}
+
+.hero-trending-index {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--bs-danger);
+  line-height: 1;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.hero-trending-title {
+  max-width: 16rem;
+}
+
+/* Quick filters */
+.quick-filters {
+  background-color: var(--app-quickfilter-bg);
+  border: 1px solid var(--app-quickfilter-border);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+}
+
+.quick-filter-btn {
+  border-radius: 999px !important;
+  padding-inline: 1.125rem !important;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 18px -16px rgba(15, 23, 42, 0.45);
+}
+
+/* Film rail */
+.film-rail-section {
+  position: relative;
+}
+
+.film-rail-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.film-rail-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.film-rail-track::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--bs-danger-rgb), 0.45);
+  border-radius: 999px;
+}
+
+.film-rail-card {
+  position: relative;
+  flex: 0 0 clamp(12rem, 18vw, 16rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: inherit;
+}
+
+.film-rail-card .badge {
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.film-rail-thumb {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 1rem;
+  background-position: center;
+  background-size: cover;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  box-shadow: var(--app-rail-card-shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.film-rail-card:hover .film-rail-thumb {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -20px rgba(var(--bs-danger-rgb), 0.4);
+}
+
+.film-rail-info small {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+/* Spotlight grid */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  min-height: 12rem;
+  border: 1px solid var(--app-navbar-border);
+}
+
+.spotlight-card-backdrop {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  transition: transform 0.3s ease;
+}
+
+.spotlight-card:hover .spotlight-card-backdrop {
+  transform: scale(1.05);
+}
+
+.spotlight-card .card-body {
+  position: relative;
+  min-height: 12rem;
+  background: var(--app-spotlight-overlay);
+}
+
+.spotlight-card .badge {
+  align-self: flex-start;
+}
+
+@media (max-width: 991.98px) {
+  .hero-spotlight-card,
+  .hero-trending-list {
+    border-radius: 1rem;
+  }
+
+  .hero-trending-title {
+    max-width: 12rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .quick-filters {
+    padding: 1.125rem;
+  }
+
+  .film-rail-card {
+    flex-basis: 12rem;
+  }
+}
+/* Sign-up form */
 .signup-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  /* Full viewport height */
-  background-color: #f8f9fa;
-  /* Light background color */
+  min-height: 100vh;
+  background-color: var(--bs-body-bg);
 }
 
 .signup-form {
-  width: 100%;
-  max-width: 400px;
-  /* Adjust width as needed */
-  padding: 20px;
-  border: 1px solid grey;
-  /* Danger color border */
-  border-radius: 8px;
-  background-color: #fff;
-  /* White background for the form */
-}
-
-.signup-form h2 {
-  text-align: center;
+  width: min(100%, 420px);
+  padding: 1.75rem;
+  border: 1px solid var(--app-navbar-border);
+  border-radius: 0.75rem;
+  background-color: var(--bs-body-bg);
+  box-shadow: 0 24px 48px -30px rgba(15, 23, 42, 0.5);
 }
 
 .signup-form .form-label {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .signup-form .form-control {
-  border-radius: 4px;
+  border-radius: 0.5rem;
 }
 
 .signup-form .btn-danger {
   width: 100%;
-  border-radius: 4px;
+  border-radius: 0.5rem;
 }
 
 .signup-form .text-danger {
-  font-size: 0.875rem;
-  /* Slightly smaller text for errors */
+  font-size: 0.85rem;
+}
+.section-title {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }

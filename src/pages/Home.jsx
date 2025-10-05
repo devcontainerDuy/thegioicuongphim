@@ -1,64 +1,203 @@
-import React, { useEffect, useState } from "react";
-import Nav from "containers/Nav";
+﻿import React, { useEffect, useMemo, useState } from "react";
+import { Container } from "react-bootstrap";
 import Template from "components/layout/Template";
+import HeroSpotlight from "components/home/HeroSpotlight";
+import QuickFilters from "components/home/QuickFilters";
+import FilmRailSection from "components/home/FilmRailSection";
+import FilmGridSection from "components/home/FilmGridSection";
+import SpotlightGrid from "components/home/SpotlightGrid";
+import ContinueWatchingSection from "components/home/ContinueWatchingSection";
 import { getFilms } from "services/getFilms";
 import { categories } from "utils/categories";
-import Cards from "containers/Cards";
-import { Container, Row } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function Home() {
-  const [films, setFilms] = useState([]);
-  const [vietnam, setVietnam] = useState([]);
+  const [sectionsData, setSectionsData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [hasPartialError, setHasPartialError] = useState(false);
+  const favoriteList = useSelector((state) => state.favorites.items);
+
+  const sectionConfigs = useMemo(
+    () =>
+      [
+        categories[0]?.slug && {
+          key: "latest",
+          title: "Latest releases",
+          slug: categories[0].slug,
+          viewAll: "/danh-sach-phim",
+        },
+        categories[1]?.item?.[1]?.slug && {
+          key: "single",
+          title: "Top movies",
+          slug: `${categories[1].slug}/${categories[1].item[1].slug}`,
+          viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1",
+        },
+        categories[1]?.item?.[2]?.slug && {
+          key: "series",
+          title: "Binge-worthy series",
+          slug: `${categories[1].slug}/${categories[1].item[2].slug}`,
+          viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
+        },
+        categories[1]?.item?.[0]?.slug && {
+          key: "tvshows",
+          title: "TV shows to follow",
+          slug: `${categories[1].slug}/${categories[1].item[0].slug}`,
+          viewAll: "/danh-sach-phim?category=danh-sach&sub=tv-shows&page=1",
+        },
+        categories[3]?.item?.[4]?.slug && {
+          key: "vietnam",
+          title: "Vietnam picks",
+          slug: `${categories[3].slug}/${categories[3].item[4].slug}`,
+          viewAll: "/danh-sach-phim?category=quoc-gia&sub=viet-nam&page=1",
+        },
+      ].filter(Boolean),
+    []
+  );
 
   useEffect(() => {
-    getFilms(categories[0].slug).then((res) => setFilms(res.items));
-    getFilms(categories[3].slug + "/" + categories[3].item[4].slug).then((res) => setVietnam(res.items));
+    let isMounted = true;
+
+    const fetchSections = async () => {
+      if (!sectionConfigs.length) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      const results = await Promise.allSettled(sectionConfigs.map((config) => getFilms(config.slug)));
+
+      if (!isMounted) {
+        return;
+      }
+
+      const nextData = {};
+      let encounteredError = false;
+
+      results.forEach((result, index) => {
+        const key = sectionConfigs[index].key;
+        if (result.status === "fulfilled") {
+          nextData[key] = result.value?.items || [];
+        } else {
+          encounteredError = true;
+          nextData[key] = [];
+          console.error(`Failed to fetch section ${key}:`, result.reason);
+        }
+      });
+
+      setSectionsData(nextData);
+      setHasPartialError(encounteredError);
+      setLoading(false);
+    };
+
+    fetchSections();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [sectionConfigs]);
+
+  const featuredFilm = useMemo(() => {
+    const prioritized = [
+      sectionsData.latest?.[0],
+      sectionsData.single?.[0],
+      sectionsData.series?.[0],
+      sectionsData.tvshows?.[0],
+    ];
+
+    return prioritized.find(Boolean) || null;
+  }, [sectionsData]);
+
+  const trendingList = useMemo(() => {
+    const combined = [
+      ...(sectionsData.latest || []),
+      ...(sectionsData.single || []),
+      ...(sectionsData.series || []),
+    ];
+
+    const unique = [];
+    const seen = new Set();
+
+    combined.forEach((film) => {
+      if (!film?.slug || seen.has(film.slug)) {
+        return;
+      }
+      seen.add(film.slug);
+      unique.push(film);
+    });
+
+    return unique.slice(0, 10);
+  }, [sectionsData]);
+
+  const quickFilters = useMemo(() => {
+    const genreCategory = categories[2];
+    if (!genreCategory?.item) {
+      return [];
+    }
+
+    return genreCategory.item.slice(0, 8).map((item) => ({
+      label: item.name,
+      to: `/danh-sach-phim?category=${genreCategory.slug}&sub=${item.slug}&page=1`,
+    }));
   }, []);
 
-  return (
-    <>
-      <Template>
-        <Nav />
+  const spotlightItems = useMemo(() => {
+    const combined = [
+      ...(sectionsData.series || []),
+      ...(sectionsData.vietnam || []),
+      ...(sectionsData.tvshows || []),
+    ];
 
-        <Container as={"section"} className="py-3">
-          <div className="py-2 mb-3 d-flex justify-content-between align-items-between border-bottom border-danger">
-            <h3 className="m-0 text-danger fw-bold">
-              <span>Phim mới cập nhật</span>
-            </h3>
-            <Link to="/danh-sach-phim" className="m-0 fs-5 text-danger">
-              <span>Xem thêm</span>
-              <i className="bi bi-chevron-double-right fs-6" />
-            </Link>
+    const unique = [];
+    const seen = new Set();
+
+    combined.forEach((film) => {
+      if (!film?.slug || seen.has(film.slug)) {
+        return;
+      }
+      seen.add(film.slug);
+      unique.push(film);
+    });
+
+    return unique.slice(0, 4);
+  }, [sectionsData]);
+
+  const continueWatching = useMemo(() => (favoriteList || []).slice(0, 10), [favoriteList]);
+
+  return (
+    <Template>
+      <Container className="home-page pt-5">
+        {hasPartialError && (
+          <div className="alert alert-warning" role="alert">
+            Some sections failed to load. Try refreshing the page to fetch the latest data.
           </div>
-          <Row xs={2} sm={2} md={3} lg={4} xl={5} className="row-hover g-2">
-            {films.length > 0 ? (
-              films.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
-            ) : (
-              <p className="text-danger">Không có phim nào được tìm thấy.</p>
-            )}
-          </Row>
-        </Container>
-        <Container as={"section"} className="py-3">
-          <div className="py-2 mb-3 d-flex justify-content-between align-items-between border-bottom border-danger">
-            <h3 className="m-0 text-danger fw-bold">
-              <span>Phim Việt Nam</span>
-            </h3>
-            <Link to="/danh-sach-phim?category=quoc-gia&sub=viet-nam&page=1" className="m-0 fs-5 text-danger">
-              <span>Xem thêm</span>
-              <i className="bi bi-chevron-double-right fs-6" />
-            </Link>
-          </div>
-          <Row xs={2} sm={2} md={3} lg={4} xl={5} className="row-hover g-2">
-            {vietnam.length > 0 ? (
-              vietnam.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
-            ) : (
-              <p>Không có phim nào được tìm thấy.</p>
-            )}
-          </Row>
-        </Container>
-      </Template>
-    </>
+        )}
+
+        <HeroSpotlight film={featuredFilm} trending={trendingList} />
+
+        <QuickFilters filters={quickFilters} />
+
+        <ContinueWatchingSection items={continueWatching} />
+
+        <FilmRailSection
+          title="Trending today"
+          films={trendingList}
+          viewAllLink="/danh-sach-phim"
+          loading={loading && !trendingList.length}
+        />
+
+        <SpotlightGrid items={spotlightItems} />
+
+        {sectionConfigs.map((config) => (
+          <FilmGridSection
+            key={config.key}
+            title={config.title}
+            films={sectionsData[config.key] || []}
+            viewAllLink={config.viewAll}
+            loading={loading && !(sectionsData[config.key]?.length)}
+          />
+        ))}
+      </Container>
+    </Template>
   );
 }
 
