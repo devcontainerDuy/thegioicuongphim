@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import * as React from "react";
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
@@ -11,18 +12,21 @@ import SignUp from "./pages/SignUp";
 import Favorites from "./pages/Favorites";
 
 function App() {
-  return (
-    <Routes>
-      <Route path="/dang-ky" element={<SignUp />} />
-      <Route path="/" element={<Home />} />
-      <Route path="/danh-sach-phim" element={<Cate />} />
-      <Route path="/danh-sach-phim/:slug" element={<Category />} />
-      <Route path="/phim/:slug" element={<Detail />} />
-      <Route path="/xem-phim/:slug/:episode" element={<Watch />} />
-      <Route path="/danh-sach-yeu-thich" element={<Favorites />} />
-      <Route path="*" element={<Error />} />
-    </Routes>
-  );
+    return (
+        <>
+            <Analytics debug={false} mode="production" />
+            <Routes>
+                <Route path="/dang-ky" element={<SignUp />} />
+                <Route path="/" element={<Home />} />
+                <Route path="/danh-sach-phim" element={<Cate />} />
+                <Route path="/danh-sach-phim/:slug" element={<Category />} />
+                <Route path="/phim/:slug" element={<Detail />} />
+                <Route path="/xem-phim/:slug/:episode" element={<Watch />} />
+                <Route path="/danh-sach-yeu-thich" element={<Favorites />} />
+                <Route path="*" element={<Error />} />
+            </Routes>
+        </>
+    );
 }
 
 export default App;
