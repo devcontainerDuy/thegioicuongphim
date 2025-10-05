@@ -1,68 +1,115 @@
-import React from "react";
+﻿import React, { useMemo } from "react";
 import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { Autoplay } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+
+const getCategoryLabel = (item) =>
+  item?.category?.[2]?.list?.map((c) => c.name).join(", ") || item?.category?.[1]?.list?.[0]?.name || "Nổi bật";
 
 const HeroSpotlight = ({ film, trending = [] }) => {
+  const trendingList = useMemo(
+    () =>
+      film
+        ? (trending || [])
+            .filter((item) => item && item.slug && item.slug !== film.slug)
+            .slice(0, 5)
+        : [],
+    [trending, film]
+  );
+
+  const spotlightSlides = useMemo(() => {
+    if (!film) {
+      return [];
+    }
+
+    const unique = new Map();
+    const pushItem = (item) => {
+      if (!item?.slug || unique.has(item.slug)) {
+        return;
+      }
+      unique.set(item.slug, item);
+    };
+
+    pushItem(film);
+    trendingList.forEach(pushItem);
+
+    return Array.from(unique.values()).slice(0, 5);
+  }, [film, trendingList]);
+
+  const autoplay = useMemo(
+    () =>
+      spotlightSlides.length > 1
+        ? {
+            delay: 5000,
+            pauseOnMouseEnter: true,
+            disableOnInteraction: false,
+          }
+        : false,
+    [spotlightSlides.length]
+  );
+
   if (!film) {
     return null;
   }
 
-  const trendingList = (trending || [])
-    .filter((item) => item && item.slug && item.slug !== film.slug)
-    .slice(0, 5);
-
-  const firstEpisodeSlug = film.episodes?.[0]?.items?.[0]?.slug;
-  const categoryLabel =
-    film.category?.[2]?.list?.map((item) => item.name).join(", ") ||
-    film.category?.[1]?.list?.[0]?.name ||
-    "Featured";
-
   return (
     <Row className="g-4 align-items-stretch hero-spotlight">
       <Col lg={7}>
-        <Card className="border-0 shadow hero-spotlight-card h-100 text-white">
-          <div
-            className="hero-spotlight-backdrop"
-            style={{ backgroundImage: `url(${film.poster_url || film.thumb_url})` }}
-          />
-          <Card.Body className="position-relative d-flex flex-column justify-content-end">
-            <Badge bg="danger" className="mb-3 align-self-start text-uppercase">
-              {film.quality || "HD"}
-            </Badge>
-            <h2 className="hero-spotlight-title fw-bold mb-2">{film.name}</h2>
-            <p className="hero-spotlight-meta mb-3 text-uppercase">
-              {(film.time && `${film.time} - `) || ""}
-              {film.language || "Vietsub"} - {categoryLabel}
-            </p>
-            {film.description && (
-              <p className="hero-spotlight-description mb-0">
-                {film.description.slice(0, 200)}
-                {film.description.length > 200 ? "..." : ""}
-              </p>
-            )}
-            <div className="d-flex flex-wrap gap-2 mt-4">
-              <Button as={Link} to={`/phim/${film.slug}`} variant="danger" size="lg">
-                <i className="bi bi-play-fill me-2" />
-                Watch now
-              </Button>
-              <Button
-                as={Link}
-                to={firstEpisodeSlug ? `/xem-phim/${film.slug}/${firstEpisodeSlug}` : `/phim/${film.slug}`}
-                variant="outline-light"
-                size="lg"
-              >
-                <i className="bi bi-collection-play me-2" />
-                Latest episode
-              </Button>
-            </div>
-          </Card.Body>
-        </Card>
+        <Swiper className="hero-spotlight-swiper flex-grow-1" modules={[Autoplay]} slidesPerView={1} autoplay={autoplay}>
+          {spotlightSlides.map((item) => {
+            const firstEpisodeSlug = item.episodes?.[0]?.items?.[0]?.slug;
+            const categoryLabel = getCategoryLabel(item);
+
+            return (
+              <SwiperSlide key={item.slug}>
+                <Card className="border-0 shadow hero-spotlight-card h-100 text-white">
+                  <div
+                    className="hero-spotlight-backdrop"
+                    style={{ backgroundImage: `url(${item.poster_url || item.thumb_url || film.poster_url || film.thumb_url})` }}
+                  />
+                  <Card.Body className="position-relative d-flex flex-column justify-content-end">
+                    <Badge bg="danger" className="mb-3 align-self-start text-uppercase">
+                      {item.quality || "HD"}
+                    </Badge>
+                    <h2 className="hero-spotlight-title fw-bold mb-2">{item.name}</h2>
+                    <p className="hero-spotlight-meta mb-3 text-uppercase">
+                      {(item.time && `${item.time} - `) || ""}
+                      {item.language || "Vietsub"} - {categoryLabel}
+                    </p>
+                    {item.description && (
+                      <p className="hero-spotlight-description mb-0">
+                        {item.description.slice(0, 200)}
+                        {item.description.length > 200 ? "..." : ""}
+                      </p>
+                    )}
+                    <div className="d-flex flex-wrap gap-2 mt-4">
+                      <Button as={Link} to={`/phim/${item.slug}`} variant="danger" size="lg">
+                        <i className="bi bi-play-fill me-2" />
+                        Xem ngay
+                      </Button>
+                      <Button
+                        as={Link}
+                        to={firstEpisodeSlug ? `/xem-phim/${item.slug}/${firstEpisodeSlug}` : `/phim/${item.slug}`}
+                        variant="outline-light"
+                        size="lg"
+                      >
+                        <i className="bi bi-collection-play me-2" />
+                        Tập mới nhất
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
       </Col>
       <Col lg={5}>
-        <Card className="h-100 border-0 shadow hero-trending-list">
+        <Card className="h-100 w-100 border-0 shadow hero-trending-list">
           <Card.Body className="p-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0 fw-bold text-uppercase text-danger">Trending now</h5>
+              <h5 className="mb-0 fw-bold text-uppercase text-danger">Đang thịnh hành</h5>
               <Badge bg="dark" className="text-uppercase">
                 Top 5
               </Badge>
@@ -87,7 +134,7 @@ const HeroSpotlight = ({ film, trending = [] }) => {
                           item.total_episodes &&
                           `${item.current_episode}/${item.total_episodes}`) ||
                           item.current_episode ||
-                          "Full"}
+                          "Trọn bộ"}
                         {item.time ? ` - ${item.time}` : ""}
                       </div>
                     </div>
@@ -97,7 +144,7 @@ const HeroSpotlight = ({ film, trending = [] }) => {
                   </ListGroup.Item>
                 ))
               ) : (
-                <p className="text-body-secondary mb-0">Trending titles are being updated...</p>
+                <p className="text-body-secondary mb-0">Danh sách đang được cập nhật...</p>
               )}
             </ListGroup>
           </Card.Body>
@@ -108,3 +155,4 @@ const HeroSpotlight = ({ film, trending = [] }) => {
 };
 
 export default HeroSpotlight;
+

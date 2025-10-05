@@ -9,41 +9,41 @@ import SearchForm from "./SearchFrom";
 import Logo from "components/specific/Logo";
 import ScrollToTop from "./ScrollToTop";
 
-const navItems = [
+const NAV_ITEMS = [
   {
     to: "/",
-    label: "Home",
-    match: (location) => location.pathname === "/",
+    label: "Trang chủ",
+    isActive: (location) => location.pathname === "/",
   },
   {
     to: "/danh-sach-phim",
-    label: "Library",
-    match: (location, params) => location.pathname === "/danh-sach-phim" && !params.get("sub"),
+    label: "Danh sách phim",
+    isActive: (location, params) => location.pathname === "/danh-sach-phim" && !params.get("sub"),
   },
   {
     to: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1",
-    label: "Movies",
-    match: (location, params) => location.pathname === "/danh-sach-phim" && params.get("sub") === "phim-le",
+    label: "Phim lẻ",
+    isActive: (location, params) => location.pathname === "/danh-sach-phim" && params.get("sub") === "phim-le",
   },
   {
     to: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
-    label: "Series",
-    match: (location, params) => location.pathname === "/danh-sach-phim" && params.get("sub") === "phim-bo",
+    label: "Phim bộ",
+    isActive: (location, params) => location.pathname === "/danh-sach-phim" && params.get("sub") === "phim-bo",
   },
 ];
 
-const accountPopover = (
+const AccountPopover = () => (
   <Popover id="header-account-popover" className="header-account-popover shadow">
-    <Popover.Header as="h3" className="text-center fw-semibold text-uppercase mb-0">
-      Account
+    <Popover.Header as="h3" className="text-center fw-semibold mb-0">
+      Tài khoản
     </Popover.Header>
     <Popover.Body className="p-0">
       <Nav className="flex-column">
         <NavLink to="/dang-nhap" className="px-4 py-2 border-bottom">
-          Sign in
+          Đăng nhập
         </NavLink>
         <NavLink to="/dang-ky" className="px-4 py-2">
-          Create account
+          Đăng ký
         </NavLink>
       </Nav>
     </Popover.Body>
@@ -53,8 +53,7 @@ const accountPopover = (
 function Header() {
   const location = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const favoriteItemsRaw = useSelector((state) => state.favorites.items);
-  const favoriteItems = useMemo(() => favoriteItemsRaw ?? [], [favoriteItemsRaw]);
+  const favoriteItems = useSelector((state) => state.favorites.items) || [];
   const favoriteCount = favoriteItems.length;
   const [theme] = useTheme();
   const [appliedTheme, setAppliedTheme] = useState(() => document.documentElement.getAttribute("data-bs-theme") || "light");
@@ -65,9 +64,14 @@ function Header() {
       const update = (event) => setAppliedTheme(event.matches ? "dark" : "light");
 
       setAppliedTheme(media.matches ? "dark" : "light");
-      media.addEventListener("change", update);
 
-      return () => media.removeEventListener("change", update);
+      if (media.addEventListener) {
+        media.addEventListener("change", update);
+        return () => media.removeEventListener("change", update);
+      }
+
+      media.addListener(update);
+      return () => media.removeListener(update);
     }
 
     setAppliedTheme(theme);
@@ -77,7 +81,15 @@ function Header() {
   const accountButtonVariant = appliedTheme === "dark" ? "outline-light" : "outline-dark";
   const heartIconClass = appliedTheme === "dark" ? "text-danger" : "text-body";
 
-  const isActive = (item) => item.match(location, searchParams);
+  const navLinks = useMemo(
+    () =>
+      NAV_ITEMS.map((item) => (
+        <NavLink key={item.to} to={item.to} active={item.isActive(location, searchParams)} className="app-navbar-link">
+          {item.label}
+        </NavLink>
+      )),
+    [location, searchParams]
+  );
 
   return (
     <header className="app-header">
@@ -87,7 +99,11 @@ function Header() {
             <Logo />
           </Navbar.Brand>
 
-          <Navbar.Toggle aria-controls="app-header-offcanvas" className="border-0 shadow-sm app-navbar-toggle" />
+          <Navbar.Toggle
+            aria-controls="app-header-offcanvas"
+            className="border-0 shadow-sm app-navbar-toggle"
+            aria-label="Mở menu điều hướng"
+          />
 
           <Navbar.Offcanvas id="app-header-offcanvas" placement="start" className="app-navbar-offcanvas">
             <Offcanvas.Header closeButton closeVariant={appliedTheme === "dark" ? "white" : undefined} className="border-bottom">
@@ -96,22 +112,16 @@ function Header() {
               </Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-              <Row className="align-items-center gy-3">
-                <Col xs={12} lg={6} className="order-lg-1">
-                  <Nav className="app-navbar-links flex-lg-row flex-column gap-lg-3 gap-2 text-uppercase">
-                    {navItems.map((item) => (
-                      <NavLink key={item.to} to={item.to} active={isActive(item)} className="px-lg-0 px-2">
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </Nav>
+              <Row className="g-3 between align-items-lg-center header-layout">
+                <Col xs={12} lg={6} className="header-layout__nav">
+                  <Nav className="app-navbar-links gap-2 gap-lg-4">{navLinks}</Nav>
                 </Col>
-                <Col xs={12} lg={4} className="order-lg-2">
+                <Col xs={12} lg={4} className="header-layout__search">
                   <SearchForm />
                 </Col>
-                <Col xs={12} lg={2} className="order-lg-3">
-                  <Nav className="justify-content-lg-end align-items-center gap-3 app-navbar-actions">
-                    <NavLink to="/danh-sach-yeu-thich" className="position-relative px-lg-0">
+                <Col xs={12} lg={2} className="header-layout__actions">
+                  <Nav className="align-items-center gap-3 app-navbar-actions">
+                    <NavLink to="/danh-sach-yeu-thich" className="position-relative px-0" aria-label="Danh sách yêu thích">
                       <i className={`bi bi-heart-fill ${heartIconClass}`} />
                       {favoriteCount > 0 && (
                         <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle">
@@ -119,15 +129,14 @@ function Header() {
                         </Badge>
                       )}
                     </NavLink>
-                    <OverlayTrigger trigger="click" placement="bottom" overlay={accountPopover} rootClose>
+                    <OverlayTrigger trigger="click" placement="bottom" overlay={<AccountPopover />} rootClose>
                       <Buttons
                         type="button"
                         variant={accountButtonVariant}
-                        className="rounded-pill d-flex align-items-center gap-2 px-3"
-                        style={{ textTransform: "none" }}
+                        className="rounded-pill d-flex align-items-center gap-2 px-3 account-button"
                       >
-                        <i className="bi bi-person-circle" />
-                        <span className="d-none d-md-inline">Account</span>
+                        <i className="bi bi-person-circle" aria-hidden />
+                        <span className="d-none d-md-inline">Tài khoản</span>
                       </Buttons>
                     </OverlayTrigger>
                   </Nav>

@@ -11,8 +11,8 @@ const QuickFilters = ({ filters = [] }) => {
     <section className="quick-filters my-4">
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-          <h5 className="mb-1 fw-bold text-uppercase text-danger">Browse by genre</h5>
-          <p className="mb-0 text-body-secondary">Jump into a theme that matches your mood today.</p>
+          <h5 className="mb-1 fw-bold text-uppercase text-danger">Khám phá theo thể loại</h5>
+          <p className="mb-0 text-body-secondary">Chọn nhanh chủ đề phù hợp với bạn.</p>
         </div>
       </div>
       <div className="d-flex flex-wrap gap-2">
@@ -34,3 +34,4 @@ const QuickFilters = ({ filters = [] }) => {
 };
 
 export default QuickFilters;
+

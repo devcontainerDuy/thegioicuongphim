@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import React, { Fragment, useEffect, useState } from "react";
 import { Col, Collapse, Container, Nav, Row } from "react-bootstrap";
 import Pagi from "containers/Pagi";
@@ -48,7 +48,7 @@ function Cate() {
       <Template>
         <section className="pt-5">
           <Container as={"aside"} className="pt-4 pb-2">
-            <Breadcrumbs props={[{ name: "Danh sách phim", url: "/danh-sach-phim" }]} />
+            <Breadcrumbs props={[{ name: "Danh sÃ¡ch phim", url: "/danh-sach-phim" }]} />
           </Container>
         </section>
         <Container as={"section"} className="pb-4">
@@ -60,7 +60,7 @@ function Cate() {
                     <div id="offcanvasCategory" className="offcanvas-collapse w-md-50 ">
                       <div className="ps-lg-2 pt-lg-0 d-flex flex-column offcanvas-body">
                         <div className="mb-3">
-                          <h5 className="fst-italic">Thể loại phim</h5>
+                          <h5 className="fst-italic">Thá»ƒ loáº¡i phim</h5>
                           <ul id="categoryCollapseMenu" className="nav nav-category">
                             <div className="border-bottom w-100">
                               {categories.map((item, i) => (
@@ -111,15 +111,15 @@ function Cate() {
               </div>
             </Col>
             <Col xs={12} md={8} lg={9}>
-              <h3 className="py-2 text-danger border-bottom border-danger">Danh sách phim</h3>
+              <h3 className="py-2 text-danger border-bottom border-danger">Danh sÃ¡ch phim</h3>
 
               <Row xs={2} sm={2} md={2} lg={4} xl={4} className="row-hover g-2">
                 {loading ? (
-                  Array.from({ length: 8 }).map((_, i) => <Cards key={i} loading={true} />)
+                  Array.from({ length: 8 }).map((_, i) => <Cards key={i} loader={true} />)
                 ) : films.length > 0 ? (
-                  films.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} />)
+                  films.map((p, i) => <Cards key={i} name={p.name} slug={p.slug} image={p.thumb_url} totalEpisodes={p.total_episodes} currentEpisode={p.current_episode} time={p.time} quality={p.quality} loader={false} />)
                 ) : (
-                  <p className="text-danger">Không có phim nào được tìm thấy.</p>
+                  <p className="text-danger">KhÃ´ng cÃ³ phim nÃ o Ä‘Æ°á»£c tÃ¬m tháº¥y.</p>
                 )}
               </Row>
 
@@ -133,3 +133,4 @@ function Cate() {
 }
 
 export default Cate;
+

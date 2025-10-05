@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Container } from "react-bootstrap";
 import Template from "components/layout/Template";
 import HeroSpotlight from "components/home/HeroSpotlight";
@@ -22,31 +22,31 @@ function Home() {
       [
         categories[0]?.slug && {
           key: "latest",
-          title: "Latest releases",
+          title: "Phim mới cập nhật",
           slug: categories[0].slug,
           viewAll: "/danh-sach-phim",
         },
         categories[1]?.item?.[1]?.slug && {
           key: "single",
-          title: "Top movies",
+          title: "Phim lẻ nổi bật",
           slug: `${categories[1].slug}/${categories[1].item[1].slug}`,
           viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1",
         },
         categories[1]?.item?.[2]?.slug && {
           key: "series",
-          title: "Binge-worthy series",
+          title: "Phim bộ đáng xem",
           slug: `${categories[1].slug}/${categories[1].item[2].slug}`,
           viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
         },
         categories[1]?.item?.[0]?.slug && {
           key: "tvshows",
-          title: "TV shows to follow",
+          title: "TV Shows hot",
           slug: `${categories[1].slug}/${categories[1].item[0].slug}`,
           viewAll: "/danh-sach-phim?category=danh-sach&sub=tv-shows&page=1",
         },
         categories[3]?.item?.[4]?.slug && {
           key: "vietnam",
-          title: "Vietnam picks",
+          title: "Phim Việt Nam",
           slug: `${categories[3].slug}/${categories[3].item[4].slug}`,
           viewAll: "/danh-sach-phim?category=quoc-gia&sub=viet-nam&page=1",
         },
@@ -168,7 +168,7 @@ function Home() {
       <Container className="home-page pt-5">
         {hasPartialError && (
           <div className="alert alert-warning" role="alert">
-            Some sections failed to load. Try refreshing the page to fetch the latest data.
+            Không thể tải đầy đủ dữ liệu. Vui lòng thử tải lại trang.
           </div>
         )}
 
@@ -179,7 +179,7 @@ function Home() {
         <ContinueWatchingSection items={continueWatching} />
 
         <FilmRailSection
-          title="Trending today"
+          title="Đang thịnh hành hôm nay"
           films={trendingList}
           viewAllLink="/danh-sach-phim"
           loading={loading && !trendingList.length}
@@ -202,3 +202,4 @@ function Home() {
 }
 
 export default Home;
+

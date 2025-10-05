@@ -1,54 +1,85 @@
-/* eslint-disable */
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Col, Placeholder } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-function Cards({ name, slug, image, totalEpisodes, currentEpisode, time, loader = true }) {
+const PLACEHOLDER_HEIGHT = "320px";
+
+function Cards({
+  name,
+  slug,
+  image,
+  totalEpisodes,
+  currentEpisode,
+  time,
+  quality = "HD",
+  loader = false,
+  wrap = "col",
+  className = "",
+}) {
   const [loading, setLoading] = useState(loader);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!loader) {
       setLoading(false);
-    }, 800);
+      return undefined;
+    }
 
+    setLoading(true);
+    const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [loader]);
 
-  let style = { minHeight: "320px", maxHeight: "320px", objectFit: "cover", objectPosition: "center", width: "auto" };
+  const Wrapper = wrap === "div" ? "div" : Col;
+  const wrapperClasses = ["film-card-wrapper", className];
+  if (wrap === "div") {
+    wrapperClasses.push("d-flex");
+  }
+
+  const wrapperStyle = wrap === "div" ? { width: "inherit" } : undefined;
+
+  const episodeLabel = currentEpisode && totalEpisodes ? `${currentEpisode}/${totalEpisodes}` : currentEpisode || "Trọn bộ";
+  const posterStyle = image ? { backgroundImage: `url(${image})` } : undefined;
+  const metaItems = [episodeLabel, time].filter(Boolean);
+
+  if (loading) {
+    return (
+      <Wrapper className={wrapperClasses.filter(Boolean).join(" ")} style={wrapperStyle}>
+        <Card className="film-card film-card--loading" aria-hidden>
+          <div className="film-card-poster">
+            <Placeholder animation="wave" className="film-card-poster-placeholder" style={{ height: PLACEHOLDER_HEIGHT }} />
+          </div>
+          <Card.Body className="film-card-body">
+            <Placeholder as="h6" animation="wave" className="mb-2 w-75" />
+            <Placeholder as="p" animation="wave" className="w-50" />
+          </Card.Body>
+        </Card>
+      </Wrapper>
+    );
+  }
 
   return (
-    <Col>
-      <Card className="shadow-sm card-hover">
-        {loading ? <Placeholder as={Card.Img} animation="wave" style={style} /> : <Card.Img className="card-img-hover" variant="top" src={image} alt={name} fluid style={style} />}
-        <Card.Body>
-          {loading ? (
-            <>
-              <Placeholder as={Card.Text} animation="wave" className="text-title" />
-              <Placeholder as="div" animation="wave" className="d-lg-flex d-block justify-content-lg-between">
-                <Placeholder xs={6} />
-                <Placeholder xs={6} />
-              </Placeholder>
-            </>
-          ) : (
-            <>
-              <Card.Text className="text-title">
-                <Link to={`/phim/${slug}`} className="link-danger link-offset-2-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover text-body-emphasis">
-                  {name}
-                </Link>
-              </Card.Text>
-              <div className="d-lg-flex d-block justify-content-lg-between">
-                <div className="text-danger">
-                  <small>{currentEpisode && totalEpisodes ? `${currentEpisode}/${totalEpisodes}` : "N/A"}</small>
-                </div>
-                <div className="text-body-secondary">
-                  <small>{time}</small>
-                </div>
-              </div>
-            </>
-          )}
+    <Wrapper className={wrapperClasses.filter(Boolean).join(" ")} style={wrapperStyle}>
+      <Card as={Link} to={`/phim/${slug}`} className="film-card text-decoration-none">
+        <div className="film-card-poster" style={posterStyle}>
+          {!image && <div className="film-card-poster-fallback" aria-hidden />}
+          <span className="film-card-badge badge text-bg-danger">{quality || "HD"}</span>
+          {episodeLabel && <span className="film-card-badge badge text-bg-dark">{episodeLabel}</span>}
+          <span className="film-card-play" aria-hidden>
+            <i className="bi bi-play-fill" />
+          </span>
+        </div>
+        <Card.Body className="film-card-body">
+          <h6 className="film-card-title">{name}</h6>
+          <div className="film-card-meta text-body-secondary">
+            {metaItems.map((item, index) => (
+              <span key={index} className="film-card-meta-item">
+                {item}
+              </span>
+            ))}
+          </div>
         </Card.Body>
       </Card>
-    </Col>
+    </Wrapper>
   );
 }
 
