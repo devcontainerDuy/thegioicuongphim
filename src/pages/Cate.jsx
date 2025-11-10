@@ -5,8 +5,8 @@ import Template from "components/layout/Template";
 import Breadcrumbs from "containers/Breadcrumbs";
 import Cards from "containers/Cards";
 import { categories } from "utils/categories";
-import { getFilms } from "services/getFilms";
 import { useSearchParams } from "react-router-dom";
+import { useFilmsList } from "hooks/useFilmsList";
 
 const SORT_OPTIONS = [
   { value: "recent", label: "Mới cập nhật" },
@@ -15,11 +15,6 @@ const SORT_OPTIONS = [
 ];
 
 function Cate() {
-  const [films, setFilms] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPage, setTotalPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
   const [sortOption, setSortOption] = useState("recent");
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,26 +25,12 @@ function Cate() {
   const selectedCategory = useMemo(() => categories.find((item) => item.slug === category) || categories[0], [category]);
   const selectedSub = useMemo(() => selectedCategory?.item?.find((item) => item.slug === sub), [selectedCategory, sub]);
 
-  useEffect(() => {
-    setLoading(true);
-    setHasError(false);
-
-    getFilms(`${category}${sub ? "/" + sub : ""}`, page)
-      .then((res) => {
-        setFilms(res.items || []);
-        setCurrentPage(res.paginate.current_page);
-        setTotalPage(res.paginate.total_page);
-      })
-      .catch((error) => {
-        console.error("Không thể tải danh sách phim:", error);
-        setFilms([]);
-        setHasError(true);
-      })
-      .finally(() => setLoading(false));
-  }, [category, sub, page]);
+  const endpoint = `${category}${sub ? "/" + sub : ""}`;
+  const { items: films, loading, error, meta } = useFilmsList({ endpoint, page });
+  const currentPage = meta.currentPage;
+  const totalPage = meta.totalPage;
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
     const params = { category, page: pageNumber };
     if (sub) {
       params.sub = sub;
@@ -58,7 +39,6 @@ function Cate() {
   };
 
   const handleCategoryChange = (slug) => {
-    setCurrentPage(1);
     const targetCategory = categories.find((item) => item.slug === slug);
     const firstSub = targetCategory?.item?.[0]?.slug;
     const params = { category: slug, page: 1 };
@@ -69,7 +49,6 @@ function Cate() {
   };
 
   const handleSubChange = (parentSlug, childSlug) => {
-    setCurrentPage(1);
     setSearchParams({ category: parentSlug, sub: childSlug, page: 1 });
   };
 
@@ -109,7 +88,11 @@ function Cate() {
 
   const handleResetFilters = () => {
     setSortOption("recent");
+    const firstSub = categories[0]?.item?.[0]?.slug;
     const params = { category: categories[0].slug, page: 1 };
+    if (firstSub) {
+      params.sub = firstSub;
+    }
     setSearchParams(params);
   };
 
@@ -221,7 +204,7 @@ function Cate() {
                 </div>
               </div>
 
-              {hasError && (
+              {error && (
                 <div className="alert alert-warning" role="alert">
                   Không thể tải dữ liệu. Hãy thử lại sau ít phút nhé.
                 </div>

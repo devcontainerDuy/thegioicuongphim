@@ -1,11 +1,11 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
 export const getFilms = async (endpoint, page = 1) => {
-  return await axios
-    .get(process.env.REACT_APP_API_URL + `/films/${endpoint}?page=${page}`)
-    .then((res) => res.data)
-    .catch((err) => {
-      console.error("Không thể tải films:", err);
-      throw err;
-    });
+  try {
+    const res = await apiClient.get(`/films/${endpoint}?page=${page}`);
+    return res.data;
+  } catch (err) {
+    console.error("Không thể tải films:", err);
+    throw err;
+  }
 };

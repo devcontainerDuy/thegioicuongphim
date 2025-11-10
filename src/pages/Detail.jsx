@@ -1,15 +1,14 @@
 /* eslint-disable */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, Col, Collapse, Container, Image, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import Template from "components/layout/Template";
 import { addFavorite, removeFavorite } from "store/reducers/favoritesSlice";
-import { getFilm } from "services/getFilm";
+import { useFilmDetail } from "hooks/useFilmDetail";
 
 function Detail() {
   const { slug } = useParams();
-  const [data, setData] = useState(null);
 
   const dispatch = useDispatch();
   const favoriteList = useSelector((state) => state.favorites.items); // Truy cập state từ slice
@@ -24,9 +23,29 @@ function Detail() {
   const [openContent, setOpenContent] = useState(true);
   const [openEpisodes, setOpenEpisodes] = useState(true);
 
-  useEffect(() => {
-    getFilm(slug).then((res) => setData(res.movie));
-  }, [slug]);
+  const { film: data, loading, error } = useFilmDetail(slug);
+
+  if (!data && loading) {
+    return (
+      <Template>
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+          <Spinner animation="border" variant="danger" />
+        </div>
+      </Template>
+    );
+  }
+
+  if (!data && error) {
+    return (
+      <Template>
+        <div className="container py-5">
+          <div className="alert alert-danger" role="alert">
+            Không thể tải thông tin phim. Vui lòng thử lại sau.
+          </div>
+        </div>
+      </Template>
+    );
+  }
 
   const categoryList = data?.category[2]?.list.map((item) => item.name).join(", ") || "N/A";
   const releaseYear = data?.category[3]?.list[0]?.name || "N/A";

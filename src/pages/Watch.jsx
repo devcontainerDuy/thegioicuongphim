@@ -2,25 +2,48 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Col, Collapse, Container, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
-import axios from "axios";
 import Template from "components/layout/Template";
 import Video from "containers/Video";
-import { getFilm } from "services/getFilm";
+import { useFilmDetail } from "hooks/useFilmDetail";
 
 function Watch() {
   const { slug, episode: selectedEpisodeSlug } = useParams();
   const [openContent, setOpenContent] = useState(true);
   const [openEpisodes, setOpenEpisodes] = useState(true);
-  const [data, setData] = useState(null);
   const [iframeUrl, setIframeUrl] = useState(null);
+  const { film: data, loading, error } = useFilmDetail(slug);
+
+  if (!data && loading) {
+    return (
+      <Template>
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+          <Spinner animation="border" variant="danger" />
+        </div>
+      </Template>
+    );
+  }
+
+  if (!data && error) {
+    return (
+      <Template>
+        <div className="container py-5">
+          <div className="alert alert-danger" role="alert">
+            Không thể tải dữ liệu phim.
+          </div>
+        </div>
+      </Template>
+    );
+  }
 
   useEffect(() => {
-    getFilm(slug).then((res) => {
-      setData(res.movie);
-      const initialEpisode = res.movie.episodes.flatMap((episode) => episode.items).find((item) => item.slug === selectedEpisodeSlug);
-      setIframeUrl(initialEpisode?.embed || null);
-    });
-  }, [slug, selectedEpisodeSlug]);
+    if (!data) {
+      return;
+    }
+    const allEpisodes = data.episodes?.flatMap((episode) => episode.items) || [];
+    const matchedEpisode = allEpisodes.find((item) => item.slug === selectedEpisodeSlug);
+    const fallbackEpisode = allEpisodes[0];
+    setIframeUrl((matchedEpisode || fallbackEpisode)?.embed || null);
+  }, [data, selectedEpisodeSlug]);
 
   const episodes =
     data?.episodes?.flatMap((episode) =>
