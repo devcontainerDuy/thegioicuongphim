@@ -1,83 +1,46 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Container } from "react-bootstrap";
 import Template from "components/layout/Template";
 import HeroSpotlight from "components/home/HeroSpotlight";
 import FilmRailSection from "components/home/FilmRailSection";
 import FilmGridSection from "components/home/FilmGridSection";
-import { getFilms } from "services/getFilms";
 import { categories } from "utils/categories";
+import { useFilmsList } from "hooks/useFilmsList";
 
 function Home() {
-  const [sectionsData, setSectionsData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [hasPartialError, setHasPartialError] = useState(false);
+  const latestEndpoint = categories[0]?.slug || null;
+  const singleEndpoint = categories[1]?.item?.[1]?.slug ? `${categories[1].slug}/${categories[1].item[1].slug}` : null;
+  const seriesEndpoint = categories[1]?.item?.[2]?.slug ? `${categories[1].slug}/${categories[1].item[2].slug}` : null;
 
-  const sectionConfigs = useMemo(
-    () =>
-      [
-        categories[0]?.slug && {
-          key: "latest",
-          title: "Phim mới cập nhật",
-          slug: categories[0].slug,
-          viewAll: "/danh-sach-phim",
-        },
-        categories[1]?.item?.[1]?.slug && {
-          key: "single",
-          title: "Phim lẻ nổi bật",
-          slug: `${categories[1].slug}/${categories[1].item[1].slug}`,
-          viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1",
-        },
-        categories[1]?.item?.[2]?.slug && {
-          key: "series",
-          title: "Phim bộ đáng xem",
-          slug: `${categories[1].slug}/${categories[1].item[2].slug}`,
-          viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
-        },
-      ].filter(Boolean),
-    []
-  );
+  const latest = useFilmsList({ endpoint: latestEndpoint, enabled: Boolean(latestEndpoint) });
+  const single = useFilmsList({ endpoint: singleEndpoint, enabled: Boolean(singleEndpoint) });
+  const series = useFilmsList({ endpoint: seriesEndpoint, enabled: Boolean(seriesEndpoint) });
 
-  useEffect(() => {
-    let isMounted = true;
+  const sectionResults = [
+    latestEndpoint && { key: "latest", title: "Phim mới cập nhật", viewAll: "/danh-sach-phim", endpoint: latestEndpoint, ...latest },
+    singleEndpoint && {
+      key: "single",
+      title: "Phim lẻ nổi bật",
+      viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1",
+      endpoint: singleEndpoint,
+      ...single,
+    },
+    seriesEndpoint && {
+      key: "series",
+      title: "Phim bộ đáng xem",
+      viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
+      endpoint: seriesEndpoint,
+      ...series,
+    },
+  ].filter(Boolean);
 
-    const fetchSections = async () => {
-      if (!sectionConfigs.length) {
-        setLoading(false);
-        return;
-      }
+  const sectionsData = sectionResults.reduce((acc, result) => {
+    acc[result.key] = result.items || [];
+    return acc;
+  }, {});
 
-      setLoading(true);
-      const results = await Promise.allSettled(sectionConfigs.map((config) => getFilms(config.slug)));
-
-      if (!isMounted) {
-        return;
-      }
-
-      const nextData = {};
-      let encounteredError = false;
-
-      results.forEach((result, index) => {
-        const key = sectionConfigs[index].key;
-        if (result.status === "fulfilled") {
-          nextData[key] = result.value?.items || [];
-        } else {
-          encounteredError = true;
-          nextData[key] = [];
-          console.error(`Failed to fetch section ${key}:`, result.reason);
-        }
-      });
-
-      setSectionsData(nextData);
-      setHasPartialError(encounteredError);
-      setLoading(false);
-    };
-
-    fetchSections();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [sectionConfigs]);
+  const loading = sectionResults.some((result) => result.loading);
+  const hasPartialError = sectionResults.some((result) => result.error);
 
   const featuredFilm = useMemo(() => {
     const prioritized = [sectionsData.latest?.[0], sectionsData.single?.[0], sectionsData.series?.[0]];
@@ -146,7 +109,7 @@ function Home() {
           loading={loading && !trendingList.length}
         />
 
-        {sectionConfigs.map((config) => (
+        {sectionResults.map((config) => (
           <FilmGridSection
             key={config.key}
             title={config.title}

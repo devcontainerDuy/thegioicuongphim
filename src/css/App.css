@@ -30,6 +30,7 @@
   border-radius: 1.5rem;
   background: rgba(var(--bs-danger-rgb), 0.05);
   padding: 2rem;
+  margin-top: 2rem;
   margin-bottom: 2rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -347,10 +348,18 @@
   border-radius: 0.85rem;
   text-decoration: none;
   color: inherit;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
 }
 
 .search-result:hover {
   background: rgba(var(--bs-danger-rgb), 0.08);
+}
+
+.search-result--active {
+  background: rgba(var(--bs-danger-rgb), 0.15);
 }
 
 .search-result__thumb {
