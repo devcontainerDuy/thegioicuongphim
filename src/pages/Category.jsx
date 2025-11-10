@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import Header from "../components/common/Header";
-import Footer from "../components/common/Footer";
+import Template from "components/layout/Template";
 import Product from "../containers/Product";
 import Pagi from "../containers/Pagi";
 import { Spinner } from "react-bootstrap";
@@ -44,8 +43,7 @@ function Category() {
   };
 
   return (
-    <>
-      <Header />
+    <Template>
       <section className="container py-5 mt-4">
         <h3 className="text-danger border-bottom border-danger">Danh sách phim</h3>
         <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
@@ -63,8 +61,7 @@ function Category() {
         </div>
         <Pagi current={currentPage} total={totalPage} handle={handlePageChange} />
       </section>
-      <Footer />
-    </>
+    </Template>
   );
 }
 

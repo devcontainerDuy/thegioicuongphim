@@ -1,61 +1,114 @@
-import Dropdowns from "components/ui/Dropdowns";
-import React, { useState } from "react";
-import { Form, InputGroup, Image, Col } from "react-bootstrap";
+import React, { useEffect, useRef, useState } from "react";
+import { Button, Col, Form, Image, InputGroup, Spinner } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import { searchFilms } from "services/search";
 
 const SearchForm = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [films, setFilms] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [films, setFilms] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [showResults, setShowResults] = useState(false);
+    const debounceRef = useRef(null);
+    const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    searchFilms(searchTerm)
-      .then((response) => {
-        setFilms(response.data.items);
-      })
-      .catch((error) => {
-        console.error("Error fetching the films:", error);
-      });
-  };
+    useEffect(() => {
+        if (!searchTerm.trim() || searchTerm.trim().length < 2) {
+            setFilms([]);
+            setShowResults(false);
+            setLoading(false);
+            return;
+        }
 
-  return (
-    <Form className="d-flex" onSubmit={handleSubmit}>
-      <InputGroup aria-label="Tìm kiếm">
-        <Form.Control type="search" placeholder="Tìm kiếm phim..." aria-label="Search" list="films" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <datalist id="films">
-          <option value="Nhà bà nữ"></option>
-          <option value="Black Adam"></option>
-          <option value="Kẻ Trộm Mặt Trăng 4"></option>
-          <option value="Re:Zero kara Hajimeru Isekai Seikatsu 3rd Season"></option>
-        </datalist>
+        setLoading(true);
+        setError("");
 
-        <Dropdowns className="dropdown-custom" variant="danger" type="submit" align="start" trigger={<i className="bi bi-search" />}>
-          {films.length > 0 ? (
-            films.map((film) => (
-              <Dropdowns.Item key={film.slug} href={`/phim/${film.slug}`}>
-                <div className="d-flex flex-grow-1">
-                  <div className="me-2">
-                    {film.thumb_url ? (
-                      <Image src={film.thumb_url} className="rounded" style={{ width: "80px", height: "120px" }} />
-                    ) : (
-                      <Col className="rounded bg-secondary" style={{ width: "80px", height: "120px" }} />
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        debounceRef.current = setTimeout(() => {
+            searchFilms(searchTerm.trim())
+                .then((response) => {
+                    setFilms(response.data?.items || []);
+                    setShowResults(true);
+                })
+                .catch((err) => {
+                    console.error("Error fetching the films:", err);
+                    setError("Không thể tải kết quả. Thử lại sau nhé.");
+                    setFilms([]);
+                })
+                .finally(() => setLoading(false));
+        }, 400);
+
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [searchTerm]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (films[0]) {
+            navigate(`/phim/${films[0].slug}`);
+            setShowResults(false);
+        } else {
+            setShowResults(true);
+        }
+    };
+
+    const handleSelectFilm = () => {
+        setShowResults(false);
+        setSearchTerm("");
+    };
+
+    return (
+        <Form className="search-form" onSubmit={handleSubmit} autoComplete="off">
+            <InputGroup className="search-form__group" hasValidation>
+                <InputGroup.Text className="search-form__icon" aria-hidden>
+                    {loading ? <Spinner animation="border" size="sm" /> : <i className="bi bi-search" />}
+                </InputGroup.Text>
+                <Form.Control
+                    type="search"
+                    placeholder="Tìm kiếm phim, diễn viên..."
+                    aria-label="Search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => films.length && setShowResults(true)}
+                    className="search-form__input"
+                />
+                <Button type="submit" variant="danger" className="search-form__submit">
+                    Enter
+                </Button>
+            </InputGroup>
+
+            {showResults && (
+                <div className="search-results shadow">
+                    {error && <div className="search-results__empty text-danger">{error}</div>}
+                    {!error && films.length === 0 && !loading && <div className="search-results__empty">Gõ tối thiểu 2 ký tự để tìm phim bạn thích.</div>}
+                    {!error && films.length > 0 && (
+                        <ul className="list-unstyled mb-0">
+                            {films.slice(0, 6).map((film) => (
+                                <li key={film.slug}>
+                                    <Link to={`/phim/${film.slug}`} className="search-result" onClick={handleSelectFilm}>
+                                        <div className="search-result__thumb">{film.thumb_url ? <Image src={film.thumb_url} rounded className="w-100 h-100 object-fit-cover" /> : <Col className="rounded bg-secondary w-100 h-100" />}</div>
+                                        <div className="search-result__body">
+                                            <h6 className="search-result__title">{film.name}</h6>
+                                            <p className="search-result__meta">
+                                                {film.current_episode || "Đang cập nhật"} • {film.time || "--"}
+                                            </p>
+                                        </div>
+                                        <i className="bi bi-arrow-up-right" aria-hidden />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
                     )}
-                  </div>
-                  <div className="d-flex flex-column">
-                    <h6 className="fw-bold text-truncate">{film.name}</h6>
-                    <span className="text-truncate">{new Date(film.created).toLocaleDateString()}</span>
-                    <p className="text-truncate">{film.current_episode}</p>
-                  </div>
                 </div>
-              </Dropdowns.Item>
-            ))
-          ) : (
-            <Dropdowns.Item disabled>Không có kết quả trùng khớp</Dropdowns.Item>
-          )}
-        </Dropdowns>
-      </InputGroup>
-    </Form>
-  );
+            )}
+        </Form>
+    );
 };
 
 export default SearchForm;

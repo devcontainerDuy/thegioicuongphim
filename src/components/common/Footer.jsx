@@ -1,72 +1,39 @@
-/* eslint-disable */
-import Logo from "components/specific/Logo";
-import Buttons from "components/ui/Buttons";
-import InputLabel from "components/ui/InputLabel";
-import NavLink from "components/ui/NavLink";
-import TextInput from "components/ui/TextInput";
 import React from "react";
 import { Col, Container, Nav, Row } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import Logo from "components/specific/Logo";
+import NavLink from "components/ui/NavLink";
+
+const FOOTER_LINKS = [
+  { label: "Trang chủ", to: "/" },
+  { label: "Danh sách phim", to: "/danh-sach-phim" },
+  { label: "Phim lẻ", to: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1" },
+  { label: "Phim bộ", to: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1" },
+];
 
 function Footer() {
   return (
-    <footer className="bg-body-secondary">
-      <Container>
-        <Row className="py-5">
-          <Col xs="8" md="3" className="mb-3">
+    <footer className="app-footer border-top">
+      <Container className="py-4">
+        <Row className="gy-4 align-items-center">
+          <Col md={6}>
             <Logo />
+            <p className="text-body-secondary mb-0 mt-3">
+              Thế Giới Cuồng Phim – nơi tụi mình tuyển chọn phim mới mỗi ngày, hạn chế ồn ào và tập trung vào trải nghiệm xem chill nhất.
+            </p>
           </Col>
-          <Col xs="4" md="3" className="mb-3">
-            <h5>Doanh mục</h5>
-            <Nav className="flex-column">
-              <NavLink className="p-0 mb-2 text-body-secondary" to="/">
-                Trang chủ
-              </NavLink>
-              <NavLink className="p-0 mb-2 text-body-secondary" to="/danh-sach-phim">
-                Danh sách phim
-              </NavLink>
-              <NavLink className="p-0 mb-2 text-body-secondary" to="/danh-sach-phim/phim-le">
-                Phim lẻ
-              </NavLink>
-              <NavLink className="p-0 mb-2 text-body-secondary" to="/danh-sach-phim/phim-bo">
-                Phim bộ
-              </NavLink>
+          <Col md={6} className="d-flex justify-content-md-end">
+            <Nav className="gap-3 flex-wrap footer-links">
+              {FOOTER_LINKS.map((link) => (
+                <NavLink key={link.to} to={link.to} className="text-body-secondary px-0">
+                  {link.label}
+                </NavLink>
+              ))}
             </Nav>
           </Col>
-          <Col md="5" className="offset-md-1 mb-3">
-            <form>
-              <h5>Đăng ký vào bản tin của chúng tôi</h5>
-              <p>Thông báo hàng tháng về những gì mới và thú vị từ chúng tôi.</p>
-              <div className="d-flex flex-column flex-sm-row w-100 gap-2">
-                <InputLabel htmlFor="newsletter1" value="Địa chỉ email" className="visually-hidden" />
-                <TextInput id="newsletter1" type="text" className="form-control" placeholder="Nhập địa chỉ email của bạn..." />
-                <Buttons variant="danger" className="w-25">
-                  Đăng ký!
-                </Buttons>
-              </div>
-            </form>
-          </Col>
         </Row>
-
-        <div className="d-flex flex-column flex-sm-row justify-content-between py-4 border-top">
-          <p>© 2024 Company, Inc. All rights reserved.</p>
-          <ul className="list-unstyled d-flex">
-            <li className="ms-3">
-              <Link className="link-body-emphasis" to="#">
-                <i className="bi bi-twitter" width={24} height={24} />
-              </Link>
-            </li>
-            <li className="ms-3">
-              <Link className="link-body-emphasis" to="#">
-                <i className="bi bi-instagram" width={24} height={24} />
-              </Link>
-            </li>
-            <li className="ms-3">
-              <Link className="link-body-emphasis" to="#">
-                <i className="bi bi-facebook" width={24} height={24} />
-              </Link>
-            </li>
-          </ul>
+        <div className="d-flex flex-column flex-sm-row justify-content-between text-body-secondary mt-4 small">
+          <span>© {new Date().getFullYear()} The Gioi Cuong Phim. All rights reserved.</span>
+          <span className="mt-2 mt-sm-0">Build with React + Bootstrap</span>
         </div>
       </Container>
     </footer>

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { Badge, Col, Container, Nav, Navbar, Offcanvas, OverlayTrigger, Popover, Row } from "react-bootstrap";
+import { Link, useLocation } from "react-router-dom";
+import { Badge, Container, Nav, Navbar } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import Buttons from "components/ui/Buttons";
 import NavLink from "components/ui/NavLink";
 import { useTheme } from "hooks/useTheme";
 import SearchForm from "./SearchFrom";
@@ -32,24 +31,6 @@ const NAV_ITEMS = [
   },
 ];
 
-const AccountPopover = () => (
-  <Popover id="header-account-popover" className="header-account-popover shadow">
-    <Popover.Header as="h3" className="text-center fw-semibold mb-0">
-      Tài khoản
-    </Popover.Header>
-    <Popover.Body className="p-0">
-      <Nav className="flex-column">
-        <NavLink to="/dang-nhap" className="px-4 py-2 border-bottom">
-          Đăng nhập
-        </NavLink>
-        <NavLink to="/dang-ky" className="px-4 py-2">
-          Đăng ký
-        </NavLink>
-      </Nav>
-    </Popover.Body>
-  </Popover>
-);
-
 function Header() {
   const location = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -78,7 +59,6 @@ function Header() {
     return undefined;
   }, [theme]);
 
-  const accountButtonVariant = appliedTheme === "dark" ? "outline-light" : "outline-dark";
   const heartIconClass = appliedTheme === "dark" ? "text-danger" : "text-body";
 
   const navLinks = useMemo(
@@ -95,55 +75,28 @@ function Header() {
     <header className="app-header">
       <Navbar expand="lg" className="app-navbar" sticky="top">
         <Container fluid className="px-3 px-lg-4">
-          <Navbar.Brand href="/" className="d-flex align-items-center gap-2 text-decoration-none">
+          <Navbar.Brand as={Link} to="/" className="d-flex align-items-center gap-2 text-decoration-none">
             <Logo />
           </Navbar.Brand>
 
-          <Navbar.Toggle
-            aria-controls="app-header-offcanvas"
-            className="border-0 shadow-sm app-navbar-toggle"
-            aria-label="Mở menu điều hướng"
-          />
+          <Navbar.Toggle aria-controls="app-header-nav" className="border-0 shadow-sm app-navbar-toggle" aria-label="Mở menu điều hướng" />
 
-          <Navbar.Offcanvas id="app-header-offcanvas" placement="start" className="app-navbar-offcanvas">
-            <Offcanvas.Header closeButton closeVariant={appliedTheme === "dark" ? "white" : undefined} className="border-bottom">
-              <Offcanvas.Title>
-                <Logo />
-              </Offcanvas.Title>
-            </Offcanvas.Header>
-            <Offcanvas.Body>
-              <Row className="g-3 between align-items-lg-center header-layout">
-                <Col xs={12} lg={6} className="header-layout__nav">
-                  <Nav className="app-navbar-links gap-2 gap-lg-4">{navLinks}</Nav>
-                </Col>
-                <Col xs={12} lg={4} className="header-layout__search">
-                  <SearchForm />
-                </Col>
-                <Col xs={12} lg={2} className="header-layout__actions">
-                  <Nav className="align-items-center gap-3 app-navbar-actions">
-                    <NavLink to="/danh-sach-yeu-thich" className="position-relative px-0" aria-label="Danh sách yêu thích">
-                      <i className={`bi bi-heart-fill ${heartIconClass}`} />
-                      {favoriteCount > 0 && (
-                        <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle">
-                          {favoriteCount}
-                        </Badge>
-                      )}
-                    </NavLink>
-                    <OverlayTrigger trigger="click" placement="bottom" overlay={<AccountPopover />} rootClose>
-                      <Buttons
-                        type="button"
-                        variant={accountButtonVariant}
-                        className="rounded-pill d-flex align-items-center gap-2 px-3 account-button"
-                      >
-                        <i className="bi bi-person-circle" aria-hidden />
-                        <span className="d-none d-md-inline">Tài khoản</span>
-                      </Buttons>
-                    </OverlayTrigger>
-                  </Nav>
-                </Col>
-              </Row>
-            </Offcanvas.Body>
-          </Navbar.Offcanvas>
+          <Navbar.Collapse id="app-header-nav" className="app-navbar-collapse">
+            <Nav className="app-navbar-links gap-2 gap-lg-4 me-auto">{navLinks}</Nav>
+            <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 app-navbar-actions">
+              <div className="w-100 w-lg-auto app-navbar-search">
+                <SearchForm />
+              </div>
+              <NavLink to="/danh-sach-yeu-thich" className="position-relative px-0 favorites-link" aria-label="Danh sách yêu thích">
+                <i className={`bi bi-heart-fill ${heartIconClass}`} />
+                {favoriteCount > 0 && (
+                  <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle">
+                    {favoriteCount}
+                  </Badge>
+                )}
+              </NavLink>
+            </div>
+          </Navbar.Collapse>
         </Container>
       </Navbar>
       <ScrollToTop />

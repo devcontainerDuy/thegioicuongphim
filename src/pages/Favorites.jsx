@@ -1,7 +1,6 @@
 import { useSelector } from "react-redux";
 import { Container } from "react-bootstrap";
-import Header from "../components/common/Header";
-import Footer from "../components/common/Footer";
+import Template from "components/layout/Template";
 import Product from "../containers/Product";
 
 function Favorites() {
@@ -9,8 +8,7 @@ function Favorites() {
   console.log("favoriteList", favoriteList);
 
   return (
-    <>
-      <Header />
+    <Template>
       <main className="pt-5">
         <Container className="py-4">
           <h3 className="py-2 text-center text-danger border-bottom border-danger fw-bold">Danh Sách Phim Yêu Thích</h3>
@@ -25,8 +23,7 @@ function Favorites() {
           )}
         </Container>
       </main>
-      <Footer />
-    </>
+    </Template>
   );
 }
 

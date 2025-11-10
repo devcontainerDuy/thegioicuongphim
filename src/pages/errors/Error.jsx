@@ -1,11 +1,9 @@
 import React from "react";
-import Header from "../../components/common/Header";
-import Footer from "../../components/common/Footer";
+import Template from "components/layout/Template";
 
 function Error() {
   return (
-    <>
-      <Header />
+    <Template>
       <main className="pt-5">
         <div className="container">
           <div className="row">
@@ -15,8 +13,7 @@ function Error() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+    </Template>
   );
 }
 

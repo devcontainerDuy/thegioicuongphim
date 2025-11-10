@@ -2,20 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Container } from "react-bootstrap";
 import Template from "components/layout/Template";
 import HeroSpotlight from "components/home/HeroSpotlight";
-import QuickFilters from "components/home/QuickFilters";
 import FilmRailSection from "components/home/FilmRailSection";
 import FilmGridSection from "components/home/FilmGridSection";
-import SpotlightGrid from "components/home/SpotlightGrid";
-import ContinueWatchingSection from "components/home/ContinueWatchingSection";
 import { getFilms } from "services/getFilms";
 import { categories } from "utils/categories";
-import { useSelector } from "react-redux";
 
 function Home() {
   const [sectionsData, setSectionsData] = useState({});
   const [loading, setLoading] = useState(true);
   const [hasPartialError, setHasPartialError] = useState(false);
-  const favoriteList = useSelector((state) => state.favorites.items);
 
   const sectionConfigs = useMemo(
     () =>
@@ -37,18 +32,6 @@ function Home() {
           title: "Phim bộ đáng xem",
           slug: `${categories[1].slug}/${categories[1].item[2].slug}`,
           viewAll: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1",
-        },
-        categories[1]?.item?.[0]?.slug && {
-          key: "tvshows",
-          title: "TV Shows hot",
-          slug: `${categories[1].slug}/${categories[1].item[0].slug}`,
-          viewAll: "/danh-sach-phim?category=danh-sach&sub=tv-shows&page=1",
-        },
-        categories[3]?.item?.[4]?.slug && {
-          key: "vietnam",
-          title: "Phim Việt Nam",
-          slug: `${categories[3].slug}/${categories[3].item[4].slug}`,
-          viewAll: "/danh-sach-phim?category=quoc-gia&sub=viet-nam&page=1",
         },
       ].filter(Boolean),
     []
@@ -97,22 +80,13 @@ function Home() {
   }, [sectionConfigs]);
 
   const featuredFilm = useMemo(() => {
-    const prioritized = [
-      sectionsData.latest?.[0],
-      sectionsData.single?.[0],
-      sectionsData.series?.[0],
-      sectionsData.tvshows?.[0],
-    ];
+    const prioritized = [sectionsData.latest?.[0], sectionsData.single?.[0], sectionsData.series?.[0]];
 
     return prioritized.find(Boolean) || null;
   }, [sectionsData]);
 
   const trendingList = useMemo(() => {
-    const combined = [
-      ...(sectionsData.latest || []),
-      ...(sectionsData.single || []),
-      ...(sectionsData.series || []),
-    ];
+    const combined = [...(sectionsData.latest || []), ...(sectionsData.single || []), ...(sectionsData.series || [])];
 
     const unique = [];
     const seen = new Set();
@@ -128,40 +102,14 @@ function Home() {
     return unique.slice(0, 10);
   }, [sectionsData]);
 
-  const quickFilters = useMemo(() => {
-    const genreCategory = categories[2];
-    if (!genreCategory?.item) {
-      return [];
-    }
-
-    return genreCategory.item.slice(0, 8).map((item) => ({
-      label: item.name,
-      to: `/danh-sach-phim?category=${genreCategory.slug}&sub=${item.slug}&page=1`,
-    }));
-  }, []);
-
-  const spotlightItems = useMemo(() => {
-    const combined = [
-      ...(sectionsData.series || []),
-      ...(sectionsData.vietnam || []),
-      ...(sectionsData.tvshows || []),
-    ];
-
-    const unique = [];
-    const seen = new Set();
-
-    combined.forEach((film) => {
-      if (!film?.slug || seen.has(film.slug)) {
-        return;
-      }
-      seen.add(film.slug);
-      unique.push(film);
-    });
-
-    return unique.slice(0, 4);
-  }, [sectionsData]);
-
-  const continueWatching = useMemo(() => (favoriteList || []).slice(0, 10), [favoriteList]);
+  const highlightStats = useMemo(
+    () => [
+      { label: "Phim mới cập nhật", value: sectionsData.latest?.length || 0 },
+      { label: "Phim lẻ nổi bật", value: sectionsData.single?.length || 0 },
+      { label: "Phim bộ đáng xem", value: sectionsData.series?.length || 0 },
+    ],
+    [sectionsData]
+  );
 
   return (
     <Template>
@@ -174,9 +122,22 @@ function Home() {
 
         <HeroSpotlight film={featuredFilm} trending={trendingList} />
 
-        <QuickFilters filters={quickFilters} />
-
-        <ContinueWatchingSection items={continueWatching} />
+        <section className="home-info-banner">
+          <div>
+            <p className="text-uppercase text-danger mb-1">Không gian xem phim tối giản</p>
+            <h2 className="fw-bold mb-2">Giảm bớt ồn ào, giữ lại thứ bạn cần: phim hay</h2>
+            <p className="text-body-secondary mb-0">
+              Chúng tôi chỉ giữ những khối nội dung quan trọng – spotlight, danh sách thịnh hành và vài kệ phim chọn lọc.
+              Bạn không phải cuộn qua quá nhiều banner hay khối quảng bá nữa.
+            </p>
+          </div>
+          {highlightStats.map((item) => (
+            <div key={item.label} className="home-info-banner__stat">
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </section>
 
         <FilmRailSection
           title="Đang thịnh hành hôm nay"
@@ -184,8 +145,6 @@ function Home() {
           viewAllLink="/danh-sach-phim"
           loading={loading && !trendingList.length}
         />
-
-        <SpotlightGrid items={spotlightItems} />
 
         {sectionConfigs.map((config) => (
           <FilmGridSection
