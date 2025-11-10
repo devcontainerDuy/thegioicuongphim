@@ -55,7 +55,6 @@ function Breadcrumbs({ props = [] }) {
 
         {props.map((item, index) => {
           const href = buildHref(item);
-          const itemPath = item.path || (item.url ? item.url.split("?")[0] : href.split("?")[0]);
           const isActive = item.params
             ? isParamsMatch(item)
             : currentUrl === href;

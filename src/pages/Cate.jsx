@@ -107,9 +107,6 @@ function Cate() {
     return items;
   }, [selectedCategory, selectedSub, currentPage]);
 
-  const subFilters = selectedCategory?.item || [];
-  const hasSubFilters = subFilters.length > 0;
-
   const handleResetFilters = () => {
     setSortOption("recent");
     const params = { category: categories[0].slug, page: 1 };
@@ -260,4 +257,3 @@ function Cate() {
 }
 
 export default Cate;
-
