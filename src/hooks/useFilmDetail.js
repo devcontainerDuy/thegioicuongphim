@@ -49,3 +49,7 @@ export function useFilmDetail(slug, { enabled = true } = {}) {
     refetch: (options) => fetchData({ force: true, ...options }),
   };
 }
+
+export function __clearFilmCache() {
+  filmCache.clear();
+}

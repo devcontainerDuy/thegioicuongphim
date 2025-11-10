@@ -376,10 +376,20 @@
   font-weight: 600;
 }
 
+.search-result__title mark {
+  background: transparent;
+  color: var(--bs-danger);
+  font-weight: inherit;
+}
+
 .search-result__meta {
   margin: 0;
   font-size: 0.8rem;
   color: var(--bs-body-secondary-color);
+}
+
+.search-history-badge {
+  cursor: pointer;
 }
 
 .favorites-link {

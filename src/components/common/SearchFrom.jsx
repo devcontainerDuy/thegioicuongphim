@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Form, Image, InputGroup, Spinner } from "react-bootstrap";
+import { Badge, Button, Col, Form, Image, InputGroup, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { searchFilms } from "services/search";
 
@@ -13,8 +13,30 @@ const SearchForm = () => {
     const debounceRef = useRef(null);
     const wrapperRef = useRef(null);
     const navigate = useNavigate();
+    const [history, setHistory] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("search_history")) || [];
+        } catch (err) {
+            return [];
+        }
+    });
 
     const visibleFilms = useMemo(() => films.slice(0, 6), [films]);
+
+    const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const highlightText = (text) => {
+        if (!searchTerm) {
+            return text;
+        }
+        const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, "ig");
+        return text.split(regex).map((part, index) =>
+            index % 2 === 1 ? (
+                <mark key={`${part}-${index}`}>{part}</mark>
+            ) : (
+                <span key={`${part}-${index}`}>{part}</span>
+            )
+        );
+    };
 
     useEffect(() => {
         if (!searchTerm.trim() || searchTerm.trim().length < 2) {
@@ -67,10 +89,23 @@ const SearchForm = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const saveHistory = (keyword) => {
+        const normalized = keyword.trim();
+        if (!normalized) {
+            return;
+        }
+        setHistory((prev) => {
+            const next = [normalized, ...prev.filter((item) => item !== normalized)].slice(0, 5);
+            localStorage.setItem("search_history", JSON.stringify(next));
+            return next;
+        });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (visibleFilms[0]) {
             handleSelectFilm(visibleFilms[0]);
+            saveHistory(searchTerm);
         } else {
             setShowResults(true);
         }
@@ -80,6 +115,7 @@ const SearchForm = () => {
         setShowResults(false);
         setSearchTerm("");
         setActiveIndex(-1);
+        saveHistory(film?.name || searchTerm);
         if (film?.slug) {
             navigate(`/phim/${film.slug}`);
         }
@@ -129,7 +165,24 @@ const SearchForm = () => {
             {showResults && (
                 <div className="search-results shadow">
                     {error && <div className="search-results__empty text-danger">{error}</div>}
-                    {!error && films.length === 0 && !loading && <div className="search-results__empty">Gõ tối thiểu 2 ký tự để tìm phim bạn thích.</div>}
+                    {!error && visibleFilms.length === 0 && !loading && (
+                        <div className="search-results__empty">
+                            {history.length ? (
+                                <div>
+                                    <p className="mb-2">Bạn từng tìm:</p>
+                                    <div className="d-flex flex-wrap gap-2">
+                                        {history.map((item) => (
+                                            <Badge key={item} bg="secondary" className="search-history-badge" onClick={() => setSearchTerm(item)}>
+                                                {item}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                "Gõ tối thiểu 2 ký tự để tìm phim bạn thích."
+                            )}
+                        </div>
+                    )}
                     {!error && visibleFilms.length > 0 && (
                         <ul className="list-unstyled mb-0">
                             {visibleFilms.map((film, index) => (
@@ -141,7 +194,7 @@ const SearchForm = () => {
                                     >
                                         <div className="search-result__thumb">{film.thumb_url ? <Image src={film.thumb_url} rounded className="w-100 h-100 object-fit-cover" /> : <Col className="rounded bg-secondary w-100 h-100" />}</div>
                                         <div className="search-result__body">
-                                            <h6 className="search-result__title">{film.name}</h6>
+                                            <h6 className="search-result__title">{highlightText(film.name)}</h6>
                                             <p className="search-result__meta">
                                                 {film.current_episode || "Đang cập nhật"} • {film.time || "--"}
                                             </p>
