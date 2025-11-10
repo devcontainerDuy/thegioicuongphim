@@ -9,6 +9,7 @@ import { useFilmDetail } from "hooks/useFilmDetail";
 
 function Detail() {
   const { slug } = useParams();
+  const { film: data, loading, error } = useFilmDetail(slug);
 
   const dispatch = useDispatch();
   const favoriteList = useSelector((state) => state.favorites.items); // Truy cập state từ slice
@@ -22,8 +23,6 @@ function Detail() {
 
   const [openContent, setOpenContent] = useState(true);
   const [openEpisodes, setOpenEpisodes] = useState(true);
-
-  const { film: data, loading, error } = useFilmDetail(slug);
 
   if (!data && loading) {
     return (
