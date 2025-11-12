@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button, Card, Col, Collapse, Container, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import Template from "components/layout/Template";
@@ -9,52 +9,43 @@ function Watch() {
     const { slug, episode: selectedEpisodeSlug } = useParams();
     const [openContent, setOpenContent] = useState(true);
     const [openEpisodes, setOpenEpisodes] = useState(true);
-    const [iframeUrl, setIframeUrl] = useState(null);
     const { film: data, loading, error } = useFilmDetail(slug);
 
-    const episodes = useMemo(() => {
-        return (
+    const episodes = useMemo(
+        () =>
             data?.episodes?.flatMap((episode) =>
-                episode.items.map((item) => ({
+                (episode?.items || []).map((item) => ({
                     name: item.name,
                     slug: item.slug,
                     embed: item.embed,
                 }))
-            ) || []
-        );
-    }, [data]);
+            ) || [],
+        [data]
+    );
 
-    useEffect(() => {
-        const matchedEpisode = episodes.find((item) => item.slug === selectedEpisodeSlug);
-        const fallbackEpisode = episodes[0];
-        setIframeUrl((matchedEpisode || fallbackEpisode)?.embed || null);
-    }, [episodes, selectedEpisodeSlug]);
+    const activeEpisode = useMemo(() => episodes.find((item) => item.slug === selectedEpisodeSlug) || episodes[0] || null, [episodes, selectedEpisodeSlug]);
+    const embedSrc = activeEpisode?.embed || "about:blank";
 
-    if (!data && loading) {
-        return (
-            <Template>
+    const isLoading = !data && loading;
+    const isError = !isLoading && !data && error;
+
+    return (
+        <Template>
+            {isLoading && (
                 <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
                     <Spinner animation="border" variant="danger" />
                 </div>
-            </Template>
-        );
-    }
+            )}
 
-    if (!data && error) {
-        return (
-            <Template>
+            {isError && (
                 <div className="container py-5">
                     <div className="alert alert-danger" role="alert">
                         Không thể tải dữ liệu phim.
                     </div>
                 </div>
-            </Template>
-        );
-    }
+            )}
 
-    return (
-        <>
-            <Template>
+            {!isLoading && !isError && (
                 <main className="pt-5">
                     <Container className="pt-4">
                         <Row>
@@ -64,7 +55,7 @@ function Watch() {
                                 </h3>
                             </Col>
                             <Col lg={12}>
-                                <Video embed={iframeUrl} />
+                                <Video embed={embedSrc} />
                             </Col>
                         </Row>
                     </Container>
@@ -86,7 +77,7 @@ function Watch() {
                         </Card>
                         <Card className="mb-3">
                             <Card.Body>
-                                <Button variant="danger	" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
+                                <Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
                                     Xem Phim
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`bi bi-caret-down ${openEpisodes ? "rotate-180" : ""}`} style={{ width: "20px", height: "20px" }}>
                                         <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -109,8 +100,8 @@ function Watch() {
                         </Card>
                     </Container>
                 </main>
-            </Template>
-        </>
+            )}
+        </Template>
     );
 }
 
