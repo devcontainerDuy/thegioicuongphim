@@ -1,55 +1,64 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getFilm } from "services/getFilm";
 
 const filmCache = new Map();
 
 export function useFilmDetail(slug, { enabled = true } = {}) {
-  const [film, setFilm] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+    const [film, setFilm] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const inFlightRef = useRef(new Set());
 
-  const fetchData = useCallback(
-    async ({ force = false } = {}) => {
-      if (!slug || !enabled) {
-        return;
-      }
+    const fetchData = useCallback(
+        async ({ force = false } = {}) => {
+            if (!slug || !enabled) {
+                return;
+            }
 
-      if (!force && filmCache.has(slug)) {
-        setFilm(filmCache.get(slug));
-        setLoading(false);
-        return;
-      }
+            if (!force && filmCache.has(slug)) {
+                setFilm(filmCache.get(slug));
+                setLoading(false);
+                return;
+            }
 
-      setLoading(true);
-      setError(null);
+            if (!force && inFlightRef.current.has(slug)) {
+                return;
+            }
 
-      try {
-        const response = await getFilm(slug);
-        const movie = response.movie || null;
-        setFilm(movie);
-        filmCache.set(slug, movie);
-      } catch (err) {
-        setFilm(null);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [slug, enabled]
-  );
+            inFlightRef.current.add(slug);
+            setLoading(true);
+            setError(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+            try {
+                const response = await getFilm(slug);
+                const movie = response.movie || null;
+                setFilm(movie);
+                filmCache.set(slug, movie);
+            } catch (err) {
+                setFilm(null);
+                setError(err);
+            } finally {
+                inFlightRef.current.delete(slug);
+                setLoading(false);
+            }
+        },
+        [slug, enabled]
+    );
 
-  return {
-    film,
-    loading,
-    error,
-    refetch: (options) => fetchData({ force: true, ...options }),
-  };
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const refetch = useCallback((options) => fetchData({ force: true, ...options }), [fetchData]);
+
+    return {
+        film,
+        loading,
+        error,
+        refetch,
+    };
 }
 
 export function __clearFilmCache() {
-  filmCache.clear();
+    filmCache.clear();
 }

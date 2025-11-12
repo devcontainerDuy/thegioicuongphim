@@ -1,5 +1,4 @@
-/* eslint-disable */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Card, Col, Collapse, Container, Row, Spinner } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import Template from "components/layout/Template";
@@ -12,6 +11,24 @@ function Watch() {
     const [openEpisodes, setOpenEpisodes] = useState(true);
     const [iframeUrl, setIframeUrl] = useState(null);
     const { film: data, loading, error } = useFilmDetail(slug);
+
+    const episodes = useMemo(() => {
+        return (
+            data?.episodes?.flatMap((episode) =>
+                episode.items.map((item) => ({
+                    name: item.name,
+                    slug: item.slug,
+                    embed: item.embed,
+                }))
+            ) || []
+        );
+    }, [data]);
+
+    useEffect(() => {
+        const matchedEpisode = episodes.find((item) => item.slug === selectedEpisodeSlug);
+        const fallbackEpisode = episodes[0];
+        setIframeUrl((matchedEpisode || fallbackEpisode)?.embed || null);
+    }, [episodes, selectedEpisodeSlug]);
 
     if (!data && loading) {
         return (
@@ -34,25 +51,6 @@ function Watch() {
             </Template>
         );
     }
-
-    useEffect(() => {
-        if (!data) {
-            return;
-        }
-        const allEpisodes = data.episodes?.flatMap((episode) => episode.items) || [];
-        const matchedEpisode = allEpisodes.find((item) => item.slug === selectedEpisodeSlug);
-        const fallbackEpisode = allEpisodes[0];
-        setIframeUrl((matchedEpisode || fallbackEpisode)?.embed || null);
-    }, [data, selectedEpisodeSlug]);
-
-    const episodes =
-        data?.episodes?.flatMap((episode) =>
-            episode.items.map((item) => ({
-                name: item.name,
-                slug: item.slug,
-                embed: item.embed,
-            }))
-        ) || [];
 
     return (
         <>
@@ -97,13 +95,9 @@ function Watch() {
                                 <Collapse in={openEpisodes}>
                                     <div className="mt-2">
                                         <div className="row g-2">
-                                            {episodes.map((e, i) => (
-                                                <div key={i} className="col-3 col-sm-3 col-md-2 col-lg-2">
-                                                    <Link
-                                                        to={`/xem-phim/${slug}/${e.slug}`}
-                                                        className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}
-                                                        onClick={() => setIframeUrl(e.embed)} // Cập nhật URL của iframe khi chọn tập
-                                                    >
+                                            {episodes.map((e) => (
+                                                <div key={e.slug} className="col-3 col-sm-3 col-md-2 col-lg-2">
+                                                    <Link to={`/xem-phim/${slug}/${e.slug}`} className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}>
                                                         {e.name}
                                                     </Link>
                                                 </div>
