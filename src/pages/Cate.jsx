@@ -42,14 +42,11 @@ function Cate() {
     // But here we rely on how useFilmsList expects endpoints.
     
     let endpoint = "";
-    let effectiveSlug = slug;
 
     if (!slug && categoryParam) {
         endpoint = categoryParam;
-        effectiveSlug = categoryParam;
         if (subParam) {
             endpoint += `/${subParam}`;
-            effectiveSlug = subParam;
         }
     } else if (slug) {
          // Existing logic in App routing might be /danh-sach/:slug or /the-loai/:slug
