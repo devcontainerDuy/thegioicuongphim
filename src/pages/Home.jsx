@@ -6,6 +6,8 @@ import FilmGridSection from "@/components/home/FilmGridSection";
 import { useFilmsList } from "@/hooks/useFilmsList";
 
 
+import FadeContent from "@/components/bits/FadeContent";
+
 function Home() {
   const { items: trending } = useFilmsList({ endpoint: "phim-moi-cap-nhat" }); // Trending
   const { items: latestSeries } = useFilmsList({ endpoint: "danh-sach/phim-bo" }); // Series
@@ -21,25 +23,25 @@ function Home() {
       <HeroSpotlight film={spotlightFilm} trending={trending} />
       
       <div className="container mx-auto px-4 md:px-12 space-y-12 -mt-20 relative z-10">
-        <div className="animate-in fade-in zoom-in duration-500">
+        <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0}>
            <FeaturedFilmSection title="Phim Đề Cử" films={trending} />
-        </div>
+        </FadeContent>
         
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+        <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={100}>
            <FilmRailSection title="Phim Bộ Mới" films={latestSeries} link="/danh-sach/phim-bo" />
-        </div>
+        </FadeContent>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+        <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={200}>
             <FilmGridSection title="Phim Lẻ Mới" films={latestMovies} link="/danh-sach/phim-le" />
-        </div>
+        </FadeContent>
         
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+        <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={300}>
             <FilmRailSection title="TV Shows Hot" films={tvShows} link="/danh-sach/tv-shows" />
-        </div>
+        </FadeContent>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
+        <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={400}>
             <FilmRailSection title="Hoạt Hình" films={cartoons} link="/danh-sach/hoat-hinh" />
-        </div>
+        </FadeContent>
       </div>
     </div>
   );

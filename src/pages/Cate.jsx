@@ -64,18 +64,21 @@ function Cate() {
     const currentSub = currentCategory?.item?.find(i => i.slug === (subParam || slug));
     const title = currentSub?.name || currentCategory?.name || "Danh sách phim";
 
-    // Reset page to 1 whenever endpoint changes
+    // View Mode State: 'pagination' | 'infinite'
+    const [viewMode, setViewMode] = useState("pagination"); 
+
+    // Reset page to 1 whenever endpoint changes or viewMode changes
     useEffect(() => {
         setPage(1);
         window.scrollTo(0, 0);
-    }, [endpoint]);
+    }, [endpoint, viewMode]);
 
     // Fetch Data
-    const { items, loading, error, meta } = useFilmsList({ endpoint, page, isInfinite: true });
+    const { items, loading, error, meta } = useFilmsList({ endpoint, page, isInfinite: viewMode === "infinite" });
     
     // Infinite Scroll Observer
     const lastElementRef = useCallback(node => {
-        if (loading) return;
+        if (loading || viewMode !== "infinite") return; // Only observer in infinite mode
         if (observerRef.current) observerRef.current.disconnect();
         
         observerRef.current = new IntersectionObserver(entries => {
@@ -85,7 +88,7 @@ function Cate() {
         });
         
         if (node) observerRef.current.observe(node);
-    }, [loading, meta.currentPage, meta.totalPage]);
+    }, [loading, meta.currentPage, meta.totalPage, viewMode]);
 
     // Handle Mobile Filter Toggle
     const [showFilters, setShowFilters] = useState(false);
@@ -109,6 +112,15 @@ function Cate() {
 
     const handleReset = () => {
          setSearchParams({});
+    };
+
+    const handlePageChange = (newPage) => {
+         setPage(newPage);
+         window.scrollTo(0, 0);
+         // Update URL params for SEO
+         const newParams = { ...Object.fromEntries(searchParams) };
+         newParams.page = newPage;
+         setSearchParams(newParams);
     };
 
     return (
@@ -185,7 +197,7 @@ function Cate() {
                     {/* Main Content */}
                     <main className="flex-1 w-full min-w-0">
                         {/* Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-border dark:border-zinc-800">
+                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 pb-6 border-b border-border dark:border-zinc-800">
                             <div>
                                 <h1 className="text-2xl md:text-3xl font-black text-foreground">{title}</h1>
                                 <p className="text-muted-foreground text-sm mt-1">
@@ -193,26 +205,42 @@ function Cate() {
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground hidden sm:block">Sắp xếp:</span>
-                                <Select value={sortOption} onValueChange={setSortOption}>
-                                    <SelectTrigger className="w-[180px] bg-card dark:bg-zinc-900 border-border dark:border-zinc-700">
-                                        <SelectValue placeholder="Sắp xếp" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {SORT_OPTIONS.map(opt => (
-                                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* View Mode Toggle */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground hidden sm:block">Chế độ xem:</span>
+                                    <Select value={viewMode} onValueChange={setViewMode}>
+                                        <SelectTrigger className="w-[140px] bg-card dark:bg-zinc-900 border-border dark:border-zinc-700">
+                                             <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="pagination">Phân trang</SelectItem>
+                                            <SelectItem value="infinite">Xem vô tận</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground hidden sm:block">Sắp xếp:</span>
+                                    <Select value={sortOption} onValueChange={setSortOption}>
+                                        <SelectTrigger className="w-[140px] bg-card dark:bg-zinc-900 border-border dark:border-zinc-700">
+                                            <SelectValue placeholder="Sắp xếp" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {SORT_OPTIONS.map(opt => (
+                                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
 
                         {/* Movie Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
                             {displayFilms.map((movie, index) => {
-                                // Attach ref to the last element
-                                if (displayFilms.length === index + 1) {
+                                // Attach ref to the last element ONLY if Infinite Mode
+                                if (viewMode === "infinite" && displayFilms.length === index + 1) {
                                     return (
                                         <div ref={lastElementRef} key={`${movie.slug}-${index}-last`} className="w-full">
                                              <MovieCard
@@ -264,10 +292,37 @@ function Cate() {
                             </div>
                         )}
                         
-                        {/* End of list indicator */}
-                        {!loading && !error && displayFilms.length > 0 && meta.currentPage >= meta.totalPage && (
+                        {/* End of list indicator (Infinite Mode) */}
+                        {viewMode === "infinite" && !loading && !error && displayFilms.length > 0 && meta.currentPage >= meta.totalPage && (
                              <div className="text-center py-12 text-muted-foreground text-sm italic">
                                 Bạn đã xem hết danh sách.
+                            </div>
+                        )}
+
+                        {/* Pagination Controls (Pagination Mode) */}
+                        {viewMode === "pagination" && meta.totalPage > 1 && (
+                            <div className="flex justify-center gap-2 mt-12">
+                                <Button 
+                                    variant="outline" 
+                                    disabled={page === 1}
+                                    onClick={() => handlePageChange(page - 1)}
+                                    className="bg-card dark:bg-black border-border dark:border-zinc-700 text-foreground dark:text-white hover:bg-muted dark:hover:bg-zinc-900"
+                                >
+                                    Trước
+                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <span className="px-4 py-2 bg-primary text-white font-bold rounded-md">{page}</span>
+                                    <span className="text-muted-foreground">/</span>
+                                    <span className="text-muted-foreground">{meta.totalPage}</span>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    disabled={page === meta.totalPage}
+                                    onClick={() => handlePageChange(page + 1)}
+                                    className="bg-card dark:bg-black border-border dark:border-zinc-700 text-foreground dark:text-white hover:bg-muted dark:hover:bg-zinc-900"
+                                >
+                                    Sau
+                                </Button>
                             </div>
                         )}
                     </main>

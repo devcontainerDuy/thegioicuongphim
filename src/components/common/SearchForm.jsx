@@ -4,7 +4,7 @@ import { Search, History, TrendingUp, X, Loader2, ArrowRight } from "lucide-reac
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import movieService from "@/services/movieService";
 
-const SearchForm = () => {
+const SearchForm = ({ trigger }) => {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [suggestions, setSuggestions] = useState([]);
@@ -23,25 +23,26 @@ const SearchForm = () => {
     const debounceRef = useRef(null);
     const inputRef = useRef(null);
 
-    // Fetch Suggestions (Trending Films) on Mount (Once)
+    // Load suggestions ONLY when dialog opens to save API calls
     useEffect(() => {
-        const fetchSuggestions = async () => {
-            setSuggestionsLoading(true);
-            try {
-                // Using 'phim-moi-cap-nhat' as "Trending" replacement
-                const data = await movieService.getFilms("phim-moi-cap-nhat"); 
-                if (data?.items) {
-                    setSuggestions(data.items.slice(0, 5));
+        if (open && suggestions.length === 0) {
+            const fetchSuggestions = async () => {
+                setSuggestionsLoading(true);
+                try {
+                     // Using 'phim-moi-cap-nhat' as "Trending" replacement
+                    const data = await movieService.getFilms("phim-moi-cap-nhat"); 
+                    if (data?.items) {
+                        setSuggestions(data.items.slice(0, 5));
+                    }
+                } catch (error) {
+                    console.error("Failed to load suggestions:", error);
+                } finally {
+                    setSuggestionsLoading(false);
                 }
-            } catch (error) {
-                console.error("Failed to load suggestions:", error);
-            } finally {
-                setSuggestionsLoading(false);
-            }
-        };
-
-        fetchSuggestions();
-    }, []);
+            };
+            fetchSuggestions();
+        }
+    }, [open, suggestions.length]);
 
     // Handle Search Logic
     useEffect(() => {
@@ -109,12 +110,14 @@ const SearchForm = () => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <button 
-                  className="hover:text-white/80 transition-colors flex items-center justify-center p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white/20"
-                  aria-label="Search"
-                >
-                    <Search className="w-5 h-5 text-white" />
-                </button>
+                {trigger ? trigger : (
+                    <button 
+                        className="hover:text-white/80 transition-colors flex items-center justify-center p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white/20"
+                        aria-label="Search"
+                    >
+                        <Search className="w-5 h-5 text-white" />
+                    </button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-[#0f0f0f] border-zinc-800 text-white overflow-hidden shadow-2xl">
                 {/* Search Header */}

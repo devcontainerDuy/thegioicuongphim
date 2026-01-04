@@ -124,7 +124,7 @@ function Watch() {
                 layout 
                 className={cn(
                     "w-full bg-black relative flex items-center justify-center transition-all duration-500 ease-in-out z-50 group",
-                    isTheaterMode ? "h-screen fixed inset-0" : "aspect-video md:h-[80vh] md:aspect-auto relative"
+                    isTheaterMode ? "h-screen fixed inset-0 z-[100]" : "aspect-video md:h-[80vh] md:aspect-auto relative"
                 )}
             >
                 {/* Priority: Embed Iframe */}

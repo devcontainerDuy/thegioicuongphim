@@ -25,7 +25,6 @@ const NAV_ITEMS = [
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const favoriteItems = useSelector((state) => state.favorites.items) || [];
   const favoriteCount = favoriteItems.length;
@@ -99,14 +98,12 @@ const Navbar = () => {
              <SearchForm />
           </div>
           
-          {/* Mobile Search Trigger */}
-          <button 
-            aria-label="Search" 
-            className="hover:text-primary transition-colors md:hidden"
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            <Search className="w-5 h-5" />
-          </button>
+          {/* Mobile Search Trigger - Now just another SearchForm instance but styled differently if needed, 
+              or simpler: Just use SearchForm and let it handle the trigger. 
+              Refactoring to use SearchForm directly for mobile too. */}
+          <div className="md:hidden">
+              <SearchForm trigger={<Search className="w-5 h-5 hover:text-primary transition-colors" />} />
+          </div>
 
           <button aria-label="Notifications" className="hover:text-primary transition-colors hidden md:block">
             <Bell className="w-5 h-5" />
@@ -153,20 +150,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Search Bar Overlay */}
-      {isSearchOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-background p-4 border-b border-border shadow-md animate-in slide-in-from-top-2">
-            <div className="relative">
-                <SearchForm className="w-full" />
-                <button 
-                    onClick={() => setIsSearchOpen(false)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-muted-foreground"
-                >
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-        </div>
-      )}
+
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
