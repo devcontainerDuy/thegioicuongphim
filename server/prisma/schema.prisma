@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  password     String
+  name         String?
+  avatar       String?
+  role         String         @default("user") // "admin" | "user"
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  watchHistory WatchHistory[]
+  favorites    Favorite[]
+}
+
+model Movie {
+  id             Int            @id @default(autoincrement())
+  slug           String         @unique
+  name           String
+  originalName   String?
+  description    String?        @db.Text
+  thumbUrl       String?
+  posterUrl      String?
+  quality        String? // "HD", "FHD", "CAM"
+  language       String? // "Vietsub", "Lồng Tiếng"
+  year           Int?
+  type           String         @default("series") // "movie" | "series"
+  totalEpisodes  Int            @default(1)
+  currentEpisode String? // "Tập 10", "FULL"
+  time           String? // "45 phút/tập"
+  views          Int            @default(0)
+  status         String         @default("active") // "active" | "inactive"
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  episodes       Episode[]
+  watchHistory   WatchHistory[]
+  favorites      Favorite[]
+}
+
+model Episode {
+  id           Int            @id @default(autoincrement())
+  movieId      Int
+  movie        Movie          @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  name         String // "Tập 1", "FULL"
+  slug         String
+  embedUrl     String?        @db.Text
+  m3u8Url      String?        @db.Text
+  sortOrder    Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  watchHistory WatchHistory[]
+
+  @@unique([movieId, slug])
+}
+
+model WatchHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieId   Int
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episodeId Int?
+  episode   Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+  progress  Int      @default(0) // 0-100 percentage
+  watchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, movieId, episodeId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieId   Int
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, movieId])
+  @@index([userId])
+}

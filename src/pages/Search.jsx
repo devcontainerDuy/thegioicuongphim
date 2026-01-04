@@ -27,12 +27,11 @@ function Search() {
             setError(null);
             try {
                 const response = await movieService.searchFilms(keyword, page);
-                // API structure might need adjustment depending on what verify returns, 
-                // but assuming it returns standard { items: [], paginate: {} }
-                setFilms(response.data?.items || []);
+                // API returns { status, paginate, items }
+                setFilms(response?.items || []);
                 setMeta({
-                    currentPage: response.data?.paginate?.current_page || 1,
-                    totalPage: response.data?.paginate?.total_page || 1
+                    currentPage: response?.paginate?.current_page || 1,
+                    totalPage: response?.paginate?.total_page || 1
                 });
             } catch (err) {
                 console.error("Search error:", err);

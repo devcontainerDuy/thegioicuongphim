@@ -58,7 +58,7 @@ const SearchForm = ({ trigger }) => {
         debounceRef.current = setTimeout(async () => {
             try {
                 const response = await movieService.searchFilms(searchTerm.trim());
-                setSearchResults(response.data?.items || []);
+                setSearchResults(response?.items || []);
             } catch (error) {
                 console.error("Search error:", error);
                 setSearchResults([]);
