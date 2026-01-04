@@ -117,6 +117,47 @@ function Settings() {
                             />
                         </div>
 
+                        {/* Maintenance Token UI */}
+                        {settings.maintenance && (
+                            <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5 space-y-4 fade-in">
+                                <div>
+                                    <Label className="text-base text-yellow-500 font-medium">Link truy cập khẩn cấp (Bypass Token)</Label>
+                                    <p className="text-sm text-zinc-400 mt-1">Gửi link này cho Developer hoặc Tester để truy cập khi web đang bảo trì.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        readOnly
+                                        value={settings.maintenance_token ? `${window.location.origin}?token=${settings.maintenance_token}` : 'Chưa có token'}
+                                        className="bg-zinc-900 border-zinc-700 text-zinc-300 font-mono text-sm"
+                                    />
+                                    <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        onClick={() => {
+                                            const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                                            handleChange('maintenance_token', token);
+                                            toast.success('Đã tạo token mới. Hãy bấm Lưu cấu hình!');
+                                        }}
+                                        className="border-zinc-700 hover:bg-zinc-800 text-zinc-300 whitespace-nowrap"
+                                    >
+                                        Tạo Token Mới
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline" 
+                                        onClick={() => {
+                                            if (!settings.maintenance_token) return toast.error('Chưa có token');
+                                            navigator.clipboard.writeText(`${window.location.origin}?token=${settings.maintenance_token}`);
+                                            toast.success('Đã copy link!');
+                                        }}
+                                        className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                                    >
+                                        Copy Link
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center justify-between p-4 rounded-lg border border-zinc-800 bg-zinc-950/50">
                             <div className="space-y-0.5">
                                 <Label className="text-base text-zinc-200">Cho phép đăng ký</Label>

@@ -13,6 +13,7 @@ import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
 import Pricing from "@/pages/Pricing";
 import ErrorPage from "@/pages/errors/Error";
+import Maintenance from "@/pages/Maintenance";
 
 // Admin imports
 import AdminLayout from "@/admin/AdminLayout";
@@ -22,17 +23,31 @@ import MovieEdit from "@/admin/pages/MovieEdit";
 import UserList from "@/admin/pages/UserList";
 import RoleManager from "@/admin/pages/RoleManager";
 import Settings from "@/admin/pages/Settings";
+import { MaintenanceProvider } from "@/context/MaintenanceContext";
+import { Outlet } from "react-router-dom";
+
+// Wrapper to provide Maintenance Context to all routes
+const AppWrapper = () => (
+    <MaintenanceProvider>
+        <Outlet />
+    </MaintenanceProvider>
+); 
 
 const router = createBrowserRouter([
-  // Public routes
+  // Wrap everything in AppWrapper to check maintenance status
   {
-    path: "/",
-    element: <MainLayout />,
-    errorElement: <ErrorPage />,
+    element: <AppWrapper />,
     children: [
+        // Public routes
+        {
+            path: "/",
+            element: <MainLayout />,
+            errorElement: <ErrorPage />,
+            children: [
       { index: true, element: <Home /> },
       { path: "dang-ky", element: <SignUp /> },
       { path: "dang-nhap", element: <Login /> },
+      { path: "bao-tri", element: <Maintenance /> }, // New Route
       { path: "danh-sach-phim", element: <Cate /> },
       { path: "danh-sach-phim/:slug", element: <Category /> },
       { path: "phim/:slug", element: <Detail /> },
@@ -57,6 +72,8 @@ const router = createBrowserRouter([
       { path: "users", element: <UserList /> },
       { path: "roles", element: <RoleManager /> },
       { path: "settings", element: <Settings /> },
+    ],
+  },
     ],
   },
 ]);

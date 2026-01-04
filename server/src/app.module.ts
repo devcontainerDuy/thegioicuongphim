@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { MaintenanceGuard } from './common/guards/maintenance.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -12,7 +14,13 @@ import { SettingsModule } from './settings/settings.module';
 @Module({
   imports: [PrismaModule, AuthModule, MoviesModule, UsersModule, RecommendationsModule, AdminModule, SettingsModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
+    },
+  ],
 })
 export class AppModule { }
 
