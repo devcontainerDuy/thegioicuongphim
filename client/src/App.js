@@ -2,7 +2,8 @@ import { Analytics } from "@vercel/analytics/react";
 import React, { Suspense } from "react";
 import { RouterProvider } from "react-router-dom";
 import router from "@/routes";
-import { Toaster } from "@/components/ui/sonner"; // If we use sonner, generic toast otherwise
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Optional: Global loading fallback
 const LoadingFallback = () => (
@@ -14,13 +15,16 @@ const LoadingFallback = () => (
 function App() {
     return (
         <React.StrictMode>
-            <Analytics debug={false} mode="production" />
-            <Suspense fallback={<LoadingFallback />}>
-                <RouterProvider router={router} />
-            </Suspense>
-            <Toaster />
+            <AuthProvider>
+                <Analytics debug={false} mode="production" />
+                <Suspense fallback={<LoadingFallback />}>
+                    <RouterProvider router={router} />
+                </Suspense>
+                <Toaster />
+            </AuthProvider>
         </React.StrictMode>
     );
 }
 
 export default App;
+

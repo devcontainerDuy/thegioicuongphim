@@ -1,15 +1,19 @@
 import React from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const SignUp = () => {
   const [loading, setLoading] = React.useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {
@@ -26,11 +30,15 @@ const SignUp = () => {
     }),
     onSubmit: async (values) => {
       setLoading(true);
-      console.log('Form data', values);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setLoading(false);
-      // Handle success redirect or toast
+      try {
+        await register(values.email, values.password, values.username);
+        toast.success('Đăng ký thành công!');
+        navigate('/');
+      } catch (error) {
+        toast.error(error.message || 'Đăng ký thất bại');
+      } finally {
+        setLoading(false);
+      }
     },
   });
 

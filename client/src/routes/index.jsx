@@ -6,6 +6,7 @@ import Watch from "@/pages/Watch";
 import Cate from "@/pages/Cate";
 import Category from "@/pages/Category";
 import SignUp from "@/pages/SignUp";
+import Login from "@/pages/Login";
 import Favorites from "@/pages/Favorites";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "dang-ky", element: <SignUp /> },
+      { path: "dang-nhap", element: <Login /> },
       { path: "danh-sach-phim", element: <Cate /> },
       { path: "danh-sach-phim/:slug", element: <Category /> },
       { path: "phim/:slug", element: <Detail /> },
