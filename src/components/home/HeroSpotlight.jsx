@@ -1,158 +1,104 @@
 import React, { useMemo } from "react";
-import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { Autoplay } from "swiper/modules";
+import { Autoplay, EffectFade } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Play, Info } from "lucide-react";
+
 
 const getCategoryLabel = (item) =>
   item?.category?.[2]?.list?.map((c) => c.name).join(", ") || item?.category?.[1]?.list?.[0]?.name || "Nổi bật";
 
 const HeroSpotlight = ({ film, trending = [] }) => {
-  const trendingList = useMemo(
-    () =>
-      film
-        ? (trending || [])
-            .filter((item) => item && item.slug && item.slug !== film.slug)
-            .slice(0, 5)
-        : [],
-    [trending, film]
-  );
-
   const spotlightSlides = useMemo(() => {
-    if (!film) {
-      return [];
-    }
+    if (!film) return [];
 
     const unique = new Map();
     const pushItem = (item) => {
-      if (!item?.slug || unique.has(item.slug)) {
-        return;
-      }
+      if (!item?.slug || unique.has(item.slug)) return;
       unique.set(item.slug, item);
     };
 
     pushItem(film);
-    trendingList.forEach(pushItem);
+    trending.forEach(pushItem);
 
     return Array.from(unique.values()).slice(0, 5);
-  }, [film, trendingList]);
+  }, [film, trending]);
 
-  const autoplay = useMemo(
-    () =>
-      spotlightSlides.length > 1
-        ? {
-            delay: 5000,
-            pauseOnMouseEnter: true,
-            disableOnInteraction: false,
-          }
-        : false,
-    [spotlightSlides.length]
-  );
-
-  if (!film) {
-    return null;
-  }
+  if (!film) return null;
 
   return (
-    <Row className="g-4 align-items-stretch hero-spotlight">
-      <Col lg={7}>
-        <Swiper className="hero-spotlight-swiper flex-grow-1" modules={[Autoplay]} slidesPerView={1} autoplay={autoplay}>
-          {spotlightSlides.map((item) => {
-            const firstEpisodeSlug = item.episodes?.[0]?.items?.[0]?.slug;
-            const categoryLabel = getCategoryLabel(item);
+    <section className="relative w-full h-[85vh] md:h-[90vh] overflow-hidden">
+      <Swiper
+        modules={[Autoplay, EffectFade]}
+        effect="fade"
+        speed={1000}
+        slidesPerView={1}
+        autoplay={{ delay: 6000, disableOnInteraction: false }}
+        className="h-full w-full"
+      >
+        {spotlightSlides.map((item) => {
+          const categoryLabel = getCategoryLabel(item);
+          const firstEpisodeSlug = item.episodes?.[0]?.items?.[0]?.slug;
 
-            return (
-              <SwiperSlide key={item.slug}>
-                <Card className="border-0 shadow hero-spotlight-card h-100 text-white">
-                  <div
-                    className="hero-spotlight-backdrop"
-                    style={{ backgroundImage: `url(${item.poster_url || item.thumb_url || film.poster_url || film.thumb_url})` }}
-                  />
-                  <Card.Body className="position-relative d-flex flex-column justify-content-end">
-                    <Badge bg="danger" className="mb-3 align-self-start text-uppercase">
-                      {item.quality || "HD"}
-                    </Badge>
-                    <h2 className="hero-spotlight-title fw-bold mb-2">{item.name}</h2>
-                    <p className="hero-spotlight-meta mb-3 text-uppercase">
-                      {(item.time && `${item.time} - `) || ""}
-                      {item.language || "Vietsub"} - {categoryLabel}
-                    </p>
-                    {item.description && (
-                      <p className="hero-spotlight-description mb-0">
-                        {item.description.slice(0, 200)}
-                        {item.description.length > 200 ? "..." : ""}
-                      </p>
-                    )}
-                    <div className="d-flex flex-wrap gap-2 mt-4">
-                      <Button as={Link} to={`/phim/${item.slug}`} variant="danger" size="lg">
-                        <i className="bi bi-play-fill me-2" />
-                        Xem ngay
-                      </Button>
-                      <Button
-                        as={Link}
-                        to={firstEpisodeSlug ? `/xem-phim/${item.slug}/${firstEpisodeSlug}` : `/phim/${item.slug}`}
-                        variant="outline-light"
-                        size="lg"
-                      >
-                        <i className="bi bi-collection-play me-2" />
-                        Tập mới nhất
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </SwiperSlide>
-            );
-          })}
-        </Swiper>
-      </Col>
-      <Col lg={5}>
-        <Card className="h-100 w-100 border-0 shadow hero-trending-list">
-          <Card.Body className="p-4">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0 fw-bold text-uppercase text-danger">Đang thịnh hành</h5>
-              <Badge bg="dark" className="text-uppercase">
-                Top 5
-              </Badge>
-            </div>
-            <ListGroup variant="flush" className="hero-trending-items">
-              {trendingList.length > 0 ? (
-                trendingList.map((item, index) => (
-                  <ListGroup.Item
-                    key={item.id ?? `${item.slug}-${index}`}
-                    className="px-0 py-3 d-flex gap-3 align-items-center border-0 border-bottom"
-                  >
-                    <span className="hero-trending-index">{index + 1}</span>
-                    <div className="flex-grow-1">
-                      <Link
-                        to={`/phim/${item.slug}`}
-                        className="stretched-link text-decoration-none text-body fw-semibold"
-                      >
-                        <span className="text-truncate d-inline-block hero-trending-title">{item.name}</span>
+          return (
+            <SwiperSlide key={item.slug} className="relative h-full w-full bg-black">
+              {/* Backdrop Image */}
+              <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] hover:scale-105"
+                style={{
+                  backgroundImage: `url(${item.poster_url || item.thumb_url})`,
+                }}
+              >
+                 {/* Gradient Overlay: Dark fade at bottom to blend with content, adapts to theme */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+              </div>
+
+              {/* Content */}
+              <div className="absolute inset-0 flex items-center px-4 md:px-12">
+                <div className="max-w-2xl space-y-6 pt-20">
+                  <Badge variant="outline" className="border-white/30 text-white backdrop-blur-md">
+                     {categoryLabel}
+                  </Badge>
+                  
+                  <h1 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-lg uppercase tracking-tighter">
+                    {item.name}
+                  </h1>
+
+                  <div className="flex items-center gap-4 text-white/90 text-sm md:text-base font-medium">
+                     <span className="text-primary font-bold">{item.quality || "HD"}</span>
+                     <span>{item.year || "2024"}</span>
+                     <span>{item.time || "N/A"}</span>
+                     <Badge variant="secondary" className="bg-white/10 text-white backdrop-blur-md border border-white/20">{item.language || "Vietsub"}</Badge>
+                  </div>
+
+                  <p className="text-white/80 text-base md:text-lg line-clamp-3 md:line-clamp-4 max-w-xl leading-relaxed drop-shadow-md">
+                    {item.content || item.description || "Đang cập nhật nội dung..."}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <Button asChild size="lg" className="h-12 px-8 text-lg font-bold bg-primary text-white hover:bg-primary/90 rounded-md border-none shadow-lg shadow-primary/20">
+                      <Link to={`/phim/${item.slug}`}>
+                        <Play className="w-6 h-6 mr-2 fill-current" /> Xem ngay
                       </Link>
-                      <div className="small text-body-secondary">
-                        {(item.current_episode &&
-                          item.total_episodes &&
-                          `${item.current_episode}/${item.total_episodes}`) ||
-                          item.current_episode ||
-                          "Trọn bộ"}
-                        {item.time ? ` - ${item.time}` : ""}
-                      </div>
-                    </div>
-                    <Button as={Link} to={`/phim/${item.slug}`} variant="outline-danger" size="sm">
-                      <i className="bi bi-play-fill" />
                     </Button>
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <p className="text-body-secondary mb-0">Danh sách đang được cập nhật...</p>
-              )}
-            </ListGroup>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+                    
+                    <Button asChild variant="secondary" size="lg" className="h-12 px-6 text-lg font-semibold bg-zinc-600/80 hover:bg-zinc-600 text-white backdrop-blur-sm rounded-md">
+                       <Link to={firstEpisodeSlug ? `/xem-phim/${item.slug}/${firstEpisodeSlug}` : `/phim/${item.slug}`}>
+                        <Info className="w-6 h-6 mr-2" /> Chi tiết
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SwiperSlide>
+          );
+        })}
+      </Swiper>
+    </section>
   );
 };
 
 export default HeroSpotlight;
-

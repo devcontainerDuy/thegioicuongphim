@@ -1,107 +1,299 @@
 import React, { useMemo, useState } from "react";
-import { Button, Card, Col, Collapse, Container, Row, Spinner } from "react-bootstrap";
-import { Link, useParams } from "react-router-dom";
-import Template from "components/layout/Template";
-import Video from "containers/Video";
-import { useFilmDetail } from "hooks/useFilmDetail";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import ReactPlayer from "react-player";
+import { useFilmDetail } from "@/hooks/useFilmDetail";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, ChevronRight, Info, AlertTriangle, Maximize, Minimize, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
+import Spotlight from "@/components/bits/Spotlight";
+import { cn } from "@/lib/utils";
+
+import { saveWatchHistory } from "@/utils/storage";
 
 function Watch() {
-    const { slug, episode: selectedEpisodeSlug } = useParams();
-    const [openContent, setOpenContent] = useState(true);
-    const [openEpisodes, setOpenEpisodes] = useState(true);
+    const { slug, episode } = useParams();
+    const navigate = useNavigate();
     const { film: data, loading, error } = useFilmDetail(slug);
+    
+    // UI States
+    const [isTheaterMode, setIsTheaterMode] = useState(false);
 
-    const episodes = useMemo(
-        () =>
-            data?.episodes?.flatMap((episode) =>
-                (episode?.items || []).map((item) => ({
-                    name: item.name,
-                    slug: item.slug,
-                    embed: item.embed,
-                }))
-            ) || [],
-        [data]
-    );
+    // Derived state for current episode
+    const currentEpisode = useMemo(() => {
+        if (!data || !data.episodes) return null;
+        const allItems = data.episodes.flatMap(group => group.items);
+        const found = allItems.find(item => item.slug === episode) || allItems[0];
+        return found;
+    }, [data, episode]);
 
-    const activeEpisode = useMemo(() => episodes.find((item) => item.slug === selectedEpisodeSlug) || episodes[0] || null, [episodes, selectedEpisodeSlug]);
-    const embedSrc = activeEpisode?.embed || "about:blank";
+    const episodeList = useMemo(() => {
+        if (!data?.episodes) return [];
+        return data.episodes.flatMap(group => group.items);
+    }, [data]);
 
-    const isLoading = !data && loading;
-    const isError = !isLoading && !data && error;
+    const currentIndex = useMemo(() => {
+        return episodeList.findIndex(ep => ep.slug === currentEpisode?.slug);
+    }, [episodeList, currentEpisode]);
+
+    // Save history on mount or episode change
+    React.useEffect(() => {
+        if (data && currentEpisode) {
+            // For embeds, we assume "watched" just by opening it (progress 0 or 100? Let's say 1% to mark as started)
+            // If it's HLS, onProgress will update it later.
+            saveWatchHistory(data, currentEpisode, 0); 
+        }
+    }, [data, currentEpisode]);
+
+    const handleNextEpisode = () => {
+        if (currentIndex < episodeList.length - 1) {
+            const nextEp = episodeList[currentIndex + 1];
+            navigate(`/xem-phim/${slug}/${nextEp.slug}`);
+        }
+    };
+
+    const handlePrevEpisode = () => {
+         if (currentIndex > 0) {
+            const prevEp = episodeList[currentIndex - 1];
+            navigate(`/xem-phim/${slug}/${prevEp.slug}`);
+        }
+    };
+
+    const handleProgress = (state) => {
+        if (data && currentEpisode) {
+            const percentage = Math.floor(state.played * 100);
+            // Throttle saving if needed, but localStorage is fast enough for occasional updates
+            if (percentage % 5 === 0) { // Save every 5%
+                saveWatchHistory(data, currentEpisode, percentage);
+            }
+        }
+    };
+
+    // Popout Player (Picture-in-Picture / Pop-up)
+    const handlePopout = () => {
+        if (!currentEpisode?.embed) return;
+        
+        // Open a small window with the embed
+        const width = 800;
+        const height = 450;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        
+        window.open(
+            currentEpisode.embed,
+            `CuongPhimPlayer_${slug}`,
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no,toolbar=no`
+        );
+    };
+    
+    if (loading) {
+        return (
+             <div className="min-h-screen bg-black flex flex-col">
+                <div className="w-full aspect-video bg-zinc-900 animate-pulse" />
+                <div className="container mx-auto p-4 space-y-4">
+                    <Skeleton className="h-8 w-1/3 bg-zinc-800" />
+                    <Skeleton className="h-4 w-1/4 bg-zinc-800" />
+                </div>
+             </div>
+        );
+    }
+
+    if (error || !data) {
+        return (
+             <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white space-y-4">
+                <AlertTriangle className="w-16 h-16 text-yellow-500" />
+                <h2 className="text-2xl font-bold">Không tìm thấy phim hoặc tập phim này.</h2>
+                <Button asChild variant="outline">
+                    <Link to="/">Quay về trang chủ</Link>
+                </Button>
+            </div>
+        );
+    }
+
+    // Determine active video source (Prioritize Embed as requested)
+    // Fallback logic: Try embed first, if not available, try m3u8
+    const videoUrl = currentEpisode?.embed || currentEpisode?.m3u8;
+    // Only use HLS/ReactPlayer if we DON'T have an embed but DO have m3u8
+    const isHls = !currentEpisode?.embed && currentEpisode?.m3u8;
 
     return (
-        <Template>
-            {isLoading && (
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
-                    <Spinner animation="border" variant="danger" />
+        <div className="min-h-screen bg-background text-foreground flex flex-col">
+            {/* Player Section */}
+            <motion.div 
+                layout 
+                className={cn(
+                    "w-full bg-black relative flex items-center justify-center transition-all duration-500 ease-in-out z-50 group",
+                    isTheaterMode ? "h-screen fixed inset-0" : "aspect-video md:h-[80vh] md:aspect-auto relative"
+                )}
+            >
+                {/* Priority: Embed Iframe */}
+                {!isHls && videoUrl ? (
+                     <iframe
+                        src={videoUrl}
+                        title={data.name}
+                        className="w-full h-full border-0 shadow-2xl"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                ) : isHls && videoUrl ? (
+                    <ReactPlayer
+                        url={videoUrl}
+                        controls={true}
+                        width="100%"
+                        height="100%"
+                        playing={true}
+                        onEnded={handleNextEpisode}
+                        onProgress={handleProgress}
+                        config={{
+                            file: {
+                                forceHLS: true,
+                                attributes: {
+                                    poster: data.thumb_url || data.poster_url
+                                }
+                            }
+                        }}
+                        className="absolute inset-0"
+                    />
+                ) : (
+                    <div className="text-zinc-500 flex flex-col items-center gap-2">
+                        <AlertTriangle className="w-8 h-8 opacity-50" />
+                        <span>Video đang cập nhật...</span>
+                    </div>
+                )}
+                
+                {/* Overlay Controls (Visible on hover or when UI is active) */}
+                <div className="absolute top-4 right-4 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Button 
+                        size="icon" 
+                        variant="secondary" 
+                        className="bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md"
+                        onClick={handlePopout}
+                        title="Mở cửa sổ nổi (PiP)"
+                    >
+                        <ExternalLink className="w-5 h-5" />
+                    </Button>
+                    <Button 
+                        size="icon" 
+                        variant="secondary" 
+                        className="bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md"
+                        onClick={() => setIsTheaterMode(!isTheaterMode)}
+                        title={isTheaterMode ? "Thu nhỏ" : "Phóng to (Theater Mode)"}
+                    >
+                        {isTheaterMode ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                    </Button>
                 </div>
-            )}
+                
+                {/* Back Button Overlay */}
+                {!isTheaterMode && (
+                    <Link 
+                        to={`/phim/${slug}`} 
+                        className="absolute top-4 left-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm transition-all z-10 opacity-0 group-hover:opacity-100"
+                    >
+                        <ChevronLeft className="w-6 h-6" />
+                    </Link>
+                )}
+            </motion.div>
 
-            {isError && (
-                <div className="container py-5">
-                    <div className="alert alert-danger" role="alert">
-                        Không thể tải dữ liệu phim.
+            {/* Controls & Info (Hidden in Theater Mode) */}
+            {!isTheaterMode && (
+                <div className="flex-1 container mx-auto px-4 py-6 md:px-8">
+                    <div className="grid lg:grid-cols-4 gap-8">
+                        {/* Main Info */}
+                        <div className="lg:col-span-3 space-y-6">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="flex items-start justify-between"
+                            >
+                                <div>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{data.name}</h1>
+                                    <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                                        <span className="text-primary font-medium">Tập {currentEpisode?.name}</span>
+                                        <span>•</span>
+                                        <span>{data.year || "2024"}</span>
+                                        <span>•</span>
+                                        <span className={cn("px-1.5 py-0.5 rounded text-xs font-bold", isHls ? "bg-green-900/20 text-green-600 dark:text-green-400" : "bg-muted text-muted-foreground")}>
+                                            {isHls ? "HLS SUPER SPEED" : "EMBED PLAYER"}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Nav Buttons */}
+                                <div className="flex items-center gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={handlePrevEpisode} 
+                                        disabled={currentIndex === 0}
+                                        className="bg-card dark:bg-zinc-900 border-border dark:border-zinc-700 hover:bg-muted dark:hover:bg-zinc-800 disabled:opacity-50 text-foreground"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={handleNextEpisode} 
+                                        disabled={currentIndex === episodeList.length - 1}
+                                        className="bg-card dark:bg-zinc-900 border-border dark:border-zinc-700 hover:bg-muted dark:hover:bg-zinc-800 disabled:opacity-50 text-foreground"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </motion.div>
+
+                            {/* Description (Spotlight Effect) */}
+                            <Spotlight className="bg-card dark:bg-zinc-900/30 p-4 rounded-lg border border-border dark:border-zinc-800/50 shadow-sm">
+                                <p className="text-foreground dark:text-zinc-300 text-sm line-clamp-2 md:line-clamp-none leading-relaxed">
+                                    {data.description}
+                                </p>
+                            </Spotlight>
+                        </div>
+
+                        {/* Sidebar / Episode List */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="lg:col-span-1"
+                        >
+                            <div className="bg-card dark:bg-zinc-900/50 border border-border dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col h-[400px] shadow-sm">
+                                <div className="p-4 border-b border-border dark:border-zinc-800 bg-muted/50 dark:bg-zinc-900/80 backdrop-blur-sm flex items-center justify-between sticky top-0">
+                                    <h3 className="font-bold text-foreground dark:text-white flex items-center gap-2">
+                                        <Info className="w-4 h-4 text-primary" /> 
+                                        Danh sách tập
+                                    </h3>
+                                    <span className="text-xs text-muted-foreground">{episodeList.length} tập</span>
+                                </div>
+                                
+                                <ScrollArea className="flex-1 p-2">
+                                    <div className="grid grid-cols-4 lg:grid-cols-3 gap-2">
+                                        {episodeList.map((ep, idx) => {
+                                            const isActive = ep.slug === currentEpisode?.slug;
+                                            return (
+                                                <Link
+                                                    key={ep.slug}
+                                                    to={`/xem-phim/${slug}/${ep.slug}`}
+                                                    className={cn(
+                                                        "py-2 px-1 text-center text-sm font-medium rounded-md transition-all border",
+                                                        isActive 
+                                                            ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-105" 
+                                                            : "bg-card dark:bg-zinc-900 text-muted-foreground hover:text-foreground border-border dark:border-zinc-800 hover:bg-muted dark:hover:bg-zinc-800 hover:border-zinc-400"
+                                                    )}
+                                                >
+                                                    {ep.name}
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                </ScrollArea>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             )}
-
-            {!isLoading && !isError && (
-                <main className="pt-5">
-                    <Container className="pt-4">
-                        <Row>
-                            <Col lg={12}>
-                                <h3 className="my-2 text-danger text-truncate">
-                                    <i className="bi bi-play-circle text-black" /> {data?.name} - {data?.original_name}
-                                </h3>
-                            </Col>
-                            <Col lg={12}>
-                                <Video embed={embedSrc} />
-                            </Col>
-                        </Row>
-                    </Container>
-                    <Container className="my-4">
-                        <Card className="mb-3">
-                            <Card.Body>
-                                <Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenContent(!openContent)}>
-                                    Nội dung phim
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`bi bi-caret-down ${openContent ? "rotate-180" : ""}`} style={{ width: "20px", height: "20px" }}>
-                                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </Button>
-                                <Collapse in={openContent}>
-                                    <div className="mt-2">
-                                        <p>{data?.description}</p>
-                                    </div>
-                                </Collapse>
-                            </Card.Body>
-                        </Card>
-                        <Card className="mb-3">
-                            <Card.Body>
-                                <Button variant="danger" className="w-100 d-flex justify-content-between" onClick={() => setOpenEpisodes(!openEpisodes)}>
-                                    Xem Phim
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`bi bi-caret-down ${openEpisodes ? "rotate-180" : ""}`} style={{ width: "20px", height: "20px" }}>
-                                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </Button>
-                                <Collapse in={openEpisodes}>
-                                    <div className="mt-2">
-                                        <div className="row g-2">
-                                            {episodes.map((e) => (
-                                                <div key={e.slug} className="col-3 col-sm-3 col-md-2 col-lg-2">
-                                                    <Link to={`/xem-phim/${slug}/${e.slug}`} className={`btn w-100 text-truncate ${e.slug === selectedEpisodeSlug ? "btn-danger" : "btn-secondary"}`}>
-                                                        {e.name}
-                                                    </Link>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </Collapse>
-                            </Card.Body>
-                        </Card>
-                    </Container>
-                </main>
-            )}
-        </Template>
+        </div>
     );
 }
 

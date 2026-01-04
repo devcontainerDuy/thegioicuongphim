@@ -11,11 +11,16 @@ export function useTheme() {
 
   useEffect(() => {
     const applyTheme = (theme) => {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+
       if (theme === "auto") {
-        const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        document.documentElement.setAttribute("data-bs-theme", preferredTheme);
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        root.classList.add(systemTheme);
+        root.setAttribute("data-bs-theme", systemTheme);
       } else {
-        document.documentElement.setAttribute("data-bs-theme", theme);
+        root.classList.add(theme);
+        root.setAttribute("data-bs-theme", theme);
       }
     };
 

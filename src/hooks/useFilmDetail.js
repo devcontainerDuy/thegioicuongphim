@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getFilm } from "services/getFilm";
+import movieService from "@/services/movieService";
 
 const filmCache = new Map();
 
@@ -30,7 +30,7 @@ export function useFilmDetail(slug, { enabled = true } = {}) {
             setError(null);
 
             try {
-                const response = await getFilm(slug);
+                const response = await movieService.getFilmDetail(slug);
                 const movie = response.movie || null;
                 setFilm(movie);
                 filmCache.set(slug, movie);
