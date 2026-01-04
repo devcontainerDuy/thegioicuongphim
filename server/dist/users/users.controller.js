@@ -27,11 +27,14 @@ let UsersController = class UsersController {
     updateProfile(req, data) {
         return this.usersService.updateProfile(req.user.userId, data);
     }
+    changePassword(req, data) {
+        return this.usersService.changePassword(req.user.userId, data);
+    }
     getWatchHistory(req, page, limit) {
         return this.usersService.getWatchHistory(req.user.userId, Number(page) || 1, Number(limit) || 20);
     }
     saveWatchProgress(req, data) {
-        return this.usersService.saveWatchProgress(req.user.userId, data.movieId, data.episodeId, data.progress || 0);
+        return this.usersService.saveWatchProgress(req.user.userId, data.movieId, data.episodeId, data.progress || 0, data.movieData, data.episodeData);
     }
     getFavorites(req, page, limit) {
         return this.usersService.getFavorites(req.user.userId, Number(page) || 1, Number(limit) || 20);
@@ -62,6 +65,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Post)('password'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "changePassword", null);
 __decorate([
     (0, common_1.Get)('history'),
     __param(0, (0, common_1.Req)()),

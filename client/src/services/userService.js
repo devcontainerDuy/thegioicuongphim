@@ -1,7 +1,9 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3006';
+import { getAccessToken } from '@/utils/cookies';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const getAuthHeader = () => {
-    const token = localStorage.getItem('access_token');
+    const token = getAccessToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -22,6 +24,19 @@ const userService = {
             body: JSON.stringify(data)
         });
         if (!response.ok) throw new Error('Failed to update profile');
+        return response.json();
+    },
+
+    changePassword: async (data) => {
+        const response = await fetch(`${API_URL}/api/user/password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Failed to change password');
+        }
         return response.json();
     },
 
@@ -69,11 +84,17 @@ const userService = {
         return response.json();
     },
 
-    saveWatchProgress: async (movieId, episodeId, progress) => {
+    saveWatchProgress: async (movieId, episodeId, progress, movieData = null, episodeData = null) => {
         const response = await fetch(`${API_URL}/api/user/history`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify({ movieId, episodeId, progress })
+            body: JSON.stringify({
+                movieId,
+                episodeId,
+                progress,
+                movieData,
+                episodeData
+            })
         });
         if (!response.ok) throw new Error('Failed to save progress');
         return response.json();

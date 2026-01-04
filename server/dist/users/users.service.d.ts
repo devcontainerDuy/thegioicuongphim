@@ -1,11 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { MovieSyncData, EpisodeSyncData } from './dto/sync-data.dto';
 export declare class UsersService {
     private prisma;
     constructor(prisma: PrismaService);
     getProfile(userId: number): Promise<{
+        id: number;
         email: string;
         name: string | null;
-        id: number;
         avatar: string | null;
         role: string;
         createdAt: Date;
@@ -18,24 +19,30 @@ export declare class UsersService {
         name?: string;
         avatar?: string;
     }): Promise<{
+        id: number;
         email: string;
         name: string | null;
-        id: number;
         avatar: string | null;
         role: string;
+    }>;
+    changePassword(userId: number, data: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
+        message: string;
     }>;
     getWatchHistory(userId: number, page?: number, limit?: number): Promise<{
         items: ({
             movie: {
-                name: string;
                 id: number;
+                name: string;
                 slug: string;
                 thumbUrl: string | null;
                 currentEpisode: string | null;
             };
             episode: {
-                name: string;
                 id: number;
+                name: string;
                 slug: string;
             } | null;
         } & {
@@ -53,7 +60,7 @@ export declare class UsersService {
             total_items: number;
         };
     }>;
-    saveWatchProgress(userId: number, movieId: number, episodeId?: number, progress?: number): Promise<{
+    saveWatchProgress(userId: number, movieId: number | string, episodeId?: number | string, progress?: number, movieData?: MovieSyncData, episodeData?: EpisodeSyncData): Promise<{
         id: number;
         updatedAt: Date;
         userId: number;
@@ -62,14 +69,16 @@ export declare class UsersService {
         progress: number;
         watchedAt: Date;
     }>;
+    private syncMovie;
+    private syncEpisode;
     getFavorites(userId: number, page?: number, limit?: number): Promise<{
         items: {
-            name: string;
             id: number;
-            year: number | null;
+            name: string;
             slug: string;
             thumbUrl: string | null;
             quality: string | null;
+            year: number | null;
             currentEpisode: string | null;
         }[];
         paginate: {

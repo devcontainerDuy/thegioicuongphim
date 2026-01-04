@@ -29,6 +29,11 @@ export class UsersController {
         return this.usersService.updateProfile(req.user.userId, data);
     }
 
+    @Post('password')
+    changePassword(@Req() req: AuthenticatedRequest, @Body() data: { currentPassword: string; newPassword: string }) {
+        return this.usersService.changePassword(req.user.userId, data);
+    }
+
     // ===== WATCH HISTORY =====
     @Get('history')
     getWatchHistory(
@@ -46,13 +51,21 @@ export class UsersController {
     @Post('history')
     saveWatchProgress(
         @Req() req: AuthenticatedRequest,
-        @Body() data: { movieId: number; episodeId?: number; progress?: number }
+        @Body() data: {
+            movieId: number | string;
+            episodeId?: number | string;
+            progress?: number;
+            movieData?: any;
+            episodeData?: any;
+        }
     ) {
         return this.usersService.saveWatchProgress(
             req.user.userId,
             data.movieId,
             data.episodeId,
-            data.progress || 0
+            data.progress || 0,
+            data.movieData,
+            data.episodeData
         );
     }
 

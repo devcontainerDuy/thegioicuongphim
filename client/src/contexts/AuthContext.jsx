@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getAccessToken, setAccessToken, removeAccessToken } from '@/utils/cookies';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3006';
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AuthContext = createContext(null);
 
@@ -14,7 +15,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(() => localStorage.getItem('access_token'));
+    const [token, setToken] = useState(() => getAccessToken());
     const [loading, setLoading] = useState(true);
 
     // Fetch user profile on mount if token exists
@@ -26,7 +27,8 @@ export const AuthProvider = ({ children }) => {
 
         try {
             const response = await fetch(`${API_URL}/api/user/profile`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include' // Include cookies in request
             });
 
             if (response.ok) {
@@ -51,7 +53,8 @@ export const AuthProvider = ({ children }) => {
         const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password }),
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -60,7 +63,8 @@ export const AuthProvider = ({ children }) => {
             throw new Error(data.message || 'Đăng nhập thất bại');
         }
 
-        localStorage.setItem('access_token', data.access_token);
+        // Store in cookie instead of localStorage
+        setAccessToken(data.access_token);
         setToken(data.access_token);
         setUser(data.user);
 
@@ -71,7 +75,8 @@ export const AuthProvider = ({ children }) => {
         const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, name })
+            body: JSON.stringify({ email, password, name }),
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -80,7 +85,8 @@ export const AuthProvider = ({ children }) => {
             throw new Error(data.message || 'Đăng ký thất bại');
         }
 
-        localStorage.setItem('access_token', data.access_token);
+        // Store in cookie instead of localStorage
+        setAccessToken(data.access_token);
         setToken(data.access_token);
         setUser(data.user);
 
@@ -88,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('access_token');
+        removeAccessToken();
         setToken(null);
         setUser(null);
     };
@@ -112,3 +118,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export default AuthContext;
+

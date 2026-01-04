@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient from '../config/apiClient';
 
 const movieService = {
     // Get list of films (category, latest, etc.)

@@ -33,6 +33,12 @@ export declare class UsersController {
         avatar: string | null;
         role: string;
     }>;
+    changePassword(req: AuthenticatedRequest, data: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
+        message: string;
+    }>;
     getWatchHistory(req: AuthenticatedRequest, page?: string, limit?: string): Promise<{
         items: ({
             movie: {
@@ -63,9 +69,11 @@ export declare class UsersController {
         };
     }>;
     saveWatchProgress(req: AuthenticatedRequest, data: {
-        movieId: number;
-        episodeId?: number;
+        movieId: number | string;
+        episodeId?: number | string;
         progress?: number;
+        movieData?: any;
+        episodeData?: any;
     }): Promise<{
         id: number;
         updatedAt: Date;

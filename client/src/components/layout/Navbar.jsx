@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Search, Bell, Menu, X, User, Heart, Film } from "lucide-react";
+import { Search, Bell, Menu, X, User, Heart, Film, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SearchForm from "@/components/common/SearchForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Trang chủ", href: "/" },
@@ -26,8 +27,17 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const favoriteItems = useSelector((state) => state.favorites.items) || [];
   const favoriteCount = favoriteItems.length;
+  
+  // Auth state
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,9 +108,7 @@ const Navbar = () => {
              <SearchForm />
           </div>
           
-          {/* Mobile Search Trigger - Now just another SearchForm instance but styled differently if needed, 
-              or simpler: Just use SearchForm and let it handle the trigger. 
-              Refactoring to use SearchForm directly for mobile too. */}
+          {/* Mobile Search Trigger */}
           <div className="md:hidden">
               <SearchForm trigger={<Search className="w-5 h-5 hover:text-primary transition-colors" />} />
           </div>
@@ -118,24 +126,59 @@ const Navbar = () => {
              )}
           </Link>
           
+          {/* User Menu */}
           <div className="flex items-center gap-2">
              <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-black/10 dark:hover:bg-white/10">
-                  <User className="w-6 h-6" />
+                  {isAuthenticated && user?.avatar ? (
+                    <img src={user.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-6 h-6" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border-border text-popover-foreground">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" asChild>
-                    <Link to="/ca-nhan">Hồ sơ cá nhân</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" asChild>
-                    <Link to="/ca-nhan">Cài đặt</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">Đăng xuất</DropdownMenuItem>
+                {isAuthenticated ? (
+                  <>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                        <Link to="/ca-nhan"><User className="w-4 h-4 mr-2" /> Hồ sơ cá nhân</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                        <Link to="/danh-sach-yeu-thich"><Heart className="w-4 h-4 mr-2" /> Yêu thích</Link>
+                    </DropdownMenuItem>
+                    {user?.role === 'admin' && (
+                      <DropdownMenuItem className="cursor-pointer" asChild>
+                          <Link to="/admin"><Settings className="w-4 h-4 mr-2" /> Admin Panel</Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                        <Link to="/dang-nhap">Đăng nhập</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                        <Link to="/dang-ky">Đăng ký</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

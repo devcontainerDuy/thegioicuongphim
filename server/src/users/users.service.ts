@@ -1,5 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
+
+import { MovieSyncData, EpisodeSyncData } from './dto/sync-data.dto';
 
 @Injectable()
 export class UsersService {
@@ -36,6 +39,34 @@ export class UsersService {
         });
     }
 
+    async changePassword(userId: number, data: { currentPassword: string; newPassword: string }) {
+        const { currentPassword, newPassword } = data;
+
+        // Get user with password
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) throw new NotFoundException('User không tồn tại');
+
+        // Verify current password
+        const isValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isValid) {
+            throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        return { message: 'Đổi mật khẩu thành công' };
+    }
+
     // ===== WATCH HISTORY =====
     async getWatchHistory(userId: number, page = 1, limit = 20) {
         const skip = (page - 1) * limit;
@@ -68,21 +99,111 @@ export class UsersService {
         };
     }
 
-    async saveWatchProgress(userId: number, movieId: number, episodeId?: number, progress = 0) {
-        const existing = await this.prisma.watchHistory.findFirst({
-            where: { userId, movieId, episodeId: episodeId || null }
-        });
 
-        if (existing) {
-            return this.prisma.watchHistory.update({
-                where: { id: existing.id },
-                data: { progress, watchedAt: new Date() }
+
+    async saveWatchProgress(
+        userId: number,
+        movieId: number | string,
+        episodeId?: number | string,
+        progress = 0,
+        movieData?: MovieSyncData,
+        episodeData?: EpisodeSyncData
+    ) {
+        try {
+            // 1. Sync Movie if needed
+            const localMovieId = await this.syncMovie(movieId, movieData);
+
+            // 2. Sync Episode if needed
+            const localEpisodeId = await this.syncEpisode(localMovieId, episodeId, episodeData);
+
+            // 3. Save History
+            const existing = await this.prisma.watchHistory.findFirst({
+                where: { userId, movieId: localMovieId, episodeId: localEpisodeId }
+            });
+
+            if (existing) {
+                return await this.prisma.watchHistory.update({
+                    where: { id: existing.id },
+                    data: { progress, watchedAt: new Date() }
+                });
+            }
+
+            return await this.prisma.watchHistory.create({
+                data: { userId, movieId: localMovieId, episodeId: localEpisodeId, progress }
+            });
+        } catch (error) {
+            console.error('Error in saveWatchProgress:', error);
+            throw new BadRequestException(`Failed to save progress: ${error.message}`);
+        }
+    }
+
+    // Helper: Sync Movie (Find or Create)
+    private async syncMovie(idOrSlug: number | string, data?: MovieSyncData): Promise<number> {
+        // If it's already a number, assume it's a local ID (though strictly we should verify)
+        if (typeof idOrSlug === 'number') return idOrSlug;
+
+        // Try to find by slug
+        const slug = data?.slug || idOrSlug.toString();
+        let movie = await this.prisma.movie.findUnique({ where: { slug } });
+
+        if (!movie && data) {
+            console.log('Creating new movie from external data:', data.slug);
+            // Create new movie from external data
+            movie = await this.prisma.movie.create({
+                data: {
+                    slug: data.slug,
+                    name: data.name,
+                    originalName: data.original_name,
+                    description: data.description,
+                    thumbUrl: data.thumb_url,
+                    posterUrl: data.poster_url,
+                    quality: data.quality,
+                    language: data.language,
+                    year: data.category?.['3']?.list?.[0]?.name ? parseInt(data.category['3'].list[0].name) : 2024,
+                    time: data.time,
+                    currentEpisode: data.current_episode,
+                    totalEpisodes: data.total_episodes || 1
+                }
             });
         }
 
-        return this.prisma.watchHistory.create({
-            data: { userId, movieId, episodeId, progress }
+        if (!movie) throw new NotFoundException('Movie not found and could not be synced');
+        return movie.id;
+    }
+
+    // Helper: Sync Episode (Find or Create)
+    private async syncEpisode(localMovieId: number, idOrSlug: number | string | undefined, data?: EpisodeSyncData): Promise<number | null> {
+        if (!data && !idOrSlug) return null; // Some movies might not have episodes? typically they do.
+
+        // If passed a number and no data, assume local ID
+        if (typeof idOrSlug === 'number') return idOrSlug;
+
+        const slug = data?.slug || idOrSlug?.toString();
+        if (!slug) return null;
+
+        let episode = await this.prisma.episode.findUnique({
+            where: {
+                movieId_slug: {
+                    movieId: localMovieId,
+                    slug: slug
+                }
+            }
         });
+
+        if (!episode && data) {
+            episode = await this.prisma.episode.create({
+                data: {
+                    movieId: localMovieId,
+                    name: data.name,
+                    slug: data.slug,
+                    embedUrl: data.embed,
+                    m3u8Url: data.m3u8,
+                    sortOrder: 0 // Default, can be improved
+                }
+            });
+        }
+
+        return episode ? episode.id : null;
     }
 
     // ===== FAVORITES =====

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
+import PrivateRoute from "@/components/common/PrivateRoute";
 import Home from "@/pages/Home";
 import Detail from "@/pages/Detail";
 import Watch from "@/pages/Watch";
@@ -10,9 +11,19 @@ import Login from "@/pages/Login";
 import Favorites from "@/pages/Favorites";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
+import Pricing from "@/pages/Pricing";
 import ErrorPage from "@/pages/errors/Error";
 
+// Admin imports
+import AdminLayout from "@/admin/AdminLayout";
+import Dashboard from "@/admin/pages/Dashboard";
+import MovieList from "@/admin/pages/MovieList";
+import MovieEdit from "@/admin/pages/MovieEdit";
+import UserList from "@/admin/pages/UserList";
+import Settings from "@/admin/pages/Settings";
+
 const router = createBrowserRouter([
+  // Public routes
   {
     path: "/",
     element: <MainLayout />,
@@ -26,10 +37,27 @@ const router = createBrowserRouter([
       { path: "phim/:slug", element: <Detail /> },
       { path: "xem-phim/:slug/:episode", element: <Watch /> },
       { path: "tim-kiem", element: <Search /> },
-      { path: "danh-sach-yeu-thich", element: <Favorites /> },
-      { path: "ca-nhan", element: <Profile /> },
+      { path: "bang-gia", element: <Pricing /> },
+      // Protected routes - require authentication
+      { path: "danh-sach-yeu-thich", element: <PrivateRoute><Favorites /></PrivateRoute> },
+      { path: "ca-nhan", element: <PrivateRoute><Profile /></PrivateRoute> },
+    ],
+  },
+  
+  // Admin routes
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <Dashboard /> },
+      { path: "movies", element: <MovieList /> },
+      { path: "movies/new", element: <MovieEdit /> },
+      { path: "movies/:id", element: <MovieEdit /> },
+      { path: "users", element: <UserList /> },
+      { path: "settings", element: <Settings /> },
     ],
   },
 ]);
 
 export default router;
+

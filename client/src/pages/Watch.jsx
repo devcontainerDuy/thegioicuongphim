@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactPlayer from "react-player";
 import { useFilmDetail } from "@/hooks/useFilmDetail";
+import { useAuth } from "@/contexts/AuthContext"; // Import Auth Context
+import userService from "@/services/userService"; // Import User Service
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,36 +17,59 @@ import { saveWatchHistory } from "@/utils/storage";
 function Watch() {
     const { slug, episode } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth(); // Get user status
     const { film: data, loading, error } = useFilmDetail(slug);
     
     // UI States
     const [isTheaterMode, setIsTheaterMode] = useState(false);
 
     // Derived state for current episode
-    const currentEpisode = useMemo(() => {
-        if (!data || !data.episodes) return null;
-        const allItems = data.episodes.flatMap(group => group.items);
-        const found = allItems.find(item => item.slug === episode) || allItems[0];
-        return found;
-    }, [data, episode]);
-
     const episodeList = useMemo(() => {
         if (!data?.episodes) return [];
         return data.episodes.flatMap(group => group.items);
     }, [data]);
 
+    const currentEpisode = useMemo(() => {
+        if (!episodeList.length) return null;
+        const found = episodeList.find(item => item.slug === episode);
+        return found || episodeList[0];
+    }, [episodeList, episode]);
+
     const currentIndex = useMemo(() => {
         return episodeList.findIndex(ep => ep.slug === currentEpisode?.slug);
     }, [episodeList, currentEpisode]);
 
-    // Save history on mount or episode change
-    React.useEffect(() => {
-        if (data && currentEpisode) {
-            // For embeds, we assume "watched" just by opening it (progress 0 or 100? Let's say 1% to mark as started)
-            // If it's HLS, onProgress will update it later.
-            saveWatchHistory(data, currentEpisode, 0); 
+    // Save history helper
+    const saveProgress = async (progress) => {
+        if (!data || !currentEpisode) return;
+
+        // 1. Always save to LocalStorage (fallback/guest)
+        saveWatchHistory(data, currentEpisode, progress);
+
+        // 2. If User Logged In -> Save to Backend
+        if (user) {
+            try {
+                // Pass full data for "Sync-on-Watch"
+                await userService.saveWatchProgress(
+                    data.id || data.slug,       // ID or Slug
+                    currentEpisode.id || currentEpisode.slug, // ID or Slug
+                    progress,
+                    data,                       // Full Movie Data
+                    currentEpisode              // Full Episode Data
+                );
+            } catch (err) {
+                console.error("Failed to save history to backend", err);
+            }
         }
-    }, [data, currentEpisode]);
+    };
+
+    // Save history on mount or episode change (Progress 0%)
+    useEffect(() => {
+        if (data && currentEpisode) {
+            saveProgress(0);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data?.id, currentEpisode?.slug]); // Use IDs/Slugs to prevent loops
 
     const handleNextEpisode = () => {
         if (currentIndex < episodeList.length - 1) {
@@ -63,9 +88,9 @@ function Watch() {
     const handleProgress = (state) => {
         if (data && currentEpisode) {
             const percentage = Math.floor(state.played * 100);
-            // Throttle saving if needed, but localStorage is fast enough for occasional updates
-            if (percentage % 5 === 0) { // Save every 5%
-                saveWatchHistory(data, currentEpisode, percentage);
+            // Throttle: Save every 5%
+            if (percentage > 0 && percentage % 5 === 0) { 
+                saveProgress(percentage);
             }
         }
     };
