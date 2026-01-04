@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminHeader from '@/admin/components/AdminHeader';
 
 function MovieEdit() {
     const { id } = useParams();
@@ -31,8 +32,8 @@ function MovieEdit() {
         description: '',
         thumbUrl: '',
         posterUrl: '',
-        type: 'movie', // or 'series'
-        status: 'completed', // completed, ongoing, trailer
+        type: 'movie', 
+        status: 'completed',
         quality: 'HD',
         language: 'Vietsub',
         year: new Date().getFullYear(),
@@ -55,7 +56,6 @@ function MovieEdit() {
         if (isEditMode) {
             fetchMovie();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchMovie = async () => {
@@ -191,226 +191,230 @@ function MovieEdit() {
     };
 
     if (loading) {
-        return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+        return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto pb-12">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/admin/movies')}>
-                    <ArrowLeft className="w-5 h-5" />
+        <div className="space-y-6 max-w-5xl mx-auto pb-12 fade-in">
+           <AdminHeader 
+                title={isEditMode ? 'Chỉnh sửa phim' : 'Thêm phim mới'} 
+                description="Điền đầy đủ thông tin phim và danh sách tập"
+            >
+                <Button variant="outline" onClick={() => navigate('/admin/movies')} className="bg-zinc-900 border-zinc-700 hover:bg-zinc-800">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
                 </Button>
-                <h1 className="text-2xl font-bold">{isEditMode ? 'Chỉnh sửa phim' : 'Thêm phim mới'}</h1>
-            </div>
+                <Button onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90">
+                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {isEditMode ? 'Lưu thay đổi' : 'Tạo phim mới'}
+                </Button>
+            </AdminHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-xl border border-border">
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* Basic Info */}
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Tên phim (TV)</Label>
-                        <div className="flex gap-2">
-                            <Input id="name" value={formData.name} onChange={handleChange} placeholder="Phim người nhện" required />
-                            <Button type="button" variant="outline" onClick={generateSlug} title="Generate Slug">Auto</Button>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Main Info */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-6">
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Tên phim (TV)</Label>
+                                <div className="flex gap-2">
+                                    <Input id="name" value={formData.name} onChange={handleChange} placeholder="Phim người nhện" className="bg-zinc-950 border-zinc-800" required />
+                                    <Button type="button" variant="outline" onClick={generateSlug} className="bg-zinc-950 border-zinc-800" title="Auto Slug">Auto</Button>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Slug (URL)</Label>
+                                <Input id="slug" value={formData.slug} onChange={handleChange} placeholder="phim-nguoi-nhen" className="bg-zinc-950 border-zinc-800" required />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Tên gốc</Label>
+                                <Input id="originalName" value={formData.originalName} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Loại phim</Label>
+                                <Select value={formData.type} onValueChange={(v) => handleSelectChange('type', v)}>
+                                    <SelectTrigger className="bg-zinc-950 border-zinc-800"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                                        <SelectItem value="movie">Phim lẻ</SelectItem>
+                                        <SelectItem value="series">Phim bộ</SelectItem>
+                                        <SelectItem value="hoat-hinh">Hoạt hình</SelectItem>
+                                        <SelectItem value="tv-shows">TV Shows</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                         <div className="space-y-2">
+                            <Label className="text-zinc-400">Mô tả</Label>
+                            <Textarea id="description" value={formData.description} onChange={handleChange} rows={5} className="bg-zinc-950 border-zinc-800" />
                         </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                        <Label htmlFor="slug">Slug (URL)</Label>
-                        <Input id="slug" value={formData.slug} onChange={handleChange} placeholder="phim-nguoi-nhen" required />
-                    </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="originalName">Tên gốc</Label>
-                        <Input id="originalName" value={formData.originalName} onChange={handleChange} placeholder="Spider-man" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="type">Loại phim</Label>
-                            <Select value={formData.type} onValueChange={(v) => handleSelectChange('type', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="movie">Phim lẻ</SelectItem>
-                                    <SelectItem value="series">Phim bộ</SelectItem>
-                                    <SelectItem value="hoat-hinh">Hoạt hình</SelectItem>
-                                    <SelectItem value="tv-shows">TV Shows</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    {/* URLs & Media */}
+                    <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-6">
+                        <h3 className="text-lg font-bold text-white">Hình ảnh & Media</h3>
+                         <div className="space-y-2">
+                            <Label className="text-zinc-400">Thumbnail URL (Ngang)</Label>
+                            <Input id="thumbUrl" value={formData.thumbUrl} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
                         </div>
+                         <div className="space-y-2">
+                            <Label className="text-zinc-400">Poster URL (Dọc)</Label>
+                            <Input id="posterUrl" value={formData.posterUrl} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Meta & Episodes */}
+                <div className="space-y-6">
+                    <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-6">
+                        <h3 className="text-lg font-bold text-white">Thông tin chi tiết</h3>
+                        
                         <div className="space-y-2">
-                            <Label htmlFor="status">Trạng thái</Label>
-                             <Select value={formData.status} onValueChange={(v) => handleSelectChange('status', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
+                            <Label className="text-zinc-400">Trạng thái</Label>
+                            <Select value={formData.status} onValueChange={(v) => handleSelectChange('status', v)}>
+                                <SelectTrigger className="bg-zinc-950 border-zinc-800"><SelectValue /></SelectTrigger>
+                                <SelectContent className="bg-zinc-900 border-zinc-800">
                                     <SelectItem value="completed">Hoàn thành</SelectItem>
                                     <SelectItem value="ongoing">Đang chiếu</SelectItem>
                                     <SelectItem value="trailer">Trailer</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
 
-                    {/* URLs */}
-                     <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="thumbUrl">Thumbnail URL</Label>
-                        <Input id="thumbUrl" value={formData.thumbUrl} onChange={handleChange} placeholder="https://..." />
-                    </div>
-                     <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="posterUrl">Poster URL</Label>
-                        <Input id="posterUrl" value={formData.posterUrl} onChange={handleChange} placeholder="https://..." />
-                    </div>
-
-                    {/* Details */}
-                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="quality">Chất lượng</Label>
-                            <Input id="quality" value={formData.quality} onChange={handleChange} />
+                            <Label className="text-zinc-400">Chất lượng</Label>
+                            <Input id="quality" value={formData.quality} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="language">Ngôn ngữ</Label>
-                            <Input id="language" value={formData.language} onChange={handleChange} />
+                            <Label className="text-zinc-400">Ngôn ngữ</Label>
+                            <Input id="language" value={formData.language} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="year">Năm phát hành</Label>
-                            <Input type="number" id="year" value={formData.year} onChange={handleChange} />
+                        <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400">Năm</Label>
+                                <Input type="number" id="year" value={formData.year} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Thời lượng</Label>
+                                <Input id="time" value={formData.time} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="time">Thời lượng</Label>
-                            <Input id="time" value={formData.time} onChange={handleChange} placeholder="120 phút" />
+
+                         <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400">Tổng tập</Label>
+                                <Input type="number" id="totalEpisodes" value={formData.totalEpisodes} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Hiện tại</Label>
+                                <Input id="currentEpisode" value={formData.currentEpisode} onChange={handleChange} className="bg-zinc-950 border-zinc-800" />
+                            </div>
                         </div>
                     </div>
 
-                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="totalEpisodes">Tổng số tập</Label>
-                            <Input type="number" id="totalEpisodes" value={formData.totalEpisodes} onChange={handleChange} />
+                    {/* Episodes Management */}
+                    {isEditMode && (
+                        <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-4">
+                            <div className="flex items-center justify-between">
+                                 <h3 className="text-lg font-bold text-white">Danh sách tập</h3>
+                                 <Button size="sm" onClick={() => openEpisodeDialog()} className="h-8 bg-zinc-800 hover:bg-zinc-700">
+                                    <Plus className="w-3 h-3 mr-1" /> Thêm
+                                 </Button>
+                            </div>
+
+                            <div className="border border-zinc-800 rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-zinc-950 sticky top-0">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left text-zinc-500 font-medium">Tên</th>
+                                            <th className="px-3 py-2 text-right text-zinc-500 font-medium">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-800">
+                                        {episodes.map((ep) => (
+                                            <tr key={ep.id} className="hover:bg-zinc-800/50">
+                                                <td className="px-3 py-2 font-medium text-zinc-300">{ep.name}</td>
+                                                <td className="px-3 py-2 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400" onClick={() => openEpisodeDialog(ep)}>
+                                                            <Edit className="w-3 h-3" />
+                                                        </Button>
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-500 hover:text-red-400" onClick={() => handleDeleteEpisode(ep.id)}>
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {!episodes.length && (
+                                            <tr>
+                                                <td colSpan={2} className="text-center py-8 text-zinc-500">Chưa có tập phim nào</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="currentEpisode">Tập hiện tại</Label>
-                            <Input id="currentEpisode" value={formData.currentEpisode} onChange={handleChange} placeholder="Full / Tập 5" />
-                        </div>
-                    </div>
-                
-                    <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="description">Mô tả</Label>
-                        <Textarea id="description" value={formData.description} onChange={handleChange} rows={5} />
-                    </div>
+                    )}
                 </div>
-
-                <div className="flex justify-end gap-4">
-                     <Button type="button" variant="ghost" onClick={() => navigate('/admin/movies')}>Hủy</Button>
-                     <Button type="submit" disabled={saving}>
-                        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {isEditMode ? 'Lưu thay đổi' : 'Tạo phim mới'}
-                     </Button>
-                </div>
-            </form>
-
-            {/* Episodes Management (Only in Edit Mode) */}
-            {isEditMode && (
-                <div className="bg-card p-6 rounded-xl border border-border space-y-4">
-                    <div className="flex items-center justify-between">
-                         <h2 className="text-xl font-bold">Danh sách tập phim</h2>
-                         <Button size="sm" onClick={() => openEpisodeDialog()}>
-                            <Plus className="w-4 h-4 mr-2" /> Thêm tập mới
-                         </Button>
-                    </div>
-
-                    <div className="border border-border rounded-lg overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left">Tên tập</th>
-                                    <th className="px-4 py-3 text-left">Slug</th>
-                                    <th className="px-4 py-3 text-left">Link</th>
-                                    <th className="px-4 py-3 text-right">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {episodes.map((ep) => (
-                                    <tr key={ep.id} className="hover:bg-muted/30">
-                                        <td className="px-4 py-3 font-medium">{ep.name}</td>
-                                        <td className="px-4 py-3 text-muted-foreground">{ep.slug}</td>
-                                        <td className="px-4 py-3 text-muted-foreground truncate max-w-[200px]">
-                                            {ep.m3u8Url ? 'M3U8' : (ep.embedUrl ? 'Embed' : 'N/A')}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEpisodeDialog(ep)}>
-                                                    <Edit className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteEpisode(ep.id)}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {!episodes.length && (
-                                    <tr>
-                                        <td colSpan={4} className="text-center py-8 text-muted-foreground">Chưa có tập phim nào</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
+            </div>
 
             {/* Episode Dialog */}
-            {isEditMode && (
-                <Dialog open={episodeDialog} onOpenChange={setEpisodeDialog}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{currentEpisode ? 'Sửa tập phim' : 'Thêm tập phim'}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label>Tên tập</Label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        value={episodeForm.name} 
-                                        onChange={(e) => setEpisodeForm({...episodeForm, name: e.target.value})} 
-                                        placeholder="Tập 1"
-                                    />
-                                    <Button type="button" variant="outline" onClick={generateEpisodeSlug}>Auto</Button>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Slug</Label>
+            <Dialog open={episodeDialog} onOpenChange={setEpisodeDialog}>
+                <DialogContent className="bg-zinc-900 border-zinc-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">{currentEpisode ? 'Sửa tập phim' : 'Thêm tập phim'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-zinc-400">Tên tập</Label>
+                            <div className="flex gap-2">
                                 <Input 
-                                    value={episodeForm.slug} 
-                                    onChange={(e) => setEpisodeForm({...episodeForm, slug: e.target.value})} 
-                                    placeholder="tap-1"
+                                    value={episodeForm.name} 
+                                    onChange={(e) => setEpisodeForm({...episodeForm, name: e.target.value})} 
+                                    placeholder="Tập 1"
+                                    className="bg-zinc-950 border-zinc-800"
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Embed URL</Label>
-                                <Input 
-                                    value={episodeForm.embedUrl} 
-                                    onChange={(e) => setEpisodeForm({...episodeForm, embedUrl: e.target.value})} 
-                                    placeholder="https://..."
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>M3U8 URL (Ưu tiên)</Label>
-                                <Input 
-                                    value={episodeForm.m3u8Url} 
-                                    onChange={(e) => setEpisodeForm({...episodeForm, m3u8Url: e.target.value})} 
-                                    placeholder="https://..."
-                                />
+                                <Button type="button" variant="outline" onClick={generateEpisodeSlug} className="bg-zinc-950 border-zinc-800">Auto</Button>
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setEpisodeDialog(false)}>Hủy</Button>
-                            <Button onClick={handleEpisodeSubmit}>Lưu</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            )}
+                        <div className="space-y-2">
+                            <Label className="text-zinc-400">Slug</Label>
+                            <Input 
+                                value={episodeForm.slug} 
+                                onChange={(e) => setEpisodeForm({...episodeForm, slug: e.target.value})} 
+                                placeholder="tap-1"
+                                className="bg-zinc-950 border-zinc-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-zinc-400">Embed URL</Label>
+                            <Input 
+                                value={episodeForm.embedUrl} 
+                                onChange={(e) => setEpisodeForm({...episodeForm, embedUrl: e.target.value})} 
+                                placeholder="https://..."
+                                className="bg-zinc-950 border-zinc-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-zinc-400">M3U8 URL (Ưu tiên)</Label>
+                            <Input 
+                                value={episodeForm.m3u8Url} 
+                                onChange={(e) => setEpisodeForm({...episodeForm, m3u8Url: e.target.value})} 
+                                placeholder="https://..."
+                                className="bg-zinc-950 border-zinc-800"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setEpisodeDialog(false)} className="text-zinc-400 hover:text-white hover:bg-zinc-800">Hủy</Button>
+                        <Button onClick={handleEpisodeSubmit} className="bg-primary hover:bg-primary/90">Lưu</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

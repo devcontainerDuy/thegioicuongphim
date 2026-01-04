@@ -113,6 +113,65 @@ const adminService = {
         });
         if (!res.ok) throw new Error('Failed to delete episode');
         return res.json();
+    },
+
+    // Roles & Permissions
+    getRoles: async () => {
+        const res = await fetch(`${API_URL}/api/admin/roles`, { headers: getAuthHeader() });
+        if (!res.ok) throw new Error('Failed to get roles');
+        return res.json();
+    },
+
+    createRole: async (data) => {
+        const res = await fetch(`${API_URL}/api/admin/roles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to create role');
+        return res.json();
+    },
+
+    updateRole: async (id, data) => {
+        const res = await fetch(`${API_URL}/api/admin/roles/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to update role');
+        return res.json();
+    },
+
+    deleteRole: async (id) => {
+        const res = await fetch(`${API_URL}/api/admin/roles/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!res.ok) throw new Error('Failed to delete role');
+        return res.json();
+    },
+
+    getPermissions: async () => {
+        const res = await fetch(`${API_URL}/api/admin/permissions`, { headers: getAuthHeader() });
+        if (!res.ok) throw new Error('Failed to get permissions');
+        return res.json();
+    },
+
+    // Settings
+    getSettings: async () => {
+        const res = await fetch(`${API_URL}/api/admin/settings`, { headers: getAuthHeader() });
+        if (!res.ok) throw new Error('Failed to get settings');
+        return res.json();
+    },
+
+    updateSettings: async (data) => {
+        const res = await fetch(`${API_URL}/api/admin/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to update settings');
+        return res.json();
     }
 };
 

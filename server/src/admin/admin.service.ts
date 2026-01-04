@@ -107,7 +107,7 @@ export class AdminService {
     async updateUserRole(id: number, role: string) {
         return this.prisma.user.update({
             where: { id },
-            data: { role },
+            data: { role: { connect: { name: role } } },
             select: { id: true, email: true, name: true, role: true }
         });
     }
@@ -130,5 +130,58 @@ export class AdminService {
 
     async deleteEpisode(id: number) {
         return this.prisma.episode.delete({ where: { id } });
+    }
+
+    // Roles & Permissions Management
+    async getRoles() {
+        return this.prisma.role.findMany({
+            include: { permissions: true, _count: { select: { users: true } } }
+        });
+    }
+
+    async createRole(data: { name: string; description?: string; permissions?: string[] }) {
+        const { name, description, permissions } = data;
+        return this.prisma.role.create({
+            data: {
+                name,
+                description,
+                permissions: permissions ? {
+                    connect: permissions.map(slug => ({ slug }))
+                } : undefined
+            },
+            include: { permissions: true }
+        });
+    }
+
+    async updateRole(id: number, data: { name?: string; description?: string; permissions?: string[] }) {
+        const { name, description, permissions } = data;
+
+        // Prepare update data
+        const updateData: any = { name, description };
+
+        if (permissions) {
+            updateData.permissions = {
+                set: [],
+                connect: permissions.map(slug => ({ slug }))
+            };
+        }
+
+        return this.prisma.role.update({
+            where: { id },
+            data: updateData,
+            include: { permissions: true }
+        });
+    }
+
+    async deleteRole(id: number) {
+        const role = await this.prisma.role.findUnique({ where: { id } });
+        if (role && role.name === 'Admin') {
+            throw new Error('Cannot delete Admin role');
+        }
+        return this.prisma.role.delete({ where: { id } });
+    }
+
+    async getPermissions() {
+        return this.prisma.permission.findMany();
     }
 }

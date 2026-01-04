@@ -33,6 +33,7 @@ export class AuthService {
                 password: hashedPassword,
                 name,
             },
+            include: { role: { include: { permissions: true } } },
         });
 
         // Generate token
@@ -56,6 +57,7 @@ export class AuthService {
         // Find user
         const user = await this.prisma.user.findUnique({
             where: { email },
+            include: { role: { include: { permissions: true } } },
         });
 
         if (!user) {
@@ -87,6 +89,7 @@ export class AuthService {
     async validateUser(userId: number) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
+            include: { role: { include: { permissions: true } } },
         });
 
         if (!user) {

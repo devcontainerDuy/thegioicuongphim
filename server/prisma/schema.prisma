@@ -13,11 +13,28 @@ model User {
   password     String
   name         String?
   avatar       String?
-  role         String         @default("user") // "admin" | "user"
+  isRoot       Boolean        @default(false)
+  roleId       Int?
+  role         Role?          @relation(fields: [roleId], references: [id])
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   watchHistory WatchHistory[]
   favorites    Favorite[]
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique // "Admin", "User", "VIP"
+  description String?
+  users       User[]
+  permissions Permission[]
+}
+
+model Permission {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique // "movie.create", "user.delete"
+  description String?
+  roles       Role[]
 }
 
 model Movie {
@@ -86,4 +103,12 @@ model Favorite {
 
   @@unique([userId, movieId])
   @@index([userId])
+}
+
+model Setting {
+  key         String   @id
+  value       String   @db.Text
+  description String?
+  type        String   @default("string") // "string", "boolean", "number"
+  updatedAt   DateTime @updatedAt
 }

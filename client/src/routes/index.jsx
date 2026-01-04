@@ -20,6 +20,7 @@ import Dashboard from "@/admin/pages/Dashboard";
 import MovieList from "@/admin/pages/MovieList";
 import MovieEdit from "@/admin/pages/MovieEdit";
 import UserList from "@/admin/pages/UserList";
+import RoleManager from "@/admin/pages/RoleManager";
 import Settings from "@/admin/pages/Settings";
 
 const router = createBrowserRouter([
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
       { path: "movies/new", element: <MovieEdit /> },
       { path: "movies/:id", element: <MovieEdit /> },
       { path: "users", element: <UserList /> },
+      { path: "roles", element: <RoleManager /> },
       { path: "settings", element: <Settings /> },
     ],
   },

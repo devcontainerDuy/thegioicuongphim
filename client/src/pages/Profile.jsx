@@ -122,7 +122,7 @@ function Profile() {
                                 <h2 className="font-bold text-xl">{user.name}</h2>
                                 <p className="text-muted-foreground text-sm">{user.email}</p>
                                 <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-[10px] uppercase font-bold rounded tracking-wider">
-                                    {user.role}
+                                    {user.role?.name || user.role}
                                 </span>
                             </div>
                             
