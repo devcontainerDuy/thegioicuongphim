@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import FadeContent from "@/components/bits/FadeContent";
 import BlurText from "@/components/bits/BlurText";
+import StarRating from "@/components/ui/StarRating";
 
 function Detail() {
     const { slug } = useParams();
@@ -96,6 +97,8 @@ function Detail() {
                                     <span>{data.time}</span>
                                     <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 hover:bg-zinc-700">{country}</Badge>
                                 </div>
+                                {/* Star Rating */}
+                                <StarRating movieId={data.id} className="mt-3" />
                             </FadeContent>
 
                             <FadeContent delay={0.5}>

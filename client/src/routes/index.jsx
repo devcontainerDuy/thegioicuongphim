@@ -11,6 +11,7 @@ import Login from "@/pages/Login";
 import Favorites from "@/pages/Favorites";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
+import SessionManager from "@/pages/SessionManager";
 import Pricing from "@/pages/Pricing";
 import ErrorPage from "@/pages/errors/Error";
 import Maintenance from "@/pages/Maintenance";
@@ -57,6 +58,8 @@ const router = createBrowserRouter([
       // Protected routes - require authentication
       { path: "danh-sach-yeu-thich", element: <PrivateRoute><Favorites /></PrivateRoute> },
       { path: "ca-nhan", element: <PrivateRoute><Profile /></PrivateRoute> },
+      { path: "quan-ly-phien", element: <PrivateRoute><SessionManager /></PrivateRoute> },
+      { path: "*", element: <ErrorPage /> },
     ],
   },
   

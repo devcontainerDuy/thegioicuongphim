@@ -1,5 +1,5 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { Heart, Film, ArrowRight, Star, Play } from "lucide-react";
 import MovieCard from "@/components/shared/MovieCard";
@@ -7,9 +7,21 @@ import { useFilmsList } from "@/hooks/useFilmsList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { fetchFavorites } from "@/store/reducers/favoritesSlice";
+import { useAuth } from "@/contexts/AuthContext";
 
 function Favorites() {
+    const dispatch = useDispatch();
+    const { isAuthenticated } = useAuth();
     const favoriteList = useSelector((state) => state.favorites.items);
+    const { loading: isLoadingCloud } = useSelector((state) => state.favorites);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            dispatch(fetchFavorites());
+        }
+    }, [isAuthenticated, dispatch]);
+
     // Fetch suggested films (using 'phim-moi-cap-nhat' or similar)
     const { items: suggestedFilms, isLoading: loadingSuggestions } = useFilmsList({ 
         endpoint: "phim-moi-cap-nhat" 

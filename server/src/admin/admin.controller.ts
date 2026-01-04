@@ -109,4 +109,15 @@ export class AdminController {
     getPermissions() {
         return this.adminService.getPermissions();
     }
+
+    @Post('permissions')
+    createPermission(@Body() data: any) {
+        return this.adminService.createPermission(data);
+    }
+
+    @Delete('permissions/:id')
+    deletePermission(@Param('id') id: string) {
+        return this.adminService.deletePermission(Number(id));
+    }
 }
+

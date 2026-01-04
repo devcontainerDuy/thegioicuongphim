@@ -109,6 +109,33 @@ function RoleManager() {
         }
     };
 
+    // Permission Management State
+    const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+    const [newPermission, setNewPermission] = useState({ slug: '', description: '' });
+
+    const handleCreatePermission = async (e) => {
+        e.preventDefault();
+        try {
+            await adminService.createPermission(newPermission);
+            toast.success('Tạo Permission thành công');
+            setNewPermission({ slug: '', description: '' });
+            initData(); // Refresh list
+        } catch (error) {
+            toast.error('Lỗi tạo Permission');
+        }
+    };
+
+    const handleDeletePermission = async (id) => {
+        if (!window.confirm('Xóa permission này? Các Role đang dùng sẽ bị mất quyền này.')) return;
+        try {
+            await adminService.deletePermission(id);
+            toast.success('Xóa Permission thành công');
+            initData();
+        } catch (error) {
+            toast.error('Lỗi xóa Permission');
+        }
+    };
+
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
     return (
@@ -117,9 +144,14 @@ function RoleManager() {
                 title="Quản lý Phân quyền" 
                 description="Danh sách Roles và Permissions của hệ thống"
             >
-                <Button onClick={() => handleOpenModal()} className="bg-primary hover:bg-primary/90">
-                    <Plus className="w-4 h-4 mr-2" /> Tạo Role
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsPermissionModalOpen(true)} className="border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800">
+                        Quản lý Permissions
+                    </Button>
+                    <Button onClick={() => handleOpenModal()} className="bg-primary hover:bg-primary/90">
+                        <Plus className="w-4 h-4 mr-2" /> Tạo Role
+                    </Button>
+                </div>
             </AdminHeader>
 
             {/* Roles Grid */}
@@ -171,7 +203,93 @@ function RoleManager() {
                 ))}
             </div>
 
-            {/* Modal */}
+            {/* Permission Management Modal */}
+            {isPermissionModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white">Quản lý Permissions System</h2>
+                            <button onClick={() => setIsPermissionModalOpen(false)} className="text-zinc-500 hover:text-white">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                             {/* Create Form */}
+                             <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-4">
+                                <h3 className="font-semibold text-white">Thêm Permission Mới</h3>
+                                <form onSubmit={handleCreatePermission} className="flex flex-col md:flex-row gap-4 items-end">
+                                    <div className="flex-1 space-y-1.5 w-full">
+                                        <Label>Slug (Mã quyền)</Label>
+                                        <Input 
+                                            value={newPermission.slug}
+                                            onChange={(e) => setNewPermission({...newPermission, slug: e.target.value})}
+                                            placeholder="ex: movie.create" 
+                                            className="bg-black/50"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex-1 space-y-1.5 w-full">
+                                        <Label>Mô tả</Label>
+                                        <Input 
+                                            value={newPermission.description}
+                                            onChange={(e) => setNewPermission({...newPermission, description: e.target.value})}
+                                            placeholder="Mô tả quyền hạn..." 
+                                            className="bg-black/50"
+                                        />
+                                    </div>
+                                    <Button type="submit" disabled={!newPermission.slug} className="bg-primary text-white whitespace-nowrap">
+                                        <Plus className="w-4 h-4 mr-2" /> Thêm
+                                    </Button>
+                                </form>
+                             </div>
+
+                             {/* Permission List Table */}
+                             <div>
+                                <h3 className="font-semibold text-white mb-4">Danh sách Permissions hiện có ({permissions.length})</h3>
+                                <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-zinc-400 bg-zinc-950 uppercase text-xs">
+                                            <tr>
+                                                <th className="px-4 py-3">Slug</th>
+                                                <th className="px-4 py-3">Mô tả</th>
+                                                <th className="px-4 py-3 text-right">Hành động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-800">
+                                            {permissions.map(perm => (
+                                                <tr key={perm.id} className="hover:bg-zinc-800/50">
+                                                    <td className="px-4 py-3 font-medium text-white">{perm.slug}</td>
+                                                    <td className="px-4 py-3 text-zinc-400">{perm.description}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Button 
+                                                            size="icon" 
+                                                            variant="ghost" 
+                                                            onClick={() => handleDeletePermission(perm.id)}
+                                                            className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {permissions.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={3} className="px-4 py-8 text-center text-zinc-500 italic">
+                                                        Chưa có dữ liệu permissions.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Role Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
@@ -183,7 +301,7 @@ function RoleManager() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-
+                        {/* ... Modal Body ... */}
                         <div className="p-6 overflow-y-auto flex-1 space-y-6">
                             <div className="space-y-2">
                                 <Label className="text-zinc-200">Tên Role</Label>

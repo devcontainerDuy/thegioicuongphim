@@ -184,4 +184,13 @@ export class AdminService {
     async getPermissions() {
         return this.prisma.permission.findMany();
     }
+
+    async createPermission(data: { slug: string; description?: string }) {
+        return this.prisma.permission.create({ data });
+    }
+
+    async deletePermission(id: number) {
+        return this.prisma.permission.delete({ where: { id } });
+    }
 }
+

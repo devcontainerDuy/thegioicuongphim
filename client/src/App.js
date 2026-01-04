@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "@/routes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
+import SyncWatcher from "@/components/shared/SyncWatcher";
 
 // Optional: Global loading fallback
 const LoadingFallback = () => (
@@ -16,6 +17,7 @@ function App() {
     return (
         <React.StrictMode>
             <AuthProvider>
+                <SyncWatcher />
                 <Analytics debug={false} mode="production" />
                 <Suspense fallback={<LoadingFallback />}>
                     <RouterProvider router={router} />

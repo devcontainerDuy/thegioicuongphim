@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken } from "@/utils/cookies";
 
 // =======================================
 // EXTERNAL API - Movie Data
@@ -23,29 +24,23 @@ movieApiClient.interceptors.response.use(
 // INTERNAL API - Backend (NestJS)
 // =======================================
 export const backendApiClient = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL,
+  baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add JWT token to backend requests (using js-cookie) and Maintenance Token
+// Add JWT token from cookies to backend requests
 backendApiClient.interceptors.request.use((config) => {
-  // Import dynamically to avoid circular deps
-  const token = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('access_token='))
-    ?.split('=')[1];
+  const token = getAccessToken();
 
   if (token) {
-    config.headers.Authorization = `Bearer ${decodeURIComponent(token)}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Inject Maintenance Token if exists (from localStorage or cookie)
-  const maintenanceToken = localStorage.getItem('maintenance_token') ||
-    document.cookie.split('; ').find(row => row.startsWith('maintenance_token='))?.split('=')[1];
-
+  // Inject Maintenance Token if exists
+  const maintenanceToken = localStorage.getItem('maintenance_token');
   if (maintenanceToken) {
     config.headers['x-maintenance-token'] = maintenanceToken;
   }
@@ -53,20 +48,62 @@ backendApiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor with auto-refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 backendApiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // console.error(`[BackendAPI] Request failed:`, error.config?.url, error);
+  async (error) => {
+    const originalRequest = error.config;
 
-    // Auto logout on 401
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/dang-nhap';
+    // Handle 401 Unauthorized - attempt refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return backendApiClient(originalRequest);
+        }).catch(err => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const response = await backendApiClient.post('/auth/refresh');
+        const { access_token } = response.data;
+
+        localStorage.setItem('access_token', access_token);
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+        processQueue(null, access_token);
+        return backendApiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        window.location.href = '/dang-nhap';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
     // Handle Maintenance Mode (503)
     if (error.response?.status === 503) {
-      // Only redirect if not already on maintenance page to avoid loops
       if (!window.location.pathname.includes('/bao-tri') && !window.location.pathname.includes('/admin')) {
         window.location.href = '/bao-tri';
       }

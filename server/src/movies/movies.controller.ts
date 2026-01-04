@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto, UpdateMovieDto } from './dto';
 
@@ -35,6 +36,44 @@ export class MoviesController {
     @Get(':slug')
     findOne(@Param('slug') slug: string) {
         return this.moviesService.findBySlug(slug);
+    }
+
+    // ===== RATINGS =====
+    @Get(':id/rating')
+    getRating(@Param('id') id: string, @Req() req: any) {
+        // Optional userId from token if exists
+        const userId = req.user?.userId;
+        return this.moviesService.getMovieRating(Number(id), userId);
+    }
+
+    @Post(':id/rating')
+    @UseGuards(AuthGuard('jwt'))
+    upsertRating(@Param('id') id: string, @Req() req: any, @Body('score') score: number) {
+        return this.moviesService.upsertRating(req.user.userId, Number(id), score);
+    }
+
+    // ===== COMMENTS =====
+    @Get(':id/comments')
+    getComments(@Param('id') id: string) {
+        return this.moviesService.getComments(Number(id));
+    }
+
+    @Post(':id/comments')
+    @UseGuards(AuthGuard('jwt'))
+    createComment(@Param('id') id: string, @Req() req: any, @Body('content') content: string) {
+        return this.moviesService.createComment(req.user.userId, Number(id), content);
+    }
+
+    @Put('comments/:id')
+    @UseGuards(AuthGuard('jwt'))
+    updateComment(@Param('id') id: string, @Req() req: any, @Body('content') content: string) {
+        return this.moviesService.updateComment(req.user.userId, Number(id), content);
+    }
+
+    @Delete('comments/:id')
+    @UseGuards(AuthGuard('jwt'))
+    deleteComment(@Param('id') id: string, @Req() req: any) {
+        return this.moviesService.deleteComment(req.user.userId, Number(id));
     }
 
     @Post()

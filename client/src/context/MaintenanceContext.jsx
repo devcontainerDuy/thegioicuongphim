@@ -13,7 +13,7 @@ export const MaintenanceProvider = ({ children }) => {
     const checkMaintenanceStatus = async () => {
         try {
             // This endpoint is whitelisted in MaintenanceGuard
-            const response = await backendApiClient.get('/api/status');
+            const response = await backendApiClient.get('/status');
             const isMaintenance = response.data.maintenance;
             setMaintenance(isMaintenance);
             return isMaintenance;

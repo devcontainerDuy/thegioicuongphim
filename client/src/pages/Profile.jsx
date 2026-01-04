@@ -181,6 +181,11 @@ function Profile() {
                                 <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted">
                                     <Settings className="w-4 h-4 mr-3" /> Cài đặt chung
                                 </Button>
+                                <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                                    <Link to="/quan-ly-phien">
+                                        <Shield className="w-4 h-4 mr-3" /> Quản lý phiên đăng nhập
+                                    </Link>
+                                </Button>
                                 
                                 <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
                                     <DialogTrigger asChild>

@@ -1,7 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Autoplay, Navigation } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+import Autoplay from "embla-carousel-autoplay";
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from "@/components/ui/carousel";
 import { ChevronRight } from "lucide-react";
 import MovieCard from "@/components/shared/MovieCard";
 
@@ -22,7 +28,7 @@ const FilmRailSection = ({ title, films = [], viewAllLink, loading = false }) =>
         )}
       </div>
 
-      <div className="px-4 md:px-12 overflow-hidden">
+      <div className="px-4 md:px-12">
         {loading ? (
              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {Array.from({ length: 6 }).map((_, index) => (
@@ -30,36 +36,40 @@ const FilmRailSection = ({ title, films = [], viewAllLink, loading = false }) =>
               ))}
             </div>
         ) : (
-          <Swiper
-            modules={[Navigation, Autoplay]}
-            spaceBetween={16}
-            slidesPerView={2}
-            navigation
-            autoplay={films.length > 6 ? { delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
-            breakpoints={{
-              0: { slidesPerView: 2.2, spaceBetween: 12 },
-              640: { slidesPerView: 3.2, spaceBetween: 16 },
-              768: { slidesPerView: 4.2 },
-              1024: { slidesPerView: 5.2 },
-              1280: { slidesPerView: 6.2 },
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
             }}
-            className="film-swiper !overflow-visible"
+            plugins={[
+              Autoplay({ delay: 5000, stopOnInteraction: false }),
+            ]}
+            className="w-full"
           >
-            {films.slice(0, 15).map((film, index) => (
-              <SwiperSlide key={film.id ?? `${film.slug}-${index}`} className="!h-auto">
-                <MovieCard
-                  name={film.name}
-                  slug={film.slug}
-                  image={film.poster_url || film.thumb_url}
-                  totalEpisodes={film.total_episodes}
-                  currentEpisode={film.current_episode}
-                  time={film.time}
-                  quality={film.quality}
-                  className="h-full"
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+            <CarouselContent className="-ml-4">
+              {films.slice(0, 15).map((film, index) => (
+                <CarouselItem 
+                  key={film.id ?? `${film.slug}-${index}`} 
+                  className="pl-4 basis-[45%] md:basis-[31%] lg:basis-[23%] xl:basis-[19%] 2xl:basis-[16%]"
+                >
+                  <MovieCard
+                    name={film.name}
+                    slug={film.slug}
+                    image={film.poster_url || film.thumb_url}
+                    totalEpisodes={film.total_episodes}
+                    currentEpisode={film.current_episode}
+                    time={film.time}
+                    quality={film.quality}
+                    className="h-full"
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            
+            {/* Custom styled navigation or standard */}
+             <CarouselPrevious className="left-0 -translate-x-1/2 hidden md:flex" />
+             <CarouselNext className="right-0 translate-x-1/2 hidden md:flex" />
+          </Carousel>
         )}
       </div>
     </section>

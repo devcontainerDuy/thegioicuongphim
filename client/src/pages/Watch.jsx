@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Info, AlertTriangle, Maximize, Minimize, Ext
 import { motion } from "framer-motion";
 import Spotlight from "@/components/bits/Spotlight";
 import { cn } from "@/lib/utils";
+import CommentSection from "@/components/ui/CommentSection";
 
 import { saveWatchHistory } from "@/utils/storage";
 
@@ -274,6 +275,9 @@ function Watch() {
                                     {data.description}
                                 </p>
                             </Spotlight>
+
+                            {/* Comment Section */}
+                            <CommentSection movieId={data.id} className="mt-8" />
                         </div>
 
                         {/* Sidebar / Episode List */}

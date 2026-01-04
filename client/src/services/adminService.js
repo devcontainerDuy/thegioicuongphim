@@ -157,6 +157,25 @@ const adminService = {
         return res.json();
     },
 
+    createPermission: async (data) => {
+        const res = await fetch(`${API_URL}/api/admin/permissions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to create permission');
+        return res.json();
+    },
+
+    deletePermission: async (id) => {
+        const res = await fetch(`${API_URL}/api/admin/permissions/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!res.ok) throw new Error('Failed to delete permission');
+        return res.json();
+    },
+
     // Settings
     getSettings: async () => {
         const res = await fetch(`${API_URL}/api/admin/settings`, { headers: getAuthHeader() });
