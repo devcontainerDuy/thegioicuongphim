@@ -56,4 +56,13 @@ export class CreateMovieDto {
     @IsString()
     @IsOptional()
     time?: string;
+
+    @IsOptional()
+    genres?: any;
+
+    @IsOptional()
+    countries?: any;
+
+    @IsOptional()
+    category?: any;
 }

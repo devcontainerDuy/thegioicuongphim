@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { backendApiClient } from '@/config/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { ReviewModal } from './ReviewModal';
 
 /**
  * StarRating Component
@@ -11,9 +12,13 @@ import { toast } from 'sonner';
  * - Tự động lưu rating khi user click
  * - Hiển thị rating trung bình của phim
  */
-function StarRating({ movieId, className }) {
+function StarRating({ movieId, slug, movieData, className }) {
     const { isAuthenticated } = useAuth();
     const [rating, setRating] = useState(0);
+    const [userReviewContent, setUserReviewContent] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // Missing states restored
     const [hoverRating, setHoverRating] = useState(0);
     const [averageRating, setAverageRating] = useState(0);
     const [totalRatings, setTotalRatings] = useState(0);
@@ -22,43 +27,69 @@ function StarRating({ movieId, className }) {
 
     const fetchRating = React.useCallback(async () => {
         try {
-            const response = await backendApiClient.get(`/movies/${movieId}/rating`);
+            const identifier = (typeof movieId === 'number' && movieId > 0) ? movieId : slug;
+            if (!identifier) return;
+
+            const response = await backendApiClient.get(`/movies/${identifier}/rating`);
             setAverageRating(response.data.averageScore || 0);
             setTotalRatings(response.data.totalRatings || 0);
             if (response.data.userRating) {
                 setRating(response.data.userRating);
+                setUserReviewContent(response.data.userReview || '');
             }
         } catch (error) {
             console.error('Failed to fetch rating:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [movieId]);
+    }, [movieId, slug]);
 
     // Fetch rating info on mount
     useEffect(() => {
         fetchRating();
     }, [fetchRating]);
 
-    const handleClick = async (value) => {
+    const handleStarClick = (value) => {
         if (!isAuthenticated) {
             toast.error('Vui lòng đăng nhập để đánh giá phim');
             return;
         }
+        // Open modal with selected rating
+        setRating(value); // Temporary set for modal
+        setIsModalOpen(true);
+    };
 
-        if (isSubmitting) return;
-
+    const handleReviewSubmit = async (score, content) => {
         setIsSubmitting(true);
-        setRating(value);
-
         try {
-            await backendApiClient.post(`/movies/${movieId}/rating`, { score: value });
-            toast.success(`Đã đánh giá ${value} sao`);
-            // Refetch to update average
-            fetchRating();
+            // Lazy sync logic
+            let targetId = movieId;
+            if (movieData && slug) {
+                try {
+                    const syncRes = await backendApiClient.post('/movies/sync', { 
+                        ...movieData,
+                        slug 
+                    });
+                    targetId = syncRes.data.movieId;
+                } catch (e) {
+                    console.warn('Sync failed, trying direct post');
+                }
+            }
+
+            const identifier = (typeof targetId === 'number' && targetId > 0) ? targetId : slug;
+
+            await backendApiClient.post(`/movies/${identifier}/rating`, { 
+                score, 
+                content 
+            });
+            
+            toast.success('Cảm ơn phản hồi của bạn!');
+            setRating(score);
+            setUserReviewContent(content);
+            setIsModalOpen(false);
+            fetchRating(); // Refresh average
         } catch (error) {
-            toast.error('Không thể gửi đánh giá');
-            setRating(rating); // Revert
+            toast.error('Có lỗi xảy ra khi gửi đánh giá');
         } finally {
             setIsSubmitting(false);
         }
@@ -74,14 +105,11 @@ function StarRating({ movieId, className }) {
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
-                            onClick={() => handleClick(star)}
+                            onClick={() => handleStarClick(star)}
                             onMouseEnter={() => setHoverRating(star)}
                             onMouseLeave={() => setHoverRating(0)}
-                            disabled={isSubmitting || isLoading}
-                            className={cn(
-                                "transition-all duration-150 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed",
-                                isSubmitting && "animate-pulse"
-                            )}
+                            disabled={isLoading}
+                            className="transition-all duration-150 hover:scale-110 disabled:opacity-50"
                             aria-label={`Rate ${star} stars`}
                         >
                             <Star
@@ -99,21 +127,33 @@ function StarRating({ movieId, className }) {
                 {/* Rating Info */}
                 {!isLoading && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-semibold text-yellow-400">
+                        <span className="font-semibold text-yellow-400 text-lg">
                             {averageRating.toFixed(1)}
                         </span>
-                        <span>/5</span>
-                        <span className="text-zinc-500">({totalRatings} đánh giá)</span>
+                        <span className="text-xs">/5</span>
+                        <span className="text-zinc-500 text-xs">({totalRatings} đánh giá)</span>
                     </div>
                 )}
             </div>
 
             {/* User rating label */}
             {rating > 0 && (
-                <p className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
                     Bạn đã đánh giá: <span className="text-yellow-400 font-medium">{rating} sao</span>
-                </p>
+                    <button onClick={() => setIsModalOpen(true)} className="text-primary hover:underline ml-2">
+                        (Viết lại)
+                    </button>
+                </div>
             )}
+
+            <ReviewModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleReviewSubmit}
+                initialRating={rating}
+                initialContent={userReviewContent}
+                isSubmitting={isSubmitting}
+            />
         </div>
     );
 }

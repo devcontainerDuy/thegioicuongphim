@@ -24,9 +24,16 @@ const movieService = {
     },
 
     // Search films
-    searchFilms: async (keyword, limit = 10) => {
+    searchFilms: async (keyword, page = 1, filters = {}) => {
         try {
-            const response = await apiClient.get(`/films/search?keyword=${keyword}&limit=${limit}`);
+            const { type, genre, year, country } = filters;
+            let url = `/movies/search?keyword=${keyword}&page=${page}`;
+            if (type) url += `&type=${type}`;
+            if (genre) url += `&genre=${encodeURIComponent(genre)}`;
+            if (year) url += `&year=${year}`;
+            if (country) url += `&country=${encodeURIComponent(country)}`;
+
+            const response = await apiClient.get(url);
             return response.data;
         } catch (error) {
             console.error("Error searching films:", error);
@@ -34,7 +41,36 @@ const movieService = {
         }
     },
 
-    // Future: Get Trending, Get Recommendations...
+    // Recommendations
+    getSimilarMovies: async (movieId, limit = 10) => {
+        try {
+            const response = await apiClient.get(`/recommendations/similar/${movieId}?limit=${limit}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching similar movies:", error);
+            return [];
+        }
+    },
+
+    getTrendingMovies: async (limit = 10) => {
+        try {
+            const response = await apiClient.get(`/recommendations/trending?limit=${limit}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching trending movies:", error);
+            return [];
+        }
+    },
+
+    getForYouMovies: async (limit = 10) => {
+        try {
+            const response = await apiClient.get(`/recommendations/for-you?limit=${limit}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching personal recommendations:", error);
+            return [];
+        }
+    }
 };
 
 export default movieService;

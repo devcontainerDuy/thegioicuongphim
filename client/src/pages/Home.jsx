@@ -1,9 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import HeroSpotlight from "@/components/home/HeroSpotlight";
 import FilmRailSection from "@/components/home/FilmRailSection";
 import FeaturedFilmSection from "@/components/home/FeaturedFilmSection";
 import FilmGridSection from "@/components/home/FilmGridSection";
 import { useFilmsList } from "@/hooks/useFilmsList";
+import { useAuth } from "@/contexts/AuthContext";
+import movieService from "@/services/movieService";
 
 
 import FadeContent from "@/components/bits/FadeContent";
@@ -18,6 +20,16 @@ function Home() {
   // Spotlight Film (First of trending or fallback)
   const spotlightFilm = useMemo(() => trending?.[0] || null, [trending]);
 
+  // Personalized Recommendations
+  const { isAuthenticated } = useAuth();
+  const [personalRecs, setPersonalRecs] = useState([]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      movieService.getForYouMovies(12).then(setPersonalRecs);
+    }
+  }, [isAuthenticated]);
+
   return (
     <div className="bg-background min-h-screen pb-12">
       <HeroSpotlight film={spotlightFilm} trending={trending} />
@@ -26,6 +38,12 @@ function Home() {
         <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0}>
            <FeaturedFilmSection title="Phim Đề Cử" films={trending} />
         </FadeContent>
+
+        {isAuthenticated && personalRecs.length > 0 && (
+          <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={50}>
+            <FilmRailSection title="Dành Cho Bạn" films={personalRecs} />
+          </FadeContent>
+        )}
         
         <FadeContent blur={true} duration={600} easing="ease-out" initialOpacity={0} delay={100}>
            <FilmRailSection title="Phim Bộ Mới" films={latestSeries} link="/danh-sach/phim-bo" />

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { Heart, Film, ArrowRight, Star, Play } from "lucide-react";
+import { Heart, Film, ArrowRight, Star, Play, LayoutGrid, List } from "lucide-react";
 import MovieCard from "@/components/shared/MovieCard";
 import { useFilmsList } from "@/hooks/useFilmsList";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { fetchFavorites } from "@/store/reducers/favoritesSlice";
 import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
 
 function Favorites() {
     const dispatch = useDispatch();
     const { isAuthenticated } = useAuth();
     const favoriteList = useSelector((state) => state.favorites.items);
-    const { loading: isLoadingCloud } = useSelector((state) => state.favorites);
+    const [viewMode, setViewMode] = React.useState("grid"); // "grid" | "list"
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -44,23 +45,90 @@ function Favorites() {
                                     Bạn đang theo dõi <span className="text-white font-bold">{favoriteList.length}</span> phim
                                 </p>
                             </div>
+
+                            {favoriteList.length > 0 && (
+                                <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800">
+                                    <Button 
+                                        variant={viewMode === "grid" ? "secondary" : "ghost"} 
+                                        size="icon" 
+                                        className="h-8 w-8 rounded-md"
+                                        onClick={() => setViewMode("grid")}
+                                    >
+                                        <LayoutGrid className="w-4 h-4" />
+                                    </Button>
+                                    <Button 
+                                        variant={viewMode === "list" ? "secondary" : "ghost"} 
+                                        size="icon" 
+                                        className="h-8 w-8 rounded-md"
+                                        onClick={() => setViewMode("list")}
+                                    >
+                                        <List className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         {favoriteList.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {favoriteList.map((film, index) => (
-                                    <div key={film.id || index} className="animate-in fade-in zoom-in duration-500" style={{ animationDelay: `${index * 50}ms` }}>
-                                        <MovieCard
-                                            name={film.name}
-                                            slug={film.slug}
-                                            image={film.poster_url || film.thumb_url}
-                                            time={film.time}
-                                            quality={film.quality}
-                                            original_name={film.original_name}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
+                            viewMode === "grid" ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                    {favoriteList.map((film, index) => (
+                                        <div key={film.id || index} className="animate-in fade-in zoom-in duration-500" style={{ animationDelay: `${index * 50}ms` }}>
+                                            <MovieCard
+                                                name={film.name}
+                                                slug={film.slug}
+                                                image={film.poster_url || film.thumb_url}
+                                                time={film.time}
+                                                quality={film.quality}
+                                                originalName={film.original_name || film.originalName}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {favoriteList.map((film, index) => (
+                                        <motion.div 
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            key={film.id || index}
+                                            className="group flex gap-4 bg-zinc-900/40 p-3 rounded-2xl border border-zinc-800/50 hover:border-primary/50 transition-all"
+                                        >
+                                            <Link to={`/phim/${film.slug}`} className="w-24 h-36 rounded-xl overflow-hidden shrink-0 border border-zinc-800">
+                                                <img src={film.thumb_url} alt={film.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                            </Link>
+                                            <div className="flex-1 py-1 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <Link to={`/phim/${film.slug}`} className="text-xl font-bold text-white group-hover:text-primary transition-colors line-clamp-1">
+                                                            {film.name}
+                                                        </Link>
+                                                        <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
+                                                            {film.quality || "HD"}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-zinc-500 text-sm mt-1">{film.original_name || film.originalName}</p>
+                                                    <div className="flex flex-wrap gap-2 mt-4">
+                                                        <Badge variant="secondary" className="bg-zinc-800 text-zinc-400 text-[10px] h-5">
+                                                            {film.time || "N/A"}
+                                                        </Badge>
+                                                        <Badge variant="secondary" className="bg-zinc-800 text-zinc-400 text-[10px] h-5">
+                                                            {film.year || "2024"}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Button asChild size="sm" className="rounded-full bg-primary hover:bg-primary/90 px-6">
+                                                        <Link to={`/phim/${film.slug}`}>
+                                                            <Play className="w-4 h-4 mr-2 fill-current" /> Xem ngay
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )
                         ) : (
                             <div className="flex flex-col items-center justify-center py-20 bg-zinc-900/30 rounded-3xl border border-zinc-800 border-dashed">
                                 <div className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mb-6">

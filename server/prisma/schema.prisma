@@ -54,9 +54,14 @@ model Movie {
   language       String? // "Vietsub", "Lồng Tiếng"
   year           Int?
   type           String         @default("series") // "movie" | "series"
+  genres         Json? // ["Hành động", "Tình cảm"]
+  countries      Json? // ["Việt Nam", "Trung Quốc"]
+  category       Json? // Store complex category data if needed
   totalEpisodes  Int            @default(1)
   currentEpisode String? // "Tập 10", "FULL"
   time           String? // "45 phút/tập"
+  director       String?
+  casts          Json? // ["Actor A", "Actor B"]
   views          Int            @default(0)
   status         String         @default("active") // "active" | "inactive"
   createdAt      DateTime       @default(now())
@@ -125,6 +130,7 @@ model Rating {
   userId    Int
   movieId   Int
   score     Int      @default(0) // 1-5
+  content   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])

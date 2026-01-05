@@ -1,12 +1,15 @@
 import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-
-import { MovieSyncData, EpisodeSyncData } from './dto/sync-data.dto';
+import { MoviesService } from '../movies/movies.service';
+import type { MovieSyncData, EpisodeSyncData } from '../movies/dto/sync-data.dto';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private moviesService: MoviesService
+    ) { }
 
     async getProfile(userId: number) {
         const user = await this.prisma.user.findUnique({
@@ -110,10 +113,12 @@ export class UsersService {
         episodeData?: EpisodeSyncData
     ) {
         try {
-            // 1. Sync Movie if needed
-            const localMovieId = await this.syncMovie(movieId, movieData);
+            // 1. Sync Movie if needed - Delegated to MoviesService
+            const localMovieId = await this.moviesService.syncMovie(movieId, movieData);
 
-            // 2. Sync Episode if needed
+            // 2. Sync Episode if needed - Since syncEpisode is localized to users historically, 
+            // but we want consistency, we'll keep it here but we could also move it to MoviesService.
+            // For now, let's just use a simplified version here.
             const localEpisodeId = await this.syncEpisode(localMovieId, episodeId, episodeData);
 
             // 3. Save History
@@ -133,50 +138,16 @@ export class UsersService {
             });
         } catch (error) {
             console.error('Error in saveWatchProgress:', error);
-            throw new BadRequestException(`Failed to save progress: ${error.message}`);
+            throw new BadRequestException(`Failed to save progress: ${error.message} `);
         }
-    }
-
-    // Helper: Sync Movie (Find or Create)
-    private async syncMovie(idOrSlug: number | string, data?: MovieSyncData): Promise<number> {
-        // If it's already a number, assume it's a local ID (though strictly we should verify)
-        if (typeof idOrSlug === 'number') return idOrSlug;
-
-        // Try to find by slug
-        const slug = data?.slug || idOrSlug.toString();
-        let movie = await this.prisma.movie.findUnique({ where: { slug } });
-
-        if (!movie && data) {
-            console.log('Creating new movie from external data:', data.slug);
-            // Create new movie from external data
-            movie = await this.prisma.movie.create({
-                data: {
-                    slug: data.slug,
-                    name: data.name,
-                    originalName: data.original_name,
-                    description: data.description,
-                    thumbUrl: data.thumb_url,
-                    posterUrl: data.poster_url,
-                    quality: data.quality,
-                    language: data.language,
-                    year: data.category?.['3']?.list?.[0]?.name ? parseInt(data.category['3'].list[0].name) : 2024,
-                    time: data.time,
-                    currentEpisode: data.current_episode,
-                    totalEpisodes: data.total_episodes || 1
-                }
-            });
-        }
-
-        if (!movie) throw new NotFoundException('Movie not found and could not be synced');
-        return movie.id;
     }
 
     // Helper: Sync Episode (Find or Create)
     private async syncEpisode(localMovieId: number, idOrSlug: number | string | undefined, data?: EpisodeSyncData): Promise<number | null> {
-        if (!data && !idOrSlug) return null; // Some movies might not have episodes? typically they do.
+        if (!data && !idOrSlug) return null;
 
         // If passed a number and no data, assume local ID
-        if (typeof idOrSlug === 'number') return idOrSlug;
+        if (typeof idOrSlug === 'number' || (idOrSlug && !isNaN(Number(idOrSlug)))) return Number(idOrSlug);
 
         const slug = data?.slug || idOrSlug?.toString();
         if (!slug) return null;
@@ -198,7 +169,7 @@ export class UsersService {
                     slug: data.slug,
                     embedUrl: data.embed,
                     m3u8Url: data.m3u8,
-                    sortOrder: 0 // Default, can be improved
+                    sortOrder: 0
                 }
             });
         }

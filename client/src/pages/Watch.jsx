@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactPlayer from "react-player";
 import { useFilmDetail } from "@/hooks/useFilmDetail";
@@ -23,6 +23,8 @@ function Watch() {
     
     // UI States
     const [isTheaterMode, setIsTheaterMode] = useState(false);
+    const [autoPlayCountdown, setAutoPlayCountdown] = useState(0);
+    const [showAutoPlayOverlay, setShowAutoPlayOverlay] = useState(false);
 
     // Derived state for current episode
     const episodeList = useMemo(() => {
@@ -72,12 +74,34 @@ function Watch() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data?.id, currentEpisode?.slug]); // Use IDs/Slugs to prevent loops
 
-    const handleNextEpisode = () => {
+    const handleNextEpisode = useCallback(() => {
         if (currentIndex < episodeList.length - 1) {
             const nextEp = episodeList[currentIndex + 1];
             navigate(`/xem-phim/${slug}/${nextEp.slug}`);
+            // Reset countdown state
+            setAutoPlayCountdown(0);
+            setShowAutoPlayOverlay(false);
+        }
+    }, [currentIndex, episodeList, navigate, slug]);
+
+    const triggerAutoPlay = () => {
+        if (currentIndex < episodeList.length - 1) {
+            setAutoPlayCountdown(5); // 5 seconds countdown
+            setShowAutoPlayOverlay(true);
         }
     };
+
+    useEffect(() => {
+        let timer;
+        if (showAutoPlayOverlay && autoPlayCountdown > 0) {
+            timer = setInterval(() => {
+                setAutoPlayCountdown(prev => prev - 1);
+            }, 1000);
+        } else if (showAutoPlayOverlay && autoPlayCountdown === 0) {
+            handleNextEpisode();
+        }
+        return () => clearInterval(timer);
+    }, [showAutoPlayOverlay, autoPlayCountdown, handleNextEpisode]);
 
     const handlePrevEpisode = () => {
          if (currentIndex > 0) {
@@ -169,7 +193,7 @@ function Watch() {
                         width="100%"
                         height="100%"
                         playing={true}
-                        onEnded={handleNextEpisode}
+                        onEnded={triggerAutoPlay}
                         onProgress={handleProgress}
                         config={{
                             file: {
@@ -218,6 +242,56 @@ function Watch() {
                     >
                         <ChevronLeft className="w-6 h-6" />
                     </Link>
+                )}
+
+                {/* Next Episode Countdown Overlay */}
+                {showAutoPlayOverlay && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="absolute inset-0 flex items-center justify-center z-[110] bg-black/60 backdrop-blur-sm"
+                    >
+                        <div className="text-center space-y-4">
+                            <p className="text-zinc-400 text-sm font-medium uppercase tracking-widest">Tập tiếp theo sẽ bắt đầu sau</p>
+                            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                    <circle
+                                        cx="48" cy="48" r="44"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                        fill="transparent"
+                                        className="text-white/10"
+                                    />
+                                    <motion.circle
+                                        cx="48" cy="48" r="44"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                        fill="transparent"
+                                        strokeDasharray="276.46"
+                                        initial={{ strokeDashoffset: 0 }}
+                                        animate={{ strokeDashoffset: 276.46 * (1 - autoPlayCountdown / 5) }}
+                                        className="text-primary"
+                                    />
+                                </svg>
+                                <span className="text-4xl font-bold text-white">{autoPlayCountdown}</span>
+                            </div>
+                            <div className="flex gap-3">
+                                <Button 
+                                    onClick={() => setShowAutoPlayOverlay(false)} 
+                                    variant="outline" 
+                                    className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                                >
+                                    Hủy bỏ
+                                </Button>
+                                <Button 
+                                    onClick={handleNextEpisode} 
+                                    className="bg-white text-black hover:bg-zinc-200"
+                                >
+                                    Xem ngay
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </motion.div>
 
@@ -277,7 +351,12 @@ function Watch() {
                             </Spotlight>
 
                             {/* Comment Section */}
-                            <CommentSection movieId={data.id} className="mt-8" />
+                            <CommentSection 
+                                movieId={data.id || slug} 
+                                slug={slug}
+                                movieData={data}
+                                className="mt-8" 
+                            />
                         </div>
 
                         {/* Sidebar / Episode List */}

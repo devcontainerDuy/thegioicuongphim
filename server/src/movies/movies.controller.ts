@@ -1,22 +1,34 @@
-import { Controller, Get, Post, Put, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, Put } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { CreateMovieDto, UpdateMovieDto } from './dto';
+import { AuthGuard } from '@nestjs/passport';
+import type { MovieSyncData } from './dto/sync-data.dto';
+
+import { OptionalJwtAuthGuard } from '../auth/guards';
 
 @Controller('movies')
 export class MoviesController {
     constructor(private readonly moviesService: MoviesService) { }
 
+    @Post('sync')
+    async syncMovie(@Body() data: MovieSyncData) {
+        const movieId = await this.moviesService.syncMovie(data.slug, data);
+        return { movieId };
+    }
+
     @Get()
     findAll(
         @Query('page') page?: string,
         @Query('limit') limit?: string,
-        @Query('type') type?: string
+        @Query('type') type?: string,
+        @Query('genre') genre?: string,
+        @Query('year') year?: string,
+        @Query('country') country?: string
     ) {
         return this.moviesService.findAll(
             Number(page) || 1,
             Number(limit) || 24,
-            type
+            { type, genre, year: year ? Number(year) : undefined, country }
         );
     }
 
@@ -24,13 +36,61 @@ export class MoviesController {
     search(
         @Query('keyword') keyword: string,
         @Query('page') page?: string,
-        @Query('limit') limit?: string
+        @Query('limit') limit?: string,
+        @Query('type') type?: string,
+        @Query('genre') genre?: string,
+        @Query('year') year?: string,
+        @Query('country') country?: string
     ) {
         return this.moviesService.search(
             keyword,
             Number(page) || 1,
-            Number(limit) || 10
+            Number(limit) || 10,
+            { type, genre, year: year ? Number(year) : undefined, country }
         );
+    }
+
+    // ===== RATINGS =====
+    @UseGuards(OptionalJwtAuthGuard)
+    @Get(':id/rating')
+    async getRating(@Param('id') id: string, @Req() req: any) {
+        const userId = req.user?.id || req.user?.userId;
+        const movieId = await this.moviesService.resolveMovieId(id);
+        return this.moviesService.getMovieRating(movieId, userId);
+    }
+
+    @Get(':id/reviews')
+    async getReviews(@Param('id') id: string) {
+        const movieId = await this.moviesService.resolveMovieId(id);
+        return this.moviesService.getReviews(movieId);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/rating')
+    async upsertRating(
+        @Param('id') id: string,
+        @Body('score') score: number,
+        @Body('content') content: string,
+        @Req() req: any
+    ) {
+        const movieId = await this.moviesService.resolveMovieId(id);
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.upsertRating(userId, movieId, score, content);
+    }
+
+    // ===== COMMENTS =====
+    @Get(':id/comments')
+    async getComments(@Param('id') id: string) {
+        const movieId = await this.moviesService.resolveMovieId(id);
+        return this.moviesService.getComments(movieId);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/comments')
+    async createComment(@Param('id') id: string, @Body('content') content: string, @Req() req: any) {
+        const movieId = await this.moviesService.resolveMovieId(id);
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.createComment(userId, movieId, content);
     }
 
     @Get(':slug')
@@ -38,42 +98,19 @@ export class MoviesController {
         return this.moviesService.findBySlug(slug);
     }
 
-    // ===== RATINGS =====
-    @Get(':id/rating')
-    getRating(@Param('id') id: string, @Req() req: any) {
-        // Optional userId from token if exists
-        const userId = req.user?.userId;
-        return this.moviesService.getMovieRating(Number(id), userId);
-    }
 
-    @Post(':id/rating')
     @UseGuards(AuthGuard('jwt'))
-    upsertRating(@Param('id') id: string, @Req() req: any, @Body('score') score: number) {
-        return this.moviesService.upsertRating(req.user.userId, Number(id), score);
-    }
-
-    // ===== COMMENTS =====
-    @Get(':id/comments')
-    getComments(@Param('id') id: string) {
-        return this.moviesService.getComments(Number(id));
-    }
-
-    @Post(':id/comments')
-    @UseGuards(AuthGuard('jwt'))
-    createComment(@Param('id') id: string, @Req() req: any, @Body('content') content: string) {
-        return this.moviesService.createComment(req.user.userId, Number(id), content);
-    }
-
     @Put('comments/:id')
-    @UseGuards(AuthGuard('jwt'))
     updateComment(@Param('id') id: string, @Req() req: any, @Body('content') content: string) {
-        return this.moviesService.updateComment(req.user.userId, Number(id), content);
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.updateComment(userId, Number(id), content);
     }
 
-    @Delete('comments/:id')
     @UseGuards(AuthGuard('jwt'))
+    @Delete('comments/:id')
     deleteComment(@Param('id') id: string, @Req() req: any) {
-        return this.moviesService.deleteComment(req.user.userId, Number(id));
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.deleteComment(userId, Number(id));
     }
 
     @Post()

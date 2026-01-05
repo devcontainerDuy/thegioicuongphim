@@ -29,7 +29,7 @@ import { toast } from 'sonner';
  * - Cho phép thêm, sửa, xóa bình luận
  * - Chỉ owner mới có thể edit/delete comment của mình
  */
-function CommentSection({ movieId, className }) {
+function CommentSection({ movieId, slug, movieData, className }) {
     const { user, isAuthenticated } = useAuth();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
@@ -40,15 +40,18 @@ function CommentSection({ movieId, className }) {
     const [deleteId, setDeleteId] = useState(null);
 
     const fetchComments = React.useCallback(async () => {
+        const identifier = (typeof movieId === 'number' && movieId > 0) ? movieId : slug;
+        if (!identifier) return;
+
         try {
-            const response = await backendApiClient.get(`/movies/${movieId}/comments`);
+            const response = await backendApiClient.get(`/movies/${identifier}/comments`);
             setComments(response.data || []);
         } catch (error) {
             console.error('Failed to fetch comments:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [movieId]);
+    }, [movieId, slug]);
 
     // Fetch comments
     useEffect(() => {
@@ -61,14 +64,30 @@ function CommentSection({ movieId, className }) {
 
         setIsSubmitting(true);
         try {
-            await backendApiClient.post(`/movies/${movieId}/comments`, {
-                content: newComment.trim()
+            // Ensure movie exists in local DB before commenting
+            let targetId = movieId;
+            if (movieData && slug) {
+                try {
+                    const syncRes = await backendApiClient.post('/movies/sync', { 
+                        ...movieData,
+                        slug 
+                    });
+                    targetId = syncRes.data.movieId;
+                } catch (syncErr) {
+                    console.warn('[CommentSection] Sync failed, trying direct post:', syncErr);
+                }
+            }
+
+            const identifier = (typeof targetId === 'number' && targetId > 0) ? targetId : slug;
+
+            const response = await backendApiClient.post(`/movies/${identifier}/comments`, { 
+                content: newComment.trim() 
             });
+            setComments([response.data, ...comments]);
             setNewComment('');
-            fetchComments();
             toast.success('Đã đăng bình luận');
         } catch (error) {
-            toast.error('Không thể đăng bình luận');
+            toast.error('Không thể đăng bình luận. Vui lòng thử lại.');
         } finally {
             setIsSubmitting(false);
         }

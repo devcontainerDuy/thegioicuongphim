@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import movieService from "@/services/movieService";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
 import { addFavorite, removeFavorite } from "@/store/reducers/favoritesSlice";
@@ -12,6 +13,8 @@ import { motion } from "framer-motion";
 import FadeContent from "@/components/bits/FadeContent";
 import BlurText from "@/components/bits/BlurText";
 import StarRating from "@/components/ui/StarRating";
+import CommentSection from "@/components/ui/CommentSection";
+import ReviewSection from "@/components/ui/ReviewSection";
 
 function Detail() {
     const { slug } = useParams();
@@ -97,8 +100,13 @@ function Detail() {
                                     <span>{data.time}</span>
                                     <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 hover:bg-zinc-700">{country}</Badge>
                                 </div>
-                                {/* Star Rating */}
-                                <StarRating movieId={data.id} className="mt-3" />
+                                 {/* Star Rating */}
+                                 <StarRating 
+                                    movieId={data.id} 
+                                    slug={data.slug} 
+                                    movieData={data}
+                                    className="mt-3" 
+                                 />
                             </FadeContent>
 
                             <FadeContent delay={0.5}>
@@ -168,6 +176,21 @@ function Detail() {
                                     ))}
                                 </div>
                             </div>
+
+                             {/* Comment Section */}
+                             <div className="pt-8 border-t border-border dark:border-zinc-800 space-y-12">
+                                <ReviewSection 
+                                    movieId={data.id || data.slug} 
+                                    slug={data.slug}
+                                    movieData={data}
+                                />
+
+                                <CommentSection 
+                                    movieId={data.id || data.slug} 
+                                    slug={data.slug}
+                                    movieData={data}
+                                />
+                             </div>
                         </div>
 
                         {/* Right: Meta */}
@@ -185,22 +208,111 @@ function Detail() {
                                         <span className="col-span-2 text-primary font-medium">{data.current_episode}</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
+                                        <span className="text-muted-foreground">Quốc gia</span>
+                                        <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                            {Array.isArray(data.countries) ? data.countries.join(", ") : (data.category?.['4']?.list?.[0]?.name || "Đang cập nhật")}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
                                         <span className="text-muted-foreground">Đạo diễn</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300">{data.director}</span>
+                                        <span className="col-span-2 text-foreground dark:text-zinc-300">{data.director || "Đang cập nhật"}</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
                                         <span className="text-muted-foreground">Diễn viên</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300 line-clamp-3">{data.casts}</span>
+                                        <span className="col-span-2 text-foreground dark:text-zinc-300 line-clamp-3">
+                                            {Array.isArray(data.casts) ? data.casts.join(", ") : (data.casts || "Đang cập nhật")}
+                                        </span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
                                         <span className="text-muted-foreground">Thể loại</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300">{categoryList}</span>
+                                        <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                            {Array.isArray(data.genres) ? data.genres.join(", ") : categoryList}
+                                        </span>
                                     </div>
                                  </div>
                             </div>
                         </div>
                     </div>
                 </FadeContent>
+            </div>
+
+            {/* Similar Movies Section */}
+            {data?.id && (
+                <div className="container mx-auto px-4 md:px-12 pb-20">
+                    <SimilarMovies movieId={data.id} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Sub-component for Similar Movies
+function SimilarMovies({ movieId }) {
+    const [similar, setSimilar] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSimilar = async () => {
+            try {
+                const results = await movieService.getSimilarMovies(movieId, 12);
+                setSimilar(results);
+            } catch (error) {
+                console.error("Failed to fetch similar movies:", error);
+            } finally {
+                setLoading(false); // Original line
+            }
+        };
+        fetchSimilar();
+    }, [movieId]);
+
+    if (!loading && similar.length === 0) return null;
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-2xl font-bold flex items-center gap-2">
+                <span className="w-1.5 h-8 bg-primary rounded-full" />
+                Phim Tương Tự
+            </h3>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                {loading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="space-y-3">
+                            <Skeleton className="w-full aspect-[2/3] rounded-lg bg-zinc-900" />
+                            <Skeleton className="h-4 w-3/4 bg-zinc-900" />
+                        </div>
+                    ))
+                ) : (
+                    similar.map((movie) => (
+                        <Link 
+                            key={movie.id} 
+                            to={`/phim/${movie.slug}`}
+                            className="group block space-y-3"
+                        >
+                            <div className="relative aspect-[2/3] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:shadow-primary/10">
+                                <img 
+                                    src={movie.thumb_url} 
+                                    alt={movie.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute bottom-2 left-2 right-2 transform translate-y-4 group-hover:translate-y-0 transition-transform opacity-0 group-hover:opacity-100">
+                                    <Button size="sm" className="w-full h-8 text-[10px] uppercase font-bold tracking-wider">
+                                        Xem ngay
+                                    </Button>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm truncate group-hover:text-primary transition-colors">
+                                    {movie.name}
+                                </h4>
+                                <p className="text-xs text-muted-foreground truncate italic">
+                                    {movie.original_name}
+                                </p>
+                            </div>
+                        </Link>
+                    ))
+                )}
             </div>
         </div>
     );

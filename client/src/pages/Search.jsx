@@ -1,63 +1,170 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import movieService from "@/services/movieService";
 import MovieCard from "@/components/shared/MovieCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search as SearchIcon, AlertCircle } from "lucide-react";
+import { Search as SearchIcon, AlertCircle, Filter, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function Search() {
     const [searchParams, setSearchParams] = useSearchParams();
     const keyword = searchParams.get("keyword") || "";
     const page = Number(searchParams.get("page")) || 1;
+    
+    // Filters from URL
+    const type = searchParams.get("type") || "all";
+    const genre = searchParams.get("genre") || "all";
+    const year = searchParams.get("year") || "all";
+    const country = searchParams.get("country") || "all";
 
     const [films, setFilms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [meta, setMeta] = useState({ currentPage: 1, totalPage: 1 });
 
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const filters = {};
+            if (type !== "all") filters.type = type;
+            if (genre !== "all") filters.genre = genre;
+            if (year !== "all") filters.year = year;
+            if (country !== "all") filters.country = country;
+
+            const response = await movieService.searchFilms(keyword, page, filters);
+            setFilms(response?.items || []);
+            setMeta({
+                currentPage: response?.paginate?.current_page || 1,
+                totalPage: response?.paginate?.total_page || 1
+            });
+        } catch (err) {
+            console.error("Search error:", err);
+            setError(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [keyword, page, type, genre, year, country]);
+
     useEffect(() => {
-        if (!keyword) {
+        if (!keyword && type === "all" && genre === "all" && year === "all" && country === "all") {
              setFilms([]);
              return;
         }
 
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await movieService.searchFilms(keyword, page);
-                // API returns { status, paginate, items }
-                setFilms(response?.items || []);
-                setMeta({
-                    currentPage: response?.paginate?.current_page || 1,
-                    totalPage: response?.paginate?.total_page || 1
-                });
-            } catch (err) {
-                console.error("Search error:", err);
-                setError(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
         window.scrollTo(0, 0);
-    }, [keyword, page]);
+    }, [fetchData, keyword, type, genre, year, country]);
 
     const handlePageChange = (newPage) => {
-        setSearchParams({ keyword, page: newPage });
+        const params = Object.fromEntries([...searchParams]);
+        params.page = newPage;
+        setSearchParams(params);
+    };
+
+    const handleFilterChange = (key, value) => {
+        const params = Object.fromEntries([...searchParams]);
+        if (value === "all") {
+            delete params[key];
+        } else {
+            params[key] = value;
+        }
+        params.page = 1; // Reset to page 1 on filter
+        setSearchParams(params);
+    };
+
+    const clearFilters = () => {
+        setSearchParams({ keyword });
     };
 
     return (
         <div className="min-h-screen bg-background pt-24 pb-12 px-4 md:px-8 lg:px-12">
              <div className="container mx-auto">
-                <div className="mb-8 border-b border-zinc-800 pb-6 flex items-baseline gap-3">
-                     <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                        <SearchIcon className="w-8 h-8 text-primary" />
-                        Kết quả tìm kiếm:
-                     </h1>
-                     <span className="text-2xl text-zinc-400 italic">"{keyword}"</span>
+                <div className="mb-8 border-b border-zinc-800 pb-6 space-y-6">
+                    <div className="flex items-baseline gap-3">
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                            <SearchIcon className="w-8 h-8 text-primary" />
+                            {keyword ? "Kết quả tìm kiếm:" : "Khám phá phim"}
+                        </h1>
+                        {keyword && <span className="text-2xl text-zinc-400 italic">"{keyword}"</span>}
+                    </div>
+
+                    {/* Filter Bar */}
+                    <div className="flex flex-wrap items-center gap-4 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50">
+                        <div className="flex items-center gap-2 text-zinc-400 mr-2">
+                            <Filter className="w-4 h-4" />
+                            <span className="text-sm font-medium">Bộ lọc:</span>
+                        </div>
+
+                        {/* Type */}
+                        <Select value={type} onValueChange={(v) => handleFilterChange("type", v)}>
+                            <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 h-9">
+                                <SelectValue placeholder="Định dạng" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-800">
+                                <SelectItem value="all">Tất cả định dạng</SelectItem>
+                                <SelectItem value="movie">Phim Lẻ</SelectItem>
+                                <SelectItem value="series">Phim Bộ</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        {/* Genre */}
+                        <Select value={genre} onValueChange={(v) => handleFilterChange("genre", v)}>
+                            <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 h-9">
+                                <SelectValue placeholder="Thể loại" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-800">
+                                <SelectItem value="all">Tất cả thể loại</SelectItem>
+                                <SelectItem value="Hành động">Hành động</SelectItem>
+                                <SelectItem value="Tình cảm">Tình cảm</SelectItem>
+                                <SelectItem value="Hài hước">Hài hước</SelectItem>
+                                <SelectItem value="Kinh dị">Kinh dị</SelectItem>
+                                <SelectItem value="Hoạt hình">Hoạt hình</SelectItem>
+                                <SelectItem value="Viễn tưởng">Viễn tưởng</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        {/* Year */}
+                        <Select value={year} onValueChange={(v) => handleFilterChange("year", v)}>
+                            <SelectTrigger className="w-[120px] bg-zinc-900 border-zinc-800 h-9">
+                                <SelectValue placeholder="Năm" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-800">
+                                <SelectItem value="all">Tất cả năm</SelectItem>
+                                {Array.from({ length: 10 }).map((_, i) => {
+                                    const y = 2025 - i;
+                                    return <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                                })}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Country */}
+                        <Select value={country} onValueChange={(v) => handleFilterChange("country", v)}>
+                            <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 h-9">
+                                <SelectValue placeholder="Quốc gia" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-800">
+                                <SelectItem value="all">Tất cả quốc gia</SelectItem>
+                                <SelectItem value="Trung Quốc">Trung Quốc</SelectItem>
+                                <SelectItem value="Việt Nam">Việt Nam</SelectItem>
+                                <SelectItem value="Hàn Quốc">Hàn Quốc</SelectItem>
+                                <SelectItem value="Mỹ">Mỹ</SelectItem>
+                                <SelectItem value="Nhật Bản">Nhật Bản</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        {(type !== "all" || genre !== "all" || year !== "all" || country !== "all") && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-zinc-500 hover:text-white h-9 px-2"
+                                onClick={clearFilters}
+                            >
+                                <X className="w-4 h-4 mr-1" /> Xóa lọc
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {loading ? (
