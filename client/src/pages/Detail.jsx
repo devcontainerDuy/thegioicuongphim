@@ -208,27 +208,64 @@ function Detail() {
                                         <span className="col-span-2 text-primary font-medium">{data.current_episode}</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
-                                        <span className="text-muted-foreground">Quốc gia</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300">
-                                            {Array.isArray(data.countries) ? data.countries.join(", ") : (data.category?.['4']?.list?.[0]?.name || "Đang cập nhật")}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <span className="text-muted-foreground">Đạo diễn</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300">{data.director || "Đang cập nhật"}</span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <span className="text-muted-foreground">Diễn viên</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300 line-clamp-3">
-                                            {Array.isArray(data.casts) ? data.casts.join(", ") : (data.casts || "Đang cập nhật")}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <span className="text-muted-foreground">Thể loại</span>
-                                        <span className="col-span-2 text-foreground dark:text-zinc-300">
-                                            {Array.isArray(data.genres) ? data.genres.join(", ") : categoryList}
-                                        </span>
-                                    </div>
+                                         <span className="text-muted-foreground">Quốc gia</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                             {Array.isArray(data.countries) ? (
+                                                 data.countries.map((c, i) => (
+                                                     <React.Fragment key={c}>
+                                                         <Link to={`/tim-kiem?country=${encodeURIComponent(c)}`} className="hover:text-primary transition-colors">{c}</Link>
+                                                         {i < data.countries.length - 1 && ", "}
+                                                     </React.Fragment>
+                                                 ))
+                                             ) : (
+                                                 data.category?.['4']?.list?.[0]?.name ? (
+                                                     <Link to={`/tim-kiem?country=${encodeURIComponent(data.category['4'].list[0].name)}`} className="hover:text-primary transition-colors">
+                                                         {data.category['4'].list[0].name}
+                                                     </Link>
+                                                 ) : "Đang cập nhật"
+                                             )}
+                                         </span>
+                                     </div>
+                                     <div className="grid grid-cols-3 gap-2">
+                                         <span className="text-muted-foreground">Đạo diễn</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                             {data.director ? (
+                                                 <Link to={`/tim-kiem?keyword=${encodeURIComponent(data.director)}`} className="hover:text-primary transition-colors">
+                                                     {data.director}
+                                                 </Link>
+                                             ) : "Đang cập nhật"}
+                                         </span>
+                                     </div>
+                                     <div className="grid grid-cols-3 gap-2">
+                                         <span className="text-muted-foreground">Diễn viên</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300 line-clamp-3">
+                                             {Array.isArray(data.casts) ? (
+                                                 data.casts.map((actor, i) => (
+                                                     <React.Fragment key={actor}>
+                                                         <Link to={`/tim-kiem?keyword=${encodeURIComponent(actor)}`} className="hover:text-primary transition-colors">{actor}</Link>
+                                                         {i < data.casts.length - 1 && ", "}
+                                                     </React.Fragment>
+                                                 ))
+                                             ) : (
+                                                 data.casts || "Đang cập nhật"
+                                             )}
+                                         </span>
+                                     </div>
+                                     <div className="grid grid-cols-3 gap-2">
+                                         <span className="text-muted-foreground">Thể loại</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                             {Array.isArray(data.genres) ? (
+                                                 data.genres.map((g, i) => (
+                                                     <React.Fragment key={g}>
+                                                         <Link to={`/tim-kiem?genre=${encodeURIComponent(g)}`} className="hover:text-primary transition-colors">{g}</Link>
+                                                         {i < data.genres.length - 1 && ", "}
+                                                     </React.Fragment>
+                                                 ))
+                                             ) : (
+                                                 categoryList
+                                             )}
+                                         </span>
+                                     </div>
                                  </div>
                             </div>
                         </div>

@@ -59,10 +59,19 @@ export class MoviesController {
         return this.moviesService.getMovieRating(movieId, userId);
     }
 
+    @UseGuards(OptionalJwtAuthGuard)
     @Get(':id/reviews')
-    async getReviews(@Param('id') id: string) {
+    async getReviews(@Param('id') id: string, @Req() req: any) {
+        const userId = req.user?.id || req.user?.userId;
         const movieId = await this.moviesService.resolveMovieId(id);
-        return this.moviesService.getReviews(movieId);
+        return this.moviesService.getReviews(movieId, userId);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('reviews/:id/vote')
+    async voteReview(@Param('id') id: string, @Req() req: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.voteReview(userId, Number(id));
     }
 
     @UseGuards(AuthGuard('jwt'))

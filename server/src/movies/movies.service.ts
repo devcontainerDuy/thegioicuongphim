@@ -110,7 +110,9 @@ export class MoviesService {
             OR: [
                 { name: { contains: keyword } },
                 { originalName: { contains: keyword } },
-                { description: { contains: keyword } }
+                { description: { contains: keyword } },
+                { director: { contains: keyword } },
+                { casts: { path: '$', array_contains: keyword } }
             ]
         };
 
@@ -139,8 +141,10 @@ export class MoviesService {
             this.prisma.movie.count({ where })
         ]);
 
+        const moviesWithRatings = await this.attachRatingToMovies(movies);
+
         return {
-            items: movies,
+            items: moviesWithRatings,
             paginate: {
                 current_page: page,
                 total_page: Math.ceil(total / limit),
@@ -148,6 +152,30 @@ export class MoviesService {
                 items_per_page: limit
             }
         };
+    }
+
+    private async attachRatingToMovies(movies: any[]) {
+        const movieIds = movies.map(m => m.id);
+        const ratingsData = await this.prisma.rating.groupBy({
+            by: ['movieId'],
+            where: { movieId: { in: movieIds } },
+            _avg: { score: true },
+            _count: { score: true }
+        });
+
+        const ratingMap: Record<number, { averageScore: number; totalRatings: number }> = ratingsData.reduce((acc, curr) => {
+            acc[curr.movieId] = {
+                averageScore: curr._avg.score ? Number(curr._avg.score.toFixed(1)) : 0,
+                totalRatings: curr._count.score
+            };
+            return acc;
+        }, {} as Record<number, { averageScore: number; totalRatings: number }>);
+
+        return movies.map(movie => ({
+            ...movie,
+            averageScore: ratingMap[movie.id]?.averageScore || 0,
+            totalRatings: ratingMap[movie.id]?.totalRatings || 0
+        }));
     }
 
     // ===== HELPERS & SYNC =====
@@ -286,12 +314,12 @@ export class MoviesService {
         });
     }
 
-    async getReviews(movieId: number) {
+    async getReviews(movieId: number, currentUserId?: number) {
         if (!movieId) {
             throw new BadRequestException('ID phim không hợp lệ');
         }
 
-        return this.prisma.rating.findMany({
+        const reviews = await this.prisma.rating.findMany({
             where: {
                 movieId: Number(movieId),
                 content: { not: null }
@@ -300,9 +328,47 @@ export class MoviesService {
             include: {
                 user: {
                     select: { id: true, name: true, avatar: true }
+                },
+                _count: {
+                    select: { votes: true }
                 }
             }
         });
+
+        // If currentUserId provided, check if voted
+        if (currentUserId) {
+            const votes = await this.prisma.reviewVote.findMany({
+                where: {
+                    userId: currentUserId,
+                    ratingId: { in: reviews.map(r => r.id) }
+                }
+            });
+            const votedIds = new Set(votes.map(v => v.ratingId));
+            return reviews.map(r => ({
+                ...r,
+                isVoted: votedIds.has(r.id)
+            }));
+        }
+
+        return reviews;
+    }
+
+    async voteReview(userId: number, ratingId: number) {
+        const existing = await this.prisma.reviewVote.findUnique({
+            where: { ratingId_userId: { ratingId, userId } }
+        });
+
+        if (existing) {
+            await this.prisma.reviewVote.delete({
+                where: { id: existing.id }
+            });
+            return { voted: false };
+        }
+
+        await this.prisma.reviewVote.create({
+            data: { ratingId, userId }
+        });
+        return { voted: true };
     }
 
     // ===== COMMENTS =====

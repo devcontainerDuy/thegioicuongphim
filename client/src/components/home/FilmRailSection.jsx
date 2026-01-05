@@ -60,6 +60,8 @@ const FilmRailSection = ({ title, films = [], viewAllLink, loading = false }) =>
                     currentEpisode={film.current_episode}
                     time={film.time}
                     quality={film.quality}
+                    averageScore={film.averageScore}
+                    totalRatings={film.totalRatings}
                     className="h-full"
                   />
                 </CarouselItem>

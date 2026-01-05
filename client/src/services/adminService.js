@@ -191,6 +191,23 @@ const adminService = {
         });
         if (!res.ok) throw new Error('Failed to update settings');
         return res.json();
+    },
+
+    // Reviews
+    getReviews: async (page = 1, limit = 20, search = '') => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit), search });
+        const res = await fetch(`${API_URL}/api/admin/reviews?${params}`, { headers: getAuthHeader() });
+        if (!res.ok) throw new Error('Failed to get reviews');
+        return res.json();
+    },
+
+    deleteReview: async (id) => {
+        const res = await fetch(`${API_URL}/api/admin/reviews/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!res.ok) throw new Error('Failed to delete review');
+        return res.json();
     }
 };
 

@@ -126,15 +126,26 @@ model Setting {
 }
 
 model Rating {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   userId    Int
   movieId   Int
-  score     Int      @default(0) // 1-5
-  content   String?  @db.Text
+  score     Int          @default(0) // 1-5
+  content   String?      @db.Text
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id])
+  movie     Movie        @relation(fields: [movieId], references: [id])
+  votes     ReviewVote[]
+}
+
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  ratingId  Int
+  userId    Int
+  rating    Rating   @relation(fields: [ratingId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  movie     Movie    @relation(fields: [movieId], references: [id])
+
+  @@unique([ratingId, userId])
 }
 
 model Comment {

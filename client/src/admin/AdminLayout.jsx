@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 const sidebarItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'Quản lý Phim', path: '/admin/movies', icon: Film },
+    { name: 'Quản lý Đánh giá', path: '/admin/reviews', icon: Star },
     { name: 'Quản lý Users', path: '/admin/users', icon: Users },
     { name: 'Phân quyền', path: '/admin/roles', icon: Shield },
     { name: 'Cài đặt', path: '/admin/settings', icon: Settings },

@@ -1,16 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { backendApiClient } from '@/config/apiClient';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star } from 'lucide-react';
+import { Star, ThumbsUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function ReviewSection({ movieId, slug, movieData }) {
     const [reviews, setReviews] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const { user } = useAuth();
+
+    const handleVote = async (reviewId) => {
+        if (!user) {
+            toast.error('Vui lòng đăng nhập để bình chọn');
+            return;
+        }
+
+        try {
+            const response = await backendApiClient.post(`/movies/reviews/${reviewId}/vote`);
+            const { voted } = response.data;
+            
+            // Update local state optimistically
+            setReviews(prev => prev.map(r => {
+                if (r.id === reviewId) {
+                    return {
+                        ...r,
+                        isVoted: voted,
+                        _count: {
+                            ...r._count,
+                            votes: voted ? (r._count?.votes || 0) + 1 : (r._count?.votes || 0) - 1
+                        }
+                    };
+                }
+                return r;
+            }));
+
+            toast.success(voted ? 'Đã đánh dấu hữu ích' : 'Đã bỏ đánh dấu hữu ích');
+        } catch (error) {
+            console.error('Failed to vote:', error);
+            toast.error('Không thể thực hiện bình chọn');
+        }
+    };
 
     const fetchReviews = async () => {
         try {
@@ -73,6 +106,21 @@ export default function ReviewSection({ movieId, slug, movieData }) {
                                 <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line">
                                     {review.content}
                                 </p>
+
+                                <div className="pt-2 flex items-center gap-4">
+                                    <button 
+                                        onClick={() => handleVote(review.id)}
+                                        className={cn(
+                                            "flex items-center gap-1.5 text-xs transition-colors py-1 px-2 rounded-md",
+                                            review.isVoted 
+                                                ? "text-primary bg-primary/10" 
+                                                : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                                        )}
+                                    >
+                                        <ThumbsUp className={cn("w-3.5 h-3.5", review.isVoted && "fill-current")} />
+                                        <span>Hữu ích ({review._count?.votes || 0})</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

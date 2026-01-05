@@ -195,6 +195,8 @@ function Search() {
                                   currentEpisode={p.current_episode}
                                   time={p.time}
                                   quality={p.quality}
+                                  averageScore={p.averageScore}
+                                  totalRatings={p.totalRatings}
                                 />
                             ))}
                         </div>

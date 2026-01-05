@@ -119,5 +119,20 @@ export class AdminController {
     deletePermission(@Param('id') id: string) {
         return this.adminService.deletePermission(Number(id));
     }
+
+    // Reviews
+    @Get('reviews')
+    getReviews(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string
+    ) {
+        return this.adminService.getReviews(Number(page) || 1, Number(limit) || 20, search);
+    }
+
+    @Delete('reviews/:id')
+    deleteReview(@Param('id') id: string) {
+        return this.adminService.deleteReview(Number(id));
+    }
 }
 

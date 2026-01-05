@@ -39,7 +39,11 @@ function MovieEdit() {
         year: new Date().getFullYear(),
         time: '',
         totalEpisodes: 1,
-        currentEpisode: 'Full'
+        currentEpisode: 'Full',
+        director: '',
+        casts: '',
+        genres: '',
+        countries: ''
     });
 
     const [episodes, setEpisodes] = useState([]);
@@ -76,7 +80,11 @@ function MovieEdit() {
                 year: data.year || new Date().getFullYear(),
                 time: data.time || '',
                 totalEpisodes: data.totalEpisodes || 1,
-                currentEpisode: data.currentEpisode || 'Full'
+                currentEpisode: data.currentEpisode || 'Full',
+                director: data.director || '',
+                casts: Array.isArray(data.casts) ? data.casts.join(', ') : (data.casts || ''),
+                genres: Array.isArray(data.genres) ? data.genres.join(', ') : (data.genres || ''),
+                countries: Array.isArray(data.countries) ? data.countries.join(', ') : (data.countries || '')
             });
             setEpisodes(data.episodes || []);
         } catch (error) {
@@ -129,7 +137,11 @@ function MovieEdit() {
             const payload = {
                 ...formData,
                 year: parseInt(formData.year),
-                totalEpisodes: parseInt(formData.totalEpisodes)
+                totalEpisodes: parseInt(formData.totalEpisodes),
+                // Convert comma-separated strings back to arrays
+                casts: formData.casts ? formData.casts.split(',').map(s => s.trim()).filter(Boolean) : [],
+                genres: formData.genres ? formData.genres.split(',').map(s => s.trim()).filter(Boolean) : [],
+                countries: formData.countries ? formData.countries.split(',').map(s => s.trim()).filter(Boolean) : []
             };
 
             if (isEditMode) {
@@ -249,6 +261,29 @@ function MovieEdit() {
                          <div className="space-y-2">
                             <Label className="text-zinc-400">Mô tả</Label>
                             <Textarea id="description" value={formData.description} onChange={handleChange} rows={5} className="bg-zinc-950 border-zinc-800" />
+                        </div>
+                    </div>
+
+                    {/* Metadata: Director, Cast, etc. */}
+                    <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-6">
+                        <h3 className="text-lg font-bold text-white">Thông tin mở rộng</h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Đạo diễn</Label>
+                                <Input id="director" value={formData.director} onChange={handleChange} placeholder="Tên đạo diễn" className="bg-zinc-950 border-zinc-800" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Diễn viên (Cách nhau bằng dấu phẩy)</Label>
+                                <Input id="casts" value={formData.casts} onChange={handleChange} placeholder="Actor A, Actor B..." className="bg-zinc-950 border-zinc-800" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Thể loại (Cách nhau bằng dấu phẩy)</Label>
+                                <Input id="genres" value={formData.genres} onChange={handleChange} placeholder="Hành động, Phiêu lưu..." className="bg-zinc-950 border-zinc-800" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-400">Quốc gia (Cách nhau bằng dấu phẩy)</Label>
+                                <Input id="countries" value={formData.countries} onChange={handleChange} placeholder="Mỹ, Trung Quốc..." className="bg-zinc-950 border-zinc-800" />
+                            </div>
                         </div>
                     </div>
 

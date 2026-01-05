@@ -26,25 +26,27 @@ export class RecommendationsService {
             orderBy: { views: 'desc' }
         });
 
-        return similar;
+        return this.attachRatingToMovies(similar);
     }
 
     // Get trending movies by views
     async getTrending(limit = 10) {
-        return this.prisma.movie.findMany({
+        const movies = await this.prisma.movie.findMany({
             where: { status: 'active' },
             take: limit,
             orderBy: { views: 'desc' }
         });
+        return this.attachRatingToMovies(movies);
     }
 
     // Get latest/new releases
     async getLatest(limit = 10) {
-        return this.prisma.movie.findMany({
+        const movies = await this.prisma.movie.findMany({
             where: { status: 'active' },
             take: limit,
             orderBy: { createdAt: 'desc' }
         });
+        return this.attachRatingToMovies(movies);
     }
 
     // Get personalized recommendations based on watch history
@@ -87,6 +89,30 @@ export class RecommendationsService {
             orderBy: { views: 'desc' }
         });
 
-        return recommendations;
+        return this.attachRatingToMovies(recommendations);
+    }
+
+    private async attachRatingToMovies(movies: any[]) {
+        const movieIds = movies.map(m => m.id);
+        const ratingsData = await this.prisma.rating.groupBy({
+            by: ['movieId'],
+            where: { movieId: { in: movieIds } },
+            _avg: { score: true },
+            _count: { score: true }
+        });
+
+        const ratingMap: Record<number, { averageScore: number; totalRatings: number }> = ratingsData.reduce((acc, curr) => {
+            acc[curr.movieId] = {
+                averageScore: curr._avg.score ? Number(curr._avg.score.toFixed(1)) : 0,
+                totalRatings: curr._count.score
+            };
+            return acc;
+        }, {} as Record<number, { averageScore: number; totalRatings: number }>);
+
+        return movies.map(movie => ({
+            ...movie,
+            averageScore: ratingMap[movie.id]?.averageScore || 0,
+            totalRatings: ratingMap[movie.id]?.totalRatings || 0
+        }));
     }
 }

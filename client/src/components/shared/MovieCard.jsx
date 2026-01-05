@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Play } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,8 @@ const MovieCard = ({
   currentEpisode,
   time,
   quality = "HD",
+  averageScore = 0,
+  totalRatings = 0,
   loading = false,
   className,
 }) => {
@@ -64,6 +66,12 @@ const MovieCard = ({
                 <Badge variant="destructive" className="bg-primary hover:bg-primary/90 text-xs px-1.5 py-0.5 rounded-sm uppercase font-bold tracking-wider shadow-sm">
                     {quality}
                 </Badge>
+                {averageScore > 0 && (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-black/60 backdrop-blur-sm border border-white/10 text-yellow-400 font-bold text-[10px] shadow-sm">
+                        <Star className="w-2.5 h-2.5 fill-yellow-400" />
+                        <span>{averageScore}</span>
+                    </div>
+                )}
             </div>
              <div className="absolute top-2 right-2">
                 {episodeLabel && (

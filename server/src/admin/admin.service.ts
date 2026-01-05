@@ -192,5 +192,44 @@ export class AdminService {
     async deletePermission(id: number) {
         return this.prisma.permission.delete({ where: { id } });
     }
+
+    // Reviews Moderation
+    async getReviews(page = 1, limit = 20, search?: string) {
+        const skip = (page - 1) * limit;
+        const where: any = {
+            content: { not: null } // Only fetch ratings that have review content
+        };
+
+        if (search) {
+            where.OR = [
+                { content: { contains: search } },
+                { user: { name: { contains: search } } },
+                { movie: { name: { contains: search } } }
+            ];
+        }
+
+        const [reviews, total] = await Promise.all([
+            this.prisma.rating.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, name: true, avatar: true, email: true } },
+                    movie: { select: { id: true, name: true, slug: true } }
+                }
+            }),
+            this.prisma.rating.count({ where })
+        ]);
+
+        return {
+            items: reviews,
+            paginate: { current_page: page, total_page: Math.ceil(total / limit), total_items: total }
+        };
+    }
+
+    async deleteReview(id: number) {
+        return this.prisma.rating.delete({ where: { id } });
+    }
 }
 
