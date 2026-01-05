@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import SyncWatcher from "@/components/shared/SyncWatcher";
 
+import { HelmetProvider } from "react-helmet-async";
+
 // Optional: Global loading fallback
 const LoadingFallback = () => (
     <div className="flex items-center justify-center min-h-screen bg-black text-white">
@@ -17,12 +19,14 @@ function App() {
     return (
         <React.StrictMode>
             <AuthProvider>
-                <SyncWatcher />
-                <Analytics debug={false} mode="production" />
-                <Suspense fallback={<LoadingFallback />}>
-                    <RouterProvider router={router} />
-                </Suspense>
-                <Toaster />
+                <HelmetProvider>
+                    <SyncWatcher />
+                    <Analytics debug={false} mode="production" />
+                    <Suspense fallback={<LoadingFallback />}>
+                        <RouterProvider router={router} />
+                    </Suspense>
+                    <Toaster />
+                </HelmetProvider>
             </AuthProvider>
         </React.StrictMode>
     );

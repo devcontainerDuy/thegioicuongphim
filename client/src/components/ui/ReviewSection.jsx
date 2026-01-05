@@ -45,21 +45,21 @@ export default function ReviewSection({ movieId, slug, movieData }) {
         }
     };
 
-    const fetchReviews = async () => {
-        try {
-            const identifier = (typeof movieId === 'number' && movieId > 0) ? movieId : slug;
-            if (!identifier) return;
-
-            const response = await backendApiClient.get(`/movies/${identifier}/reviews`);
-            setReviews(response.data);
-        } catch (error) {
-            console.error('Failed to fetch reviews:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const identifier = (typeof movieId === 'number' && movieId > 0) ? movieId : slug;
+                if (!identifier) return;
+
+                const response = await backendApiClient.get(`/movies/${identifier}/reviews`);
+                setReviews(response.data);
+            } catch (error) {
+                console.error('Failed to fetch reviews:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         fetchReviews();
     }, [movieId, slug]);
 

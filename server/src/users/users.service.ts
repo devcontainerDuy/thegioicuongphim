@@ -209,12 +209,12 @@ export class UsersService {
         };
     }
 
-    async addFavorite(userId: number, movieId: number) {
-        const movie = await this.prisma.movie.findUnique({ where: { id: movieId } });
-        if (!movie) throw new NotFoundException('Phim không tồn tại');
+    async addFavorite(userId: number, movieId: number | string, movieData?: any) {
+        // Auto-sync movie to database first
+        const localMovieId = await this.moviesService.syncMovie(movieId, movieData);
 
         const existing = await this.prisma.favorite.findUnique({
-            where: { userId_movieId: { userId, movieId } }
+            where: { userId_movieId: { userId, movieId: localMovieId } }
         });
 
         if (existing) {
@@ -222,29 +222,37 @@ export class UsersService {
         }
 
         await this.prisma.favorite.create({
-            data: { userId, movieId }
+            data: { userId, movieId: localMovieId }
         });
 
         return { message: 'Đã thêm vào danh sách yêu thích' };
     }
 
-    async removeFavorite(userId: number, movieId: number) {
+    async removeFavorite(userId: number, movieId: number | string) {
+        // Resolve movie ID (might be string/hex)
+        const localMovieId = await this.moviesService.resolveMovieId(movieId, false);
+        if (!localMovieId) throw new NotFoundException('Phim không tồn tại');
+
         const existing = await this.prisma.favorite.findUnique({
-            where: { userId_movieId: { userId, movieId } }
+            where: { userId_movieId: { userId, movieId: localMovieId } }
         });
 
         if (!existing) throw new NotFoundException('Phim không có trong danh sách yêu thích');
 
         await this.prisma.favorite.delete({
-            where: { userId_movieId: { userId, movieId } }
+            where: { userId_movieId: { userId, movieId: localMovieId } }
         });
 
         return { message: 'Đã xóa khỏi danh sách yêu thích' };
     }
 
-    async isFavorite(userId: number, movieId: number) {
+    async isFavorite(userId: number, movieId: number | string) {
+        // Resolve movie ID (might be string/hex)
+        const localMovieId = await this.moviesService.resolveMovieId(movieId, false);
+        if (!localMovieId) return { isFavorite: false };
+
         const existing = await this.prisma.favorite.findUnique({
-            where: { userId_movieId: { userId, movieId } }
+            where: { userId_movieId: { userId, movieId: localMovieId } }
         });
         return { isFavorite: !!existing };
     }

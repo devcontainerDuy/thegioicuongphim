@@ -9,6 +9,7 @@ import Category from "@/pages/Category";
 import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import Favorites from "@/pages/Favorites";
+import Watchlist from "@/pages/Watchlist";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
 import SessionManager from "@/pages/SessionManager";
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
       { path: "bang-gia", element: <Pricing /> },
       // Protected routes - require authentication
       { path: "danh-sach-yeu-thich", element: <PrivateRoute><Favorites /></PrivateRoute> },
+      { path: "danh-sach-phim-da-luu", element: <PrivateRoute><Watchlist /></PrivateRoute> },
       { path: "ca-nhan", element: <PrivateRoute><Profile /></PrivateRoute> },
       { path: "quan-ly-phien", element: <PrivateRoute><SessionManager /></PrivateRoute> },
       { path: "*", element: <ErrorPage /> },

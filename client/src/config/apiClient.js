@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken } from "@/utils/cookies";
+import { getAccessToken, setAccessToken } from "@/utils/cookies";
 
 // =======================================
 // EXTERNAL API - Movie Data
@@ -86,7 +86,7 @@ backendApiClient.interceptors.response.use(
         const response = await backendApiClient.post('/auth/refresh');
         const { access_token } = response.data;
 
-        localStorage.setItem('access_token', access_token);
+        setAccessToken(access_token); // Use cookies instead of localStorage
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
         processQueue(null, access_token);

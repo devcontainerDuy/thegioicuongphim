@@ -10,12 +10,6 @@ import { OptionalJwtAuthGuard } from '../auth/guards';
 export class MoviesController {
     constructor(private readonly moviesService: MoviesService) { }
 
-    @Post('sync')
-    async syncMovie(@Body() data: MovieSyncData) {
-        const movieId = await this.moviesService.syncMovie(data.slug, data);
-        return { movieId };
-    }
-
     @Get()
     findAll(
         @Query('page') page?: string,
@@ -30,6 +24,14 @@ export class MoviesController {
             Number(limit) || 24,
             { type, genre, year: year ? Number(year) : undefined, country }
         );
+    }
+
+    // List static routes before dynamic ones to avoid shadowing
+    @UseGuards(AuthGuard('jwt'))
+    @Get('watchlist')
+    async getWatchlist(@Req() req: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.getWatchlist(userId);
     }
 
     @Get('search')
@@ -50,21 +52,27 @@ export class MoviesController {
         );
     }
 
-    // ===== RATINGS =====
+    @Post('sync')
+    async syncMovie(@Body() data: MovieSyncData) {
+        const movieId = await this.moviesService.syncMovie(data.slug, data);
+        return { movieId };
+    }
+
+    // ===== RATINGS & REVIEWS =====
     @UseGuards(OptionalJwtAuthGuard)
     @Get(':id/rating')
     async getRating(@Param('id') id: string, @Req() req: any) {
         const userId = req.user?.id || req.user?.userId;
-        const movieId = await this.moviesService.resolveMovieId(id);
-        return this.moviesService.getMovieRating(movieId, userId);
+        const movieId = await this.moviesService.resolveMovieId(id, false);
+        return this.moviesService.getMovieRating(movieId as number, userId);
     }
 
     @UseGuards(OptionalJwtAuthGuard)
     @Get(':id/reviews')
     async getReviews(@Param('id') id: string, @Req() req: any) {
         const userId = req.user?.id || req.user?.userId;
-        const movieId = await this.moviesService.resolveMovieId(id);
-        return this.moviesService.getReviews(movieId, userId);
+        const movieId = await this.moviesService.resolveMovieId(id, false);
+        return this.moviesService.getReviews(movieId as number, userId);
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -84,29 +92,28 @@ export class MoviesController {
     ) {
         const movieId = await this.moviesService.resolveMovieId(id);
         const userId = req.user.id || req.user.userId;
-        return this.moviesService.upsertRating(userId, movieId, score, content);
+        return this.moviesService.upsertRating(userId, movieId as number, score, content);
     }
 
     // ===== COMMENTS =====
     @Get(':id/comments')
     async getComments(@Param('id') id: string) {
-        const movieId = await this.moviesService.resolveMovieId(id);
-        return this.moviesService.getComments(movieId);
+        const movieId = await this.moviesService.resolveMovieId(id, false);
+        return this.moviesService.getComments(movieId as number);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Post(':id/comments')
-    async createComment(@Param('id') id: string, @Body('content') content: string, @Req() req: any) {
+    async createComment(
+        @Param('id') id: string,
+        @Body('content') content: string,
+        @Body('parentId') parentId: number,
+        @Req() req: any
+    ) {
         const movieId = await this.moviesService.resolveMovieId(id);
         const userId = req.user.id || req.user.userId;
-        return this.moviesService.createComment(userId, movieId, content);
+        return this.moviesService.createComment(userId, movieId as number, content, parentId);
     }
-
-    @Get(':slug')
-    findOne(@Param('slug') slug: string) {
-        return this.moviesService.findBySlug(slug);
-    }
-
 
     @UseGuards(AuthGuard('jwt'))
     @Put('comments/:id')
@@ -122,6 +129,37 @@ export class MoviesController {
         return this.moviesService.deleteComment(userId, Number(id));
     }
 
+    // ===== WATCHLIST ACTIONS =====
+    @UseGuards(AuthGuard('jwt'))
+    @Get(':id/watchlist')
+    async checkInWatchlist(@Param('id') id: string, @Req() req: any) {
+        const movieId = await this.moviesService.resolveMovieId(id); // Throws if not found
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.checkInWatchlist(userId, movieId as number);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/watchlist')
+    async toggleWatchlist(@Param('id') id: string, @Req() req: any) {
+        const movieId = await this.moviesService.resolveMovieId(id);
+        const userId = req.user.id || req.user.userId;
+        return this.moviesService.toggleWatchlist(userId, movieId as number);
+    }
+
+    // ===== VIEW LOGGING =====
+    @Post(':id/view')
+    async logView(@Param('id') id: string, @Body() body: any) {
+        const movieId = await this.moviesService.syncMovie(id, body);
+        return this.moviesService.logView(movieId);
+    }
+
+    // ===== GENERIC SLUG ROUTE (Should be near bottom) =====
+    @Get(':slug')
+    findOne(@Param('slug') slug: string) {
+        return this.moviesService.findBySlug(slug);
+    }
+
+    // ===== ADMIN / CRUD =====
     @Post()
     // @UseGuards(JwtAuthGuard, RolesGuard) // TODO: Add admin guard
     create(@Body() createMovieDto: CreateMovieDto) {

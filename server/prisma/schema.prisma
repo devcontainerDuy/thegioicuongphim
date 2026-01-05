@@ -25,6 +25,8 @@ model User {
   comments      Comment[]
   tokens        PersonalAccessToken[]
   sessions      Session[]
+  watchlist     Watchlist[]
+  notifications Notification[]
 }
 
 model Role {
@@ -71,6 +73,8 @@ model Movie {
   favorites      Favorite[]
   ratings        Rating[]
   comments       Comment[]
+  watchlists     Watchlist[]
+  viewLogs       ViewLog[]
 }
 
 model Episode {
@@ -149,14 +153,17 @@ model ReviewVote {
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   userId    Int
   movieId   Int
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  movie     Movie    @relation(fields: [movieId], references: [id])
+  parentId  Int?
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+  movie     Movie     @relation(fields: [movieId], references: [id])
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
 }
 
 model PersonalAccessToken {
@@ -185,4 +192,43 @@ model Session {
   createdAt      DateTime            @default(now())
 
   @@index([userId])
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId])
+}
+
+model ViewLog {
+  id      Int      @id @default(autoincrement())
+  movieId Int
+  date    DateTime @default(now()) @db.Date // Store only date (YYYY-MM-DD)
+  views   Int      @default(1)
+  movie   Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, date])
+  @@index([date])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("SYSTEM") // "REPLY", "MOVIE_UPDATE", "SYSTEM"
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  metadata  Json? // { commentId, movieSlug, etc. }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isRead])
 }

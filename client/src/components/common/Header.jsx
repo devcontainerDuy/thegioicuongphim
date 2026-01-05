@@ -7,6 +7,8 @@ import { useTheme } from "hooks/useTheme";
 import SearchForm from "./SearchFrom";
 import Logo from "components/specific/Logo";
 import ScrollToTop from "./ScrollToTop";
+import { NotificationDropdown } from "./NotificationDropdown";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   {
@@ -32,10 +34,13 @@ const NAV_ITEMS = [
 ];
 
 function Header() {
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const favoriteItems = useSelector((state) => state.favorites.items) || [];
   const favoriteCount = favoriteItems.length;
+  const watchlistItems = useSelector((state) => state.watchlist.items) || [];
+  const watchlistCount = watchlistItems.length;
   const [theme] = useTheme();
   const [appliedTheme, setAppliedTheme] = useState(() => document.documentElement.getAttribute("data-bs-theme") || "light");
 
@@ -87,11 +92,20 @@ function Header() {
               <div className="w-100 w-lg-auto app-navbar-search">
                 <SearchForm />
               </div>
+              {isAuthenticated && <NotificationDropdown />}
               <NavLink to="/danh-sach-yeu-thich" className="position-relative px-0 favorites-link" aria-label="Danh sách yêu thích">
                 <i className={`bi bi-heart-fill ${heartIconClass}`} />
                 {favoriteCount > 0 && (
                   <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle">
                     {favoriteCount}
+                  </Badge>
+                )}
+              </NavLink>
+              <NavLink to="/danh-sach-phim-da-luu" className="position-relative px-0 watchlist-link" aria-label="Danh sách phim đã lưu">
+                <i className={`bi bi-bookmark-fill ${appliedTheme === 'dark' ? 'text-primary' : 'text-body'}`} />
+                {watchlistCount > 0 && (
+                  <Badge pill bg="primary" className="position-absolute top-0 start-100 translate-middle">
+                    {watchlistCount}
                   </Badge>
                 )}
               </NavLink>

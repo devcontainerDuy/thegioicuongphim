@@ -1,4 +1,4 @@
-import apiClient from '../config/apiClient';
+import apiClient, { backendApiClient } from '../config/apiClient';
 
 const movieService = {
     // Get list of films (category, latest, etc.)
@@ -69,6 +69,27 @@ const movieService = {
         } catch (error) {
             console.error("Error fetching personal recommendations:", error);
             return [];
+        }
+    },
+
+    // ===== WATCHLIST =====
+    getWatchlist: async () => {
+        try {
+            const response = await backendApiClient.get('/movies/watchlist');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching watchlist:', error);
+            throw error;
+        }
+    },
+
+    toggleWatchlist: async (movieId) => {
+        try {
+            const response = await backendApiClient.post(`/movies/${movieId}/watchlist`);
+            return response.data;
+        } catch (error) {
+            console.error('Error toggling watchlist:', error);
+            throw error;
         }
     }
 };

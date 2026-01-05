@@ -16,14 +16,17 @@ export const fetchFavorites = createAsyncThunk(
 
 export const addFavorite = createAsyncThunk(
 	"favorites/add",
-	async (film, { getState, rejectWithValue }) => {
-		const { auth } = getState();
-		if (auth?.isAuthenticated) {
-			try {
+	async (film, { rejectWithValue }) => {
+		// Always return the film for local state update
+		// Backend sync will happen only if authenticated
+		try {
+			const token = document.cookie.match(/access_token=([^;]+)/)?.[1];
+			if (token) {
 				await userService.addFavorite(film.id);
-			} catch (error) {
-				console.error("Cloud sync failed:", error);
 			}
+		} catch (error) {
+			console.warn("Failed to sync favorite to backend:", error);
+			// Don't reject - local favorite still works
 		}
 		return film;
 	}
@@ -31,14 +34,16 @@ export const addFavorite = createAsyncThunk(
 
 export const removeFavorite = createAsyncThunk(
 	"favorites/remove",
-	async (filmId, { getState, rejectWithValue }) => {
-		const { auth } = getState();
-		if (auth?.isAuthenticated) {
-			try {
+	async (filmId, { rejectWithValue }) => {
+		// Always return the filmId for local state update
+		try {
+			const token = document.cookie.match(/access_token=([^;]+)/)?.[1];
+			if (token) {
 				await userService.removeFavorite(filmId);
-			} catch (error) {
-				console.error("Cloud sync failed:", error);
 			}
+		} catch (error) {
+			console.warn("Failed to remove favorite from backend:", error);
+			// Don't reject - local removal still works
 		}
 		return filmId;
 	}

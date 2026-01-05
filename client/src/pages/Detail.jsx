@@ -3,11 +3,12 @@ import movieService from "@/services/movieService";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
 import { addFavorite, removeFavorite } from "@/store/reducers/favoritesSlice";
+import { fetchWatchlist, toggleWatchlist } from "@/store/reducers/watchlistSlice";
 import { useFilmDetail } from "@/hooks/useFilmDetail";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Play, Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Plus, Check, ChevronDown, ChevronUp, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import FadeContent from "@/components/bits/FadeContent";
@@ -15,11 +16,18 @@ import BlurText from "@/components/bits/BlurText";
 import StarRating from "@/components/ui/StarRating";
 import CommentSection from "@/components/ui/CommentSection";
 import ReviewSection from "@/components/ui/ReviewSection";
+import SEO from "@/components/common/SEO";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { backendApiClient } from "@/config/apiClient";
 
 function Detail() {
     const { slug } = useParams();
     const { film: data, loading, error } = useFilmDetail(slug);
+    const { isAuthenticated } = useAuth();
     const dispatch = useDispatch();
+    
+    // Favorites
     const favoriteList = useSelector((state) => state.favorites.items);
     const isFavorite = useMemo(() => favoriteList.some((film) => film.id === data?.id), [favoriteList, data]);
 
@@ -29,33 +37,79 @@ function Detail() {
         }
     }, [data, isFavorite, dispatch]);
 
+    // Watchlist
+    const watchlist = useSelector((state) => state.watchlist.items);
+    const isInWatchlist = useMemo(() => watchlist.some((film) => film.id === data?.id), [watchlist, data]);
     const [isDescExpanded, setIsDescExpanded] = useState(false);
+
+    // Initial load
+    useEffect(() => {
+        if (isAuthenticated && watchlist.length === 0) {
+            dispatch(fetchWatchlist());
+        }
+    }, [isAuthenticated, dispatch, watchlist.length]);
+
+    // Log view on load
+    useEffect(() => {
+        const logView = async () => {
+            if (data?.id) {
+                try {
+                    await backendApiClient.post(`/movies/${data.id}/view`, data);
+                } catch (error) {
+                    console.error('Failed to log view:', error);
+                }
+            }
+        };
+        
+        // Slight delay to ensure it's a real view
+        const timer = setTimeout(logView, 2000);
+        return () => clearTimeout(timer);
+    }, [data?.id, data]);
+
+    const handleWatchlistClick = async () => {
+        if (data) {
+            try {
+                await dispatch(toggleWatchlist(data)).unwrap();
+                toast.success(!isInWatchlist ? 'Đã thêm vào danh sách xem sau' : 'Đã xóa khỏi danh sách xem sau');
+            } catch (err) {
+                toast.error('Có lỗi xảy ra, vui lòng thử lại');
+            }
+        }
+    };
 
     if (loading) {
         return (
              <div className="min-h-screen bg-black pt-[64px]">
-                <Skeleton className="w-full h-[60vh] bg-zinc-800" />
-                <div className="container mx-auto px-4 py-8 space-y-4">
-                     <Skeleton className="h-10 w-1/3 bg-zinc-800" />
-                     <Skeleton className="h-4 w-2/3 bg-zinc-800" />
-                     <Skeleton className="h-4 w-1/2 bg-zinc-800" />
-                </div>
+                 <div className="h-[70vh] w-full relative">
+                     <Skeleton className="absolute inset-0 bg-zinc-900" />
+                 </div>
              </div>
         );
     }
 
     if (error || !data) {
         return (
-            <div className="min-h-screen flex items-center justify-center text-white bg-black">
-                <div className="text-center space-y-4">
-                    <h2 className="text-2xl font-bold text-red-500">Không tìm thấy phim</h2>
-                    <Button asChild variant="outline">
-                        <Link to="/">Quay về trang chủ</Link>
-                    </Button>
+            <div className="min-h-screen bg-black flex items-center justify-center pt-[64px]">
+                <div className="text-center text-zinc-400">
+                    <p className="text-xl mb-4">{error || 'Không tìm thấy phim'}</p>
+                    <Link to="/" className="text-primary hover:underline">Về trang chủ</Link>
                 </div>
             </div>
         );
     }
+
+    // Prepare Movie Schema
+    const movieSchema = {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": data.name,
+        "alternateName": data.original_name,
+        "description": data.description,
+        "image": data.poster_url || data.thumb_url,
+        "datePublished": data.year,
+        "director": data.director?.split(',').map(d => ({ "@type": "Person", "name": d.trim() })),
+        "actor": data.actor?.split(',').map(a => ({ "@type": "Person", "name": a.trim() })),
+    };
 
     // Data parsing
     const categoryList = data?.category?.[2]?.list?.map((item) => item.name).join(", ") || "N/A";
@@ -70,7 +124,13 @@ function Detail() {
     const firstEpisodeSlug = episodes?.[0]?.slug;
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen bg-background text-foreground relative">
+            <SEO 
+                title={data.name} 
+                description={data.description} 
+                image={data.poster_url || data.thumb_url}
+                schema={movieSchema}
+            />
             {/* Backdrop Section */}
             <div className="relative w-full h-[70vh] md:h-[85vh]">
                 <motion.div 
@@ -127,6 +187,19 @@ function Detail() {
                                             <><Check className="w-6 h-6 mr-2 text-green-500" /> Đã Yêu Thích</>
                                         ) : (
                                             <><Plus className="w-6 h-6 mr-2" /> Thêm Yêu Thích</>
+                                        )}
+                                    </Button>
+
+                                    <Button 
+                                        size="lg" 
+                                        variant="outline" 
+                                        className="h-14 px-5 text-lg border-zinc-700 hover:bg-zinc-800 text-white bg-black/20 backdrop-blur-md"
+                                        onClick={handleWatchlistClick}
+                                    >
+                                        {isInWatchlist ? (
+                                            <Bookmark className="w-6 h-6 fill-primary text-primary" />
+                                        ) : (
+                                            <Bookmark className="w-6 h-6" />
                                         )}
                                     </Button>
                                 </div>
@@ -276,7 +349,7 @@ function Detail() {
             {/* Similar Movies Section */}
             {data?.id && (
                 <div className="container mx-auto px-4 md:px-12 pb-20">
-                    <SimilarMovies movieId={data.id} />
+                    <SimilarMovies movieId={data.id} currentMovie={data} />
                 </div>
             )}
         </div>
@@ -284,23 +357,33 @@ function Detail() {
 }
 
 // Sub-component for Similar Movies
-function SimilarMovies({ movieId }) {
+function SimilarMovies({ movieId, currentMovie }) {
     const [similar, setSimilar] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchSimilar = async () => {
+            setLoading(true);
             try {
-                const results = await movieService.getSimilarMovies(movieId, 12);
-                setSimilar(results);
+                let results = await movieService.getSimilarMovies(movieId, 12);
+                
+                // Fallback: If no results from recommendation engine, search by genre
+                if ((!results || results.length === 0) && currentMovie?.genres?.length > 0) {
+                    const firstGenre = Array.isArray(currentMovie.genres) ? currentMovie.genres[0] : currentMovie.genres;
+                    const searchResults = await movieService.searchFilms('', 1, { genre: firstGenre });
+                    // Filter out current movie
+                    results = (searchResults.items || []).filter(m => m.id !== movieId).slice(0, 12);
+                }
+                
+                setSimilar(results || []);
             } catch (error) {
                 console.error("Failed to fetch similar movies:", error);
             } finally {
-                setLoading(false); // Original line
+                setLoading(false);
             }
         };
         fetchSimilar();
-    }, [movieId]);
+    }, [movieId, currentMovie]);
 
     if (!loading && similar.length === 0) return null;
 

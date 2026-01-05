@@ -2,9 +2,12 @@ export interface MovieSyncData {
     slug: string;
     name: string;
     original_name?: string;
+    originalName?: string; // Camelcase variant
     description?: string;
     thumb_url?: string;
+    thumbUrl?: string; // Camelcase variant
     poster_url?: string;
+    posterUrl?: string; // Camelcase variant
     quality?: string;
     language?: string;
     category?: {
@@ -14,9 +17,15 @@ export interface MovieSyncData {
     };
     time?: string;
     director?: string;
-    casts?: string;
+    casts?: string | string[]; // Can be string or array
     current_episode?: string;
-    total_episodes?: number;
+    currentEpisode?: string; // Camelcase variant
+    total_episodes?: number | string;
+    totalEpisodes?: number | string; // Camelcase variant
+    genres?: string[];
+    countries?: string[];
+    year?: number | string;
+    type?: string;
 }
 
 export interface EpisodeSyncData {

@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import Spotlight from "@/components/bits/Spotlight";
 import { cn } from "@/lib/utils";
 import CommentSection from "@/components/ui/CommentSection";
+import { backendApiClient } from "@/config/apiClient";
 
 import { saveWatchHistory } from "@/utils/storage";
 
@@ -73,6 +74,23 @@ function Watch() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data?.id, currentEpisode?.slug]); // Use IDs/Slugs to prevent loops
+
+    // Log view on load
+    useEffect(() => {
+        const logView = async () => {
+            if (data?.id) {
+                try {
+                    await backendApiClient.post(`/movies/${data.id}/view`, data);
+                } catch (error) {
+                    console.error('Failed to log view:', error);
+                }
+            }
+        };
+        
+        // Slight delay to ensure it's a real view
+        const timer = setTimeout(logView, 3000);
+        return () => clearTimeout(timer);
+    }, [data?.id, data]);
 
     const handleNextEpisode = useCallback(() => {
         if (currentIndex < episodeList.length - 1) {

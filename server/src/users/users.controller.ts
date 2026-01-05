@@ -85,16 +85,16 @@ export class UsersController {
 
     @Get('favorites/:movieId')
     isFavorite(@Req() req: AuthenticatedRequest, @Param('movieId') movieId: string) {
-        return this.usersService.isFavorite(req.user.userId, Number(movieId));
+        return this.usersService.isFavorite(req.user.userId, movieId);
     }
 
     @Post('favorites/:movieId')
-    addFavorite(@Req() req: AuthenticatedRequest, @Param('movieId') movieId: string) {
-        return this.usersService.addFavorite(req.user.userId, Number(movieId));
+    addFavorite(@Req() req: AuthenticatedRequest, @Param('movieId') movieId: string, @Body() body?: any) {
+        return this.usersService.addFavorite(req.user.userId, movieId, body);
     }
 
     @Delete('favorites/:movieId')
     removeFavorite(@Req() req: AuthenticatedRequest, @Param('movieId') movieId: string) {
-        return this.usersService.removeFavorite(req.user.userId, Number(movieId));
+        return this.usersService.removeFavorite(req.user.userId, movieId);
     }
 }

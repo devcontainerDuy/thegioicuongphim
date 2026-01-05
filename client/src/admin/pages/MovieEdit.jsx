@@ -56,13 +56,7 @@ function MovieEdit() {
         m3u8Url: ''
     });
 
-    useEffect(() => {
-        if (isEditMode) {
-            fetchMovie();
-        }
-    }, [id]);
-
-    const fetchMovie = async () => {
+    const fetchMovie = React.useCallback(async () => {
         setLoading(true);
         try {
             const data = await adminService.getMovie(id);
@@ -93,7 +87,13 @@ function MovieEdit() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, navigate]);
+
+    useEffect(() => {
+        if (isEditMode) {
+            fetchMovie();
+        }
+    }, [isEditMode, fetchMovie]);
 
     const handleChange = (e) => {
         const { id, value } = e.target;

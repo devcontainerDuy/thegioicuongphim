@@ -9,8 +9,8 @@ import {
   CarouselNext, 
   CarouselPrevious 
 } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import { Play, Info } from "lucide-react";
+import PlayButton from "@/components/ui/PlayButton";
+import TrailerButton from "@/components/ui/TrailerButton";
 
 
 const getCategoryLabel = (item) =>
@@ -81,9 +81,10 @@ const HeroSpotlight = ({ film, trending = [] }) => {
                 {/* Backdrop Image with Ken Burns Effect */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div
-                    className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] ease-linear ${isActive ? "scale-110" : "scale-100"}`}
+                    className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform ease-linear ${isActive ? "scale-110" : "scale-100"}`}
                     style={{
                         backgroundImage: `url(${item.poster_url || item.thumb_url})`,
+                        transitionDuration: '10000ms'
                     }}
                     >
                         {/* Improved Gradient Overlay: Bottom-heavy for text readability */}

@@ -9,6 +9,7 @@ import movieService from "@/services/movieService";
 
 
 import FadeContent from "@/components/bits/FadeContent";
+import SEO from "@/components/common/SEO";
 
 function Home() {
   const { items: trending } = useFilmsList({ endpoint: "phim-moi-cap-nhat" }); // Trending
@@ -32,6 +33,10 @@ function Home() {
 
   return (
     <div className="bg-background min-h-screen pb-12">
+      <SEO 
+        title="Xem Phim HD Online Miễn Phí" 
+        description="Thế Giới Cuồng Phim - Nền tảng xem phim HD online chất lượng cao, cập nhật phim mới liên tục mỗi ngày, tốc độ nhanh, hoàn toàn miễn phí."
+      />
       <HeroSpotlight film={spotlightFilm} trending={trending} />
       
       <div className="container mx-auto px-4 md:px-12 space-y-12 -mt-20 relative z-10">

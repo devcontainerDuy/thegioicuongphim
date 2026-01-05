@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, ForbiddenException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateMovieDto, UpdateMovieDto } from './dto';
 import { MovieSyncData } from './dto/sync-data.dto';
 
 @Injectable()
 export class MoviesService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private notificationsService: NotificationsService
+    ) { }
 
     async findAll(page = 1, limit = 24, filters: { type?: string; genre?: string; year?: number; country?: string } = {}) {
         const skip = (page - 1) * limit;
@@ -185,7 +189,7 @@ export class MoviesService {
      * If it's a slug and not found locally, it will return the existing ID or throw.
      * Note: This does NOT auto-create. Use syncMovie for that.
      */
-    async resolveMovieId(idOrSlug: number | string): Promise<number> {
+    async resolveMovieId(idOrSlug: number | string, throwOnNotFound = true): Promise<number | null> {
         console.log('[MoviesService] Resolving movie ID for:', idOrSlug);
 
         let movie: { id: number } | null = null;
@@ -206,7 +210,10 @@ export class MoviesService {
 
         if (!movie) {
             console.warn('[MoviesService] Movie not found for identifier:', idOrSlug);
-            throw new NotFoundException('Phim không tồn tại trong hệ thống');
+            if (throwOnNotFound) {
+                throw new NotFoundException('Phim không tồn tại trong hệ thống');
+            }
+            return null;
         }
 
         return movie.id;
@@ -217,63 +224,83 @@ export class MoviesService {
      * Centralized logic moved from UsersService.
      */
     async syncMovie(idOrSlug: number | string, data?: MovieSyncData): Promise<number> {
-        if (typeof idOrSlug === 'number' || !isNaN(Number(idOrSlug))) {
+        console.log('[MoviesService] syncMovie called for:', idOrSlug);
+
+        if (typeof idOrSlug === 'number' || (!isNaN(Number(idOrSlug)) && idOrSlug.toString().length < 10)) {
+            // Likely a local numeric ID
             return Number(idOrSlug);
         }
 
+        // It's a slug or a hex ID
         const slug = data?.slug || idOrSlug.toString();
         let movie = await this.prisma.movie.findUnique({ where: { slug } });
 
-        if (!movie && data) {
-            console.log('[MoviesService] Syncing new movie:', data.slug);
-            // Parse Category Data
-            const catType = data.category?.['1']?.list?.[0]?.name || 'Phim bộ';
-            const type = catType === 'Phim lẻ' ? 'movie' : 'series';
+        if (!movie && data && data.name) {
+            console.log('[MoviesService] Syncing new movie:', slug);
+            try {
+                // Parse Category Data
+                const catType = data.category?.['1']?.list?.[0]?.name || 'Phim bộ';
+                const type = catType === 'Phim lẻ' ? 'movie' : 'series';
 
-            // Extract lists
-            const genres = data.category?.['2']?.list?.map(i => i.name) || [];
-            const countries = data.category?.['4']?.list?.map(i => i.name) || [];
-            const yearStr = data.category?.['3']?.list?.[0]?.name;
-            const year = yearStr ? parseInt(yearStr) : new Date().getFullYear();
+                // Extract lists
+                const genres = data.category?.['2']?.list?.map(i => i.name) || (Array.isArray(data.genres) ? data.genres : []);
+                const countries = data.category?.['4']?.list?.map(i => i.name) || (Array.isArray(data.countries) ? data.countries : []);
+                const yearStr = data.category?.['3']?.list?.[0]?.name;
+                const year = yearStr ? parseInt(yearStr) : (Number(data.year) || new Date().getFullYear());
 
-            // Parse Casts "A, B, C" -> ["A", "B", "C"]
-            let casts: string[] = [];
-            if (data.casts) {
-                casts = data.casts.split(',').map(c => c.trim()).filter(c => c);
-            }
-
-            movie = await this.prisma.movie.create({
-                data: {
-                    slug: data.slug,
-                    name: data.name,
-                    originalName: data.original_name,
-                    description: data.description,
-                    thumbUrl: data.thumb_url,
-                    posterUrl: data.poster_url,
-                    quality: data.quality,
-                    language: data.language,
-                    year,
-                    type,
-                    time: data.time,
-                    currentEpisode: data.current_episode,
-                    totalEpisodes: data.total_episodes || 1,
-                    director: data.director,
-                    casts: casts.length > 0 ? casts : undefined,
-                    genres: genres.length > 0 ? genres : undefined,
-                    countries: countries.length > 0 ? countries : undefined,
+                // Parse Casts "A, B, C" vs ["A", "B", "C"]
+                let casts: string[] = [];
+                if (Array.isArray(data.casts)) {
+                    casts = data.casts;
+                } else if (typeof data.casts === 'string') {
+                    casts = data.casts.split(',').map(c => c.trim()).filter(c => c);
                 }
-            });
+
+                movie = await this.prisma.movie.create({
+                    data: {
+                        slug,
+                        name: data.name,
+                        originalName: data.original_name || data.originalName,
+                        description: data.description,
+                        thumbUrl: data.thumb_url || data.thumbUrl,
+                        posterUrl: data.poster_url || data.posterUrl,
+                        quality: data.quality,
+                        language: data.language,
+                        year,
+                        type: data.type || type,
+                        time: data.time,
+                        currentEpisode: data.current_episode || data.currentEpisode,
+                        totalEpisodes: Number(data.total_episodes || data.totalEpisodes) || 1,
+                        director: data.director,
+                        casts: casts.length > 0 ? casts : undefined,
+                        genres: genres.length > 0 ? genres : undefined,
+                        countries: countries.length > 0 ? countries : undefined,
+                    }
+                });
+                console.log('[MoviesService] Successfully synced movie:', movie.slug, 'ID:', movie.id);
+            } catch (err) {
+                console.error('[MoviesService] Error during movie sync:', err);
+                throw new BadRequestException('Không thể lưu thông tin phim: ' + err.message);
+            }
         }
 
-        if (!movie) throw new NotFoundException('Phim chưa được đồng bộ và không có dữ liệu để tạo mới');
+        if (!movie) {
+            console.error('[MoviesService] Movie not found and sync failed for:', slug);
+            throw new NotFoundException('Phim chưa được đồng bộ và không có đủ dữ liệu để tạo mới');
+        }
+
         return movie.id;
     }
 
     // ===== RATINGS =====
     async getMovieRating(movieId: number, userId?: number) {
         if (!movieId) {
-            console.error('[MoviesService] getMovieRating called with invalid movieId:', movieId);
-            throw new BadRequestException('ID phim không hợp lệ');
+            return {
+                averageScore: 0,
+                totalRatings: 0,
+                userRating: null,
+                userReview: null
+            };
         }
 
         const [aggregate, userRating] = await Promise.all([
@@ -316,7 +343,7 @@ export class MoviesService {
 
     async getReviews(movieId: number, currentUserId?: number) {
         if (!movieId) {
-            throw new BadRequestException('ID phim không hợp lệ');
+            return [];
         }
 
         const reviews = await this.prisma.rating.findMany({
@@ -374,11 +401,11 @@ export class MoviesService {
     // ===== COMMENTS =====
     async getComments(movieId: number) {
         if (!movieId) {
-            console.error('[MoviesService] getComments called with invalid movieId:', movieId);
-            throw new BadRequestException('ID phim không hợp lệ');
+            return [];
         }
 
-        return this.prisma.comment.findMany({
+        // Fetch all comments for the movie
+        const comments = await this.prisma.comment.findMany({
             where: { movieId: Number(movieId) },
             orderBy: { createdAt: 'desc' },
             include: {
@@ -387,29 +414,70 @@ export class MoviesService {
                 }
             }
         });
+
+        // Group into tree (Parent -> Replies)
+        const parentComments = comments.filter(c => !c.parentId);
+        const replies = comments.filter(c => c.parentId);
+
+        return parentComments.map(p => ({
+            ...p,
+            replies: replies
+                .filter(r => r.parentId === p.id)
+                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()) // Replies chronological
+        }));
     }
 
-    async createComment(userId: number, movieId: number, content: string) {
+    async createComment(userId: number, movieId: number, content: string, parentId?: number) {
         if (!userId) {
             throw new BadRequestException('User ID is required for commenting');
         }
-        console.log(`[MoviesService] Creating comment by user ${userId} for movie ${movieId}`);
-        return this.prisma.comment.create({
+
+        console.log(`[MoviesService] Creating comment by user ${userId} for movie ${movieId}, parent: ${parentId}`);
+
+        const comment = await this.prisma.comment.create({
             data: {
                 content,
                 userId,
                 movieId,
+                parentId: parentId ? Number(parentId) : null,
             },
             include: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        avatar: true,
-                    },
+                    select: { id: true, name: true, avatar: true },
                 },
-            },
+                movie: {
+                    select: { name: true, slug: true }
+                }
+            }
         });
+
+        // Trigger Notification if it's a reply
+        if (parentId) {
+            try {
+                const parentComment = await this.prisma.comment.findUnique({
+                    where: { id: Number(parentId) },
+                    select: { userId: true }
+                });
+
+                // Don't notify self
+                if (parentComment && parentComment.userId !== userId) {
+                    await this.notificationsService.createNotification(parentComment.userId, {
+                        type: 'REPLY',
+                        title: 'Phản hồi bình luận',
+                        message: `${comment.user.name} đã trả lời bình luận của bạn trong phim ${comment.movie.name}`,
+                        metadata: {
+                            commentId: comment.id,
+                            parentId: parentId,
+                            movieSlug: comment.movie.slug
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('[MoviesService] Failed to create reply notification:', err);
+            }
+        }
+
+        return comment;
     }
 
     async updateComment(userId: number, commentId: number, content: string) {
@@ -443,6 +511,95 @@ export class MoviesService {
             where: { id: commentId }
         });
 
-        return { message: 'Đã xóa bình luận' };
+        return { success: true };
+    }
+
+    async logView(movieId: number) {
+        console.log('[MoviesService] Logging view for movieId:', movieId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalized to day start
+
+        try {
+            return await this.prisma.viewLog.upsert({
+                where: {
+                    movieId_date: {
+                        movieId,
+                        date: today
+                    }
+                },
+                update: {
+                    views: { increment: 1 }
+                },
+                create: {
+                    movieId,
+                    date: today,
+                    views: 1
+                }
+            });
+        } catch (error) {
+            // Handle race condition where two requests try to create the same log at once
+            if (error.code === 'P2002') {
+                console.log('[MoviesService] Race condition in logView, waiting and retrying...');
+                // Wait for the other request to finish creating the record
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                // Find the existing record
+                const existing = await this.prisma.viewLog.findFirst({
+                    where: { movieId, date: today }
+                });
+
+                if (existing) {
+                    // Update by ID
+                    return this.prisma.viewLog.update({
+                        where: { id: existing.id },
+                        data: { views: { increment: 1 } }
+                    });
+                } else {
+                    // Still not found? Just ignore to avoid crashing UX
+                    console.warn('[MoviesService] View log not found after retry, ignoring');
+                    return null;
+                }
+            }
+            console.error('[MoviesService] logView failed:', error);
+            throw error;
+        }
+    }
+
+    // ===== WATCHLIST =====
+    async toggleWatchlist(userId: number, movieId: number) {
+        const existing = await this.prisma.watchlist.findUnique({
+            where: { userId_movieId: { userId, movieId } }
+        });
+
+        if (existing) {
+            await this.prisma.watchlist.delete({
+                where: { id: existing.id }
+            });
+            return { added: false };
+        }
+
+        await this.prisma.watchlist.create({
+            data: { userId, movieId }
+        });
+        return { added: true };
+    }
+
+    async getWatchlist(userId: number) {
+        const watchlist = await this.prisma.watchlist.findMany({
+            where: { userId },
+            include: {
+                movie: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        return watchlist.map(item => item.movie);
+    }
+
+    async checkInWatchlist(userId: number, movieId: number) {
+        const item = await this.prisma.watchlist.findUnique({
+            where: { userId_movieId: { userId, movieId } }
+        });
+        return { inWatchlist: !!item };
     }
 }

@@ -7,6 +7,7 @@ export class AdminService {
 
     // Dashboard Stats
     async getDashboardStats() {
+        // ... (existing code remains as fallback/overview)
         const [totalMovies, totalUsers, totalViews, recentMovies, recentUsers] = await Promise.all([
             this.prisma.movie.count(),
             this.prisma.user.count(),
@@ -31,6 +32,80 @@ export class AdminService {
             },
             recentMovies,
             recentUsers
+        };
+    }
+
+    async getAnalytics() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const last7Days = new Date(today);
+        last7Days.setDate(today.getDate() - 7);
+
+        const last30Days = new Date(today);
+        last30Days.setDate(today.getDate() - 30);
+
+        const [dailyStats, weeklyStats, monthlyStats, topMovies, chartDaily] = await Promise.all([
+            // Daily Total
+            this.prisma.viewLog.aggregate({
+                where: { date: today },
+                _sum: { views: true }
+            }),
+            // Last 7 Days Total
+            this.prisma.viewLog.aggregate({
+                where: { date: { gte: last7Days } },
+                _sum: { views: true }
+            }),
+            // Last 30 Days Total
+            this.prisma.viewLog.aggregate({
+                where: { date: { gte: last30Days } },
+                _sum: { views: true }
+            }),
+            // Top 10 Movies in last 30 days
+            this.prisma.viewLog.groupBy({
+                by: ['movieId'],
+                where: { date: { gte: last30Days } },
+                _sum: { views: true },
+                orderBy: { _sum: { views: 'desc' } },
+                take: 10
+            }),
+            // Daily breakdown for chart (30 days)
+            this.prisma.viewLog.groupBy({
+                by: ['date'],
+                where: { date: { gte: last30Days } },
+                _sum: { views: true },
+                orderBy: { date: 'asc' }
+            })
+        ]);
+
+        // Get movie names for top movies
+        const topMoviesWithNames = await Promise.all(
+            topMovies.map(async (item) => {
+                const movie = await this.prisma.movie.findUnique({
+                    where: { id: item.movieId },
+                    select: { name: true, slug: true }
+                });
+                return {
+                    id: item.movieId,
+                    name: movie?.name || 'Unknown',
+                    slug: movie?.slug,
+                    views: item._sum.views || 0
+                };
+            })
+        );
+
+        // Format chart data
+        const chartData = chartDaily.map(item => ({
+            date: item.date.toISOString().split('T')[0],
+            views: item._sum.views || 0
+        }));
+
+        return {
+            daily: dailyStats._sum.views || 0,
+            weekly: weeklyStats._sum.views || 0,
+            monthly: monthlyStats._sum.views || 0,
+            topMovies: topMoviesWithNames,
+            chartData
         };
     }
 

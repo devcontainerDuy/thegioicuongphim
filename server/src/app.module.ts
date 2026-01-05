@@ -10,9 +10,10 @@ import { UsersModule } from './users/users.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { AdminModule } from './admin/admin.module';
 import { SettingsModule } from './settings/settings.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, MoviesModule, UsersModule, RecommendationsModule, AdminModule, SettingsModule],
+  imports: [PrismaModule, AuthModule, MoviesModule, UsersModule, RecommendationsModule, AdminModule, SettingsModule, NotificationsModule],
   controllers: [AppController],
   providers: [
     AppService,

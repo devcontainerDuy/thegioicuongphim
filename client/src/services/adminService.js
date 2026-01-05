@@ -15,6 +15,12 @@ const adminService = {
         return res.json();
     },
 
+    getAnalytics: async () => {
+        const res = await fetch(`${API_URL}/api/admin/analytics`, { headers: getAuthHeader() });
+        if (!res.ok) throw new Error('Failed to get analytics');
+        return res.json();
+    },
+
     // Movies
     getMovies: async (page = 1, limit = 20, search = '') => {
         const params = new URLSearchParams({ page: String(page), limit: String(limit), search });

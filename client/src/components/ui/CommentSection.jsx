@@ -29,6 +29,195 @@ import { toast } from 'sonner';
  * - Cho phép thêm, sửa, xóa bình luận
  * - Chỉ owner mới có thể edit/delete comment của mình
  */
+
+// Move CommentItem outside to prevent re-creation on every render
+const CommentItem = React.memo(({ 
+    comment, 
+    isReply = false, 
+    user,
+    editingId,
+    editContent,
+    setEditingId,
+    setEditContent,
+    handleEdit,
+    formatDate,
+    replyingTo,
+    setReplyingTo,
+    setReplyContent,
+    replyContent,
+    handleSubmit,
+    isSubmitting,
+    isAuthenticated
+}) => {
+    const isOwner = user?.id === comment.userId;
+    const isEditing = editingId === comment.id;
+
+    return (
+        <div className={cn("flex gap-3 group", isReply ? "mt-3 ml-12" : "mt-6")}>
+            {/* Avatar */}
+            <div className={cn("rounded-full bg-muted flex items-center justify-center shrink-0", isReply ? "w-8 h-8" : "w-10 h-10")}>
+                {comment.user?.avatar ? (
+                    <img src={comment.user.avatar} alt="" className={cn("rounded-full object-cover", isReply ? "w-8 h-8" : "w-10 h-10")} />
+                ) : (
+                    <User className={cn("text-muted-foreground", isReply ? "w-4 h-4" : "w-5 h-5")} />
+                )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-sm">
+                        {comment.user?.name || 'Người dùng'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        {formatDate(comment.createdAt)}
+                    </span>
+                </div>
+
+                {isEditing ? (
+                    <div className="space-y-2">
+                        <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            rows={2}
+                            autoFocus
+                            className="resize-none bg-card border-border"
+                        />
+                        <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleEdit(comment.id)}>
+                                Lưu
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => {
+                                setEditingId(null);
+                                setEditContent('');
+                            }}>
+                                Hủy
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+                            {comment.content}
+                        </p>
+                        
+                        {!isReply && isAuthenticated && (
+                            <button 
+                                onClick={() => {
+                                    setReplyingTo(replyingTo === comment.id ? null : comment.id);
+                                    setReplyContent('');
+                                }}
+                                className="text-xs text-muted-foreground hover:text-primary mt-2 flex items-center gap-1 transition-colors"
+                            >
+                                <Send className="w-3 h-3 rotate-45" /> Phản hồi
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Reply Form */}
+                {replyingTo === comment.id && (
+                    <div className="mt-3 flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            {user?.avatar ? (
+                                <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                                <User className="w-4 h-4 text-primary" />
+                            )}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                            <Textarea
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                placeholder="Viết phản hồi..."
+                                rows={2}
+                                autoFocus
+                                className="resize-none bg-card border-border text-sm"
+                            />
+                            <div className="flex gap-2 justify-end">
+                                <Button 
+                                    size="xs" 
+                                    variant="ghost" 
+                                    onClick={() => setReplyingTo(null)}
+                                    className="h-7 text-xs"
+                                >
+                                    Hủy
+                                </Button>
+                                <Button 
+                                    size="xs" 
+                                    onClick={() => handleSubmit(null, comment.id)}
+                                    disabled={!replyContent.trim() || isSubmitting}
+                                    className="h-7 text-xs"
+                                >
+                                    Phản hồi
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Render Replies */}
+                {!isReply && comment.replies?.length > 0 && (
+                    <div className="border-l-2 border-muted pl-4 mt-2">
+                        {comment.replies.map(reply => (
+                            <CommentItem 
+                                key={reply.id} 
+                                comment={reply} 
+                                isReply={true}
+                                user={user}
+                                editingId={editingId}
+                                editContent={editContent}
+                                setEditingId={setEditingId}
+                                setEditContent={setEditContent}
+                                handleEdit={handleEdit}
+                                formatDate={formatDate}
+                                replyingTo={replyingTo}
+                                setReplyingTo={setReplyingTo}
+                                replyContent={replyContent}
+                                setReplyContent={setReplyContent}
+                                handleSubmit={handleSubmit}
+                                isSubmitting={isSubmitting}
+                                isAuthenticated={isAuthenticated}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Actions */}
+            {isOwner && !isEditing && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        >
+                            <MoreVertical className="w-4 h-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                            setEditingId(comment.id);
+                            setEditContent(comment.content);
+                        }}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Chỉnh sửa
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                            onClick={() => {}} // Will be handled by parent
+                            className="text-red-500 focus:text-red-500"
+                        >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Xóa
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+        </div>
+    );
+});
+
 function CommentSection({ movieId, slug, movieData, className }) {
     const { user, isAuthenticated } = useAuth();
     const [comments, setComments] = useState([]);
@@ -38,6 +227,10 @@ function CommentSection({ movieId, slug, movieData, className }) {
     const [editingId, setEditingId] = useState(null);
     const [editContent, setEditContent] = useState('');
     const [deleteId, setDeleteId] = useState(null);
+
+    // Reply state
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyContent, setReplyContent] = useState('');
 
     const fetchComments = React.useCallback(async () => {
         const identifier = (typeof movieId === 'number' && movieId > 0) ? movieId : slug;
@@ -58,13 +251,13 @@ function CommentSection({ movieId, slug, movieData, className }) {
         fetchComments();
     }, [fetchComments]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!newComment.trim() || !isAuthenticated) return;
+    const handleSubmit = async (e, parentId = null) => {
+        if (e) e.preventDefault();
+        const content = parentId ? replyContent : newComment;
+        if (!content.trim() || !isAuthenticated) return;
 
         setIsSubmitting(true);
         try {
-            // Ensure movie exists in local DB before commenting
             let targetId = movieId;
             if (movieData && slug) {
                 try {
@@ -74,20 +267,38 @@ function CommentSection({ movieId, slug, movieData, className }) {
                     });
                     targetId = syncRes.data.movieId;
                 } catch (syncErr) {
-                    console.warn('[CommentSection] Sync failed, trying direct post:', syncErr);
+                    console.warn('[CommentSection] Sync failed:', syncErr);
                 }
             }
 
             const identifier = (typeof targetId === 'number' && targetId > 0) ? targetId : slug;
 
             const response = await backendApiClient.post(`/movies/${identifier}/comments`, { 
-                content: newComment.trim() 
+                content: content.trim(),
+                parentId: parentId
             });
-            setComments([response.data, ...comments]);
-            setNewComment('');
-            toast.success('Đã đăng bình luận');
+
+            if (parentId) {
+                // Update specific parent with new reply
+                setComments(prev => prev.map(c => {
+                    if (c.id === parentId) {
+                        return {
+                            ...c,
+                            replies: [...(c.replies || []), response.data]
+                        };
+                    }
+                    return c;
+                }));
+                setReplyingTo(null);
+                setReplyContent('');
+            } else {
+                setComments([response.data, ...comments]);
+                setNewComment('');
+            }
+            
+            toast.success(parentId ? 'Đã gửi phản hồi' : 'Đã đăng bình luận');
         } catch (error) {
-            toast.error('Không thể đăng bình luận. Vui lòng thử lại.');
+            toast.error('Không thể gửi bình luận. Vui lòng thử lại.');
         } finally {
             setIsSubmitting(false);
         }
@@ -146,7 +357,7 @@ function CommentSection({ movieId, slug, movieData, className }) {
 
             {/* Comment Form */}
             {isAuthenticated ? (
-                <form onSubmit={handleSubmit} className="space-y-3">
+                <form onSubmit={(e) => handleSubmit(e)} className="space-y-3">
                     <div className="flex gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             {user?.avatar ? (
@@ -197,92 +408,26 @@ function CommentSection({ movieId, slug, movieData, className }) {
                 </div>
             ) : comments.length > 0 ? (
                 <div className="space-y-4">
-                    {comments.map((comment) => {
-                        const isOwner = user?.id === comment.userId;
-                        const isEditing = editingId === comment.id;
-
-                        return (
-                            <div key={comment.id} className="flex gap-3 group">
-                                {/* Avatar */}
-                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                                    {comment.user?.avatar ? (
-                                        <img src={comment.user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
-                                    ) : (
-                                        <User className="w-5 h-5 text-muted-foreground" />
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-semibold text-sm">
-                                            {comment.user?.name || 'Người dùng'}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {formatDate(comment.createdAt)}
-                                        </span>
-                                    </div>
-
-                                    {isEditing ? (
-                                        <div className="space-y-2">
-                                            <Textarea
-                                                value={editContent}
-                                                onChange={(e) => setEditContent(e.target.value)}
-                                                rows={2}
-                                                className="resize-none bg-card border-border"
-                                            />
-                                            <div className="flex gap-2">
-                                                <Button size="sm" onClick={() => handleEdit(comment.id)}>
-                                                    Lưu
-                                                </Button>
-                                                <Button size="sm" variant="ghost" onClick={() => {
-                                                    setEditingId(null);
-                                                    setEditContent('');
-                                                }}>
-                                                    Hủy
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-foreground/90 whitespace-pre-wrap">
-                                            {comment.content}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Actions */}
-                                {isOwner && !isEditing && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                                            >
-                                                <MoreVertical className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => {
-                                                setEditingId(comment.id);
-                                                setEditContent(comment.content);
-                                            }}>
-                                                <Edit className="w-4 h-4 mr-2" />
-                                                Chỉnh sửa
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                                onClick={() => setDeleteId(comment.id)}
-                                                className="text-red-500 focus:text-red-500"
-                                            >
-                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                Xóa
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
-                            </div>
-                        );
-                    })}
+                    {comments.map((comment) => (
+                        <CommentItem 
+                            key={comment.id} 
+                            comment={comment}
+                            user={user}
+                            editingId={editingId}
+                            editContent={editContent}
+                            setEditingId={setEditingId}
+                            setEditContent={setEditContent}
+                            handleEdit={handleEdit}
+                            formatDate={formatDate}
+                            replyingTo={replyingTo}
+                            setReplyingTo={setReplyingTo}
+                            replyContent={replyContent}
+                            setReplyContent={setReplyContent}
+                            handleSubmit={handleSubmit}
+                            isSubmitting={isSubmitting}
+                            isAuthenticated={isAuthenticated}
+                        />
+                    ))}
                 </div>
             ) : (
                 <div className="text-center py-8 text-muted-foreground">
