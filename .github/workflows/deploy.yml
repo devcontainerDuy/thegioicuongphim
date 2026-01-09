@@ -1,4 +1,4 @@
-name: 🚀 Deploy on push to main
+name: 🚀 Deploy React App
 
 on:
   push:
@@ -10,39 +10,90 @@ on:
 
 jobs:
   deploy:
-    name: 🎉 Deploy
+    name: 🎉 Build & Deploy
     runs-on: ubuntu-latest
+    
+    env:
+      NODE_ENV: production
+      CI: false # Tắt warnings as errors trong CRA
 
     steps:
-      - name: 🚚 Get latest code
+      - name: 🚚 Checkout code
         uses: actions/checkout@v4
 
-      # - name: Set up Node
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: "20"
-      #     cache: "npm"
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
 
-      - name: 📝 Set environment variables
-        run: echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            client/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
-      - name: 🔧 Install dependencies and 🔨 Build Project
+      - name: 📝 Create .env file
+        working-directory: ./client
         run: |
-          npm install 
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" > .env
+          echo "GENERATE_SOURCEMAP=false" >> .env
+          echo "✅ Environment variables created"
+
+      - name: 🔧 Install dependencies
+        working-directory: ./client
+        run: |
+          npm ci --prefer-offline --no-audit
+          echo "✅ Dependencies installed"
+
+      - name: 🔨 Build React App
+        working-directory: ./client
+        run: |
+          echo "🏗️ Building production bundle..."
           npm run build
+          echo "✅ Build completed"
+          
+      - name: 📊 Show build stats
+        working-directory: ./client
+        run: |
+          echo "📦 Build size analysis:"
+          du -sh build/
+          echo ""
+          echo "📄 Main files:"
+          find build/static/js -name "*.js" -exec ls -lh {} \; | awk '{print $9, "-", $5}'
+          find build/static/css -name "*.css" -exec ls -lh {} \; | awk '{print $9, "-", $5}'
 
-      - name: List output files
-        run: find build/ -print
+      - name: 🗜️ Optimize build (optional)
+        working-directory: ./client/build
+        run: |
+          # Xóa source maps nếu không cần
+          find . -name "*.map" -type f -delete
+          echo "✅ Source maps removed"
 
-      - name: 📂 Sync files
+      - name: 📂 Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: react-build
+          path: client/build/
+          retention-days: 7
+
+      - name: 📤 Deploy to server via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
           server: ${{ secrets.SERVER }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          local-dir: build/
+          local-dir: client/build/
+          server-dir: /
+          dangerous-clean-slate: false
           exclude: |
-            **/.git**
+            **/.git*
             **/.git*/**
             **/node_modules/**
-            **/.**
+            **/.DS_Store
+            **/Thumbs.db
