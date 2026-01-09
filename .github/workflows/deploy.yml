@@ -48,7 +48,7 @@ jobs:
       - name: 🔧 Install dependencies
         working-directory: ./client
         run: |
-          npm ci --prefer-offline --no-audit
+          npm ci --prefer-offline --no-audit --legacy-peer-deps
           echo "✅ Dependencies installed"
 
       - name: 🔨 Build React App

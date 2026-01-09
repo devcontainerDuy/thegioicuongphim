@@ -46,7 +46,7 @@ jobs:
 
       - name: 🔧 Install dependencies
         working-directory: ./client
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🧪 Run tests (if available)
         working-directory: ./client
