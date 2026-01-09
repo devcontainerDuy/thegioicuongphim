@@ -1,30 +1,30 @@
-import React, { useCallback, useMemo, useState, useEffect } from "react";
-import movieService from "@/services/movieService";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { addFavorite, removeFavorite } from "@/store/reducers/favoritesSlice";
-import { fetchWatchlist, toggleWatchlist } from "@/store/reducers/watchlistSlice";
-import { useFilmDetail } from "@/hooks/useFilmDetail";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Play, Plus, Check, ChevronDown, ChevronUp, Bookmark } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import FadeContent from "@/components/bits/FadeContent";
-import BlurText from "@/components/bits/BlurText";
-import StarRating from "@/components/ui/StarRating";
-import CommentSection from "@/components/ui/CommentSection";
-import ReviewSection from "@/components/ui/ReviewSection";
-import SEO from "@/components/common/SEO";
-import { useAuth } from "@/contexts/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-import { backendApiClient } from "@/config/apiClient";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useFilmDetail } from "@/hooks/useFilmDetail";
+import { addFavorite, removeFavorite } from "@/store/reducers/favoritesSlice";
+import { toggleWatchlist } from "@/store/reducers/watchlistSlice";
+import { cn } from "@/lib/utils";
+import SEO from "@/components/common/SEO";
+import FadeContent from "@/components/bits/FadeContent";
+import ReviewSection from "@/components/ui/ReviewSection";
+import { backendApiClient } from '@/config/apiClient';
+import CommentSection from "@/components/ui/CommentSection";
+import { Badge } from "@/components/ui/badge";
+import PlayButton from "@/components/ui/PlayButton";
+import FavoriteButton from "@/components/ui/FavoriteButton";
+import WatchlistButton from "@/components/ui/WatchlistButton";
+import ShareButton from "@/components/ui/ShareButton";
+import { Skeleton } from "@/components/ui/skeleton";
+import StarRating from "@/components/ui/StarRating";
+import BlurText from "@/components/bits/BlurText";
+import { motion } from "framer-motion";
 
 function Detail() {
     const { slug } = useParams();
     const { film: data, loading, error } = useFilmDetail(slug);
-    const { isAuthenticated } = useAuth();
     const dispatch = useDispatch();
     
     // Favorites
@@ -42,12 +42,7 @@ function Detail() {
     const isInWatchlist = useMemo(() => watchlist.some((film) => film.id === data?.id), [watchlist, data]);
     const [isDescExpanded, setIsDescExpanded] = useState(false);
 
-    // Initial load
-    useEffect(() => {
-        if (isAuthenticated && watchlist.length === 0) {
-            dispatch(fetchWatchlist());
-        }
-    }, [isAuthenticated, dispatch, watchlist.length]);
+
 
     // Log view on load
     useEffect(() => {
@@ -122,6 +117,7 @@ function Detail() {
         }))) || [];
 
     const firstEpisodeSlug = episodes?.[0]?.slug;
+    const firstEpisodeLink = firstEpisodeSlug ? `/xem-phim/${data.slug}/${firstEpisodeSlug}` : `/phim/${data.slug}`;
 
     return (
         <div className="min-h-screen bg-background text-foreground relative">
@@ -167,41 +163,32 @@ function Detail() {
                                     movieData={data}
                                     className="mt-3" 
                                  />
-                            </FadeContent>
+                                 </FadeContent>
+                            {/* Actions */}
+                            <FadeContent delay={0.4}>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {/* Play Button */}
+                                    <Link to={firstEpisodeLink}>
+                                        <PlayButton />
+                                    </Link>
 
-                            <FadeContent delay={0.5}>
-                                <div className="flex gap-4 pt-4">
-                                    <Button asChild size="lg" className="h-14 px-8 text-lg font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-                                        <Link to={firstEpisodeSlug ? `/xem-phim/${data.slug}/${firstEpisodeSlug}` : "#"}>
-                                            <Play className="w-6 h-6 mr-2 fill-current" /> Xem Ngay
-                                        </Link>
-                                    </Button>
-                                    
-                                    <Button 
-                                        size="lg" 
-                                        variant="outline" 
-                                        className="h-14 px-6 text-lg border-zinc-600 hover:bg-zinc-800 text-white bg-black/40 backdrop-blur-sm"
+                                    {/* Favorite Button */}
+                                    <FavoriteButton 
+                                        isFavorite={isFavorite}
                                         onClick={handleFavoriteClick}
-                                    >
-                                        {isFavorite ? (
-                                            <><Check className="w-6 h-6 mr-2 text-green-500" /> Đã Yêu Thích</>
-                                        ) : (
-                                            <><Plus className="w-6 h-6 mr-2" /> Thêm Yêu Thích</>
-                                        )}
-                                    </Button>
+                                    />
 
-                                    <Button 
-                                        size="lg" 
-                                        variant="outline" 
-                                        className="h-14 px-5 text-lg border-zinc-700 hover:bg-zinc-800 text-white bg-black/20 backdrop-blur-md"
+                                    {/* Watchlist Button */}
+                                    <WatchlistButton 
+                                        isInWatchlist={isInWatchlist}
                                         onClick={handleWatchlistClick}
-                                    >
-                                        {isInWatchlist ? (
-                                            <Bookmark className="w-6 h-6 fill-primary text-primary" />
-                                        ) : (
-                                            <Bookmark className="w-6 h-6" />
-                                        )}
-                                    </Button>
+                                    />
+
+                                    {/* Share Button */}
+                                    <ShareButton onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        toast.success('Đã sao chép link!');
+                                    }} />
                                 </div>
                             </FadeContent>
                         </div>
@@ -344,95 +331,6 @@ function Detail() {
                         </div>
                     </div>
                 </FadeContent>
-            </div>
-
-            {/* Similar Movies Section */}
-            {data?.id && (
-                <div className="container mx-auto px-4 md:px-12 pb-20">
-                    <SimilarMovies movieId={data.id} currentMovie={data} />
-                </div>
-            )}
-        </div>
-    );
-}
-
-// Sub-component for Similar Movies
-function SimilarMovies({ movieId, currentMovie }) {
-    const [similar, setSimilar] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchSimilar = async () => {
-            setLoading(true);
-            try {
-                let results = await movieService.getSimilarMovies(movieId, 12);
-                
-                // Fallback: If no results from recommendation engine, search by genre
-                if ((!results || results.length === 0) && currentMovie?.genres?.length > 0) {
-                    const firstGenre = Array.isArray(currentMovie.genres) ? currentMovie.genres[0] : currentMovie.genres;
-                    const searchResults = await movieService.searchFilms('', 1, { genre: firstGenre });
-                    // Filter out current movie
-                    results = (searchResults.items || []).filter(m => m.id !== movieId).slice(0, 12);
-                }
-                
-                setSimilar(results || []);
-            } catch (error) {
-                console.error("Failed to fetch similar movies:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSimilar();
-    }, [movieId, currentMovie]);
-
-    if (!loading && similar.length === 0) return null;
-
-    return (
-        <div className="space-y-6">
-            <h3 className="text-2xl font-bold flex items-center gap-2">
-                <span className="w-1.5 h-8 bg-primary rounded-full" />
-                Phim Tương Tự
-            </h3>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-                {loading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="space-y-3">
-                            <Skeleton className="w-full aspect-[2/3] rounded-lg bg-zinc-900" />
-                            <Skeleton className="h-4 w-3/4 bg-zinc-900" />
-                        </div>
-                    ))
-                ) : (
-                    similar.map((movie) => (
-                        <Link 
-                            key={movie.id} 
-                            to={`/phim/${movie.slug}`}
-                            className="group block space-y-3"
-                        >
-                            <div className="relative aspect-[2/3] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 shadow-sm transition-transform duration-300 group-hover:scale-105 group-hover:shadow-primary/10">
-                                <img 
-                                    src={movie.thumb_url} 
-                                    alt={movie.name} 
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute bottom-2 left-2 right-2 transform translate-y-4 group-hover:translate-y-0 transition-transform opacity-0 group-hover:opacity-100">
-                                    <Button size="sm" className="w-full h-8 text-[10px] uppercase font-bold tracking-wider">
-                                        Xem ngay
-                                    </Button>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-sm truncate group-hover:text-primary transition-colors">
-                                    {movie.name}
-                                </h4>
-                                <p className="text-xs text-muted-foreground truncate italic">
-                                    {movie.original_name}
-                                </p>
-                            </div>
-                        </Link>
-                    ))
-                )}
             </div>
         </div>
     );

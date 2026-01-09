@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
+import ClickSpark from "@/components/bits/ClickSpark";
 
 const MovieCard = ({
   name,
@@ -34,12 +35,14 @@ const MovieCard = ({
   const episodeLabel = currentEpisode && totalEpisodes ? `${currentEpisode}/${totalEpisodes}` : currentEpisode || "Trọn bộ";
 
   return (
-    <motion.div
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.2 }}
-        className={cn("group relative rounded-lg cursor-pointer", className)}
-    >
-      <Link to={`/phim/${slug}`}>
+    <ClickSpark sparkCount={8} sparkColor="hsl(var(--primary))">
+      <motion.div
+          whileHover={{ scale: 1.05, y: -5 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+          className={cn("group relative rounded-lg cursor-pointer", className)}
+      >
+        <Link to={`/phim/${slug}`}>
         <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-muted dark:bg-zinc-800 border border-transparent dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
             {image ? (
                 <img
@@ -89,9 +92,10 @@ const MovieCard = ({
           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
               {time && <span>{time}</span>}
           </div>
-        </div>
-      </Link>
-    </motion.div>
+          </div>
+        </Link>
+      </motion.div>
+    </ClickSpark>
   );
 };
 

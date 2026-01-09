@@ -8,7 +8,7 @@ export const PlayButton = ({ onClick, className = "" }) => {
   return (
     <button
       onClick={onClick}
-      className={`group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-white overflow-hidden rounded-lg transition-all duration-300 hover:scale-105 ${className}`}
+      className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 font-bold text-white overflow-hidden rounded-lg transition-all duration-300 hover:scale-105 active:scale-95 ${className}`}
     >
       {/* Animated gradient background */}
       <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-red-600 via-red-500 to-orange-500 transition-all duration-300 ease-out group-hover:from-red-500 group-hover:via-orange-500 group-hover:to-yellow-500"></span>
@@ -20,8 +20,8 @@ export const PlayButton = ({ onClick, className = "" }) => {
       
       {/* Content */}
       <span className="relative flex items-center gap-2 z-10">
-        <Play className="w-5 h-5 fill-current" />
-        <span className="text-base md:text-lg font-bold tracking-wide">Xem Ngay</span>
+        <Play className="w-4 h-4 md:w-5 md:h-5 fill-current" />
+        <span className="text-sm md:text-base lg:text-lg font-bold tracking-wide">Xem Ngay</span>
       </span>
     </button>
   );

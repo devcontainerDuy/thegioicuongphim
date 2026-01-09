@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/carousel";
 import { ChevronRight } from "lucide-react";
 import MovieCard from "@/components/shared/MovieCard";
+import SlideIn from "@/components/bits/SlideIn";
+import ShinyText from "@/components/bits/ShinyText";
 
 
 const FilmRailSection = ({ title, films = [], viewAllLink, loading = false }) => {
@@ -19,14 +21,23 @@ const FilmRailSection = ({ title, films = [], viewAllLink, loading = false }) =>
 
   return (
     <section className="py-8 relative">
-      <div className="flex justify-between items-center mb-6 px-4 md:px-12">
-        <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-wide">{title}</h3>
-        {viewAllLink && (
-          <Link to={viewAllLink} className="flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-            Xem thêm <ChevronRight className="w-4 h-4 ml-1" />
-          </Link>
-        )}
-      </div>
+      <SlideIn direction="right" delay={0.1}>
+        <div className="flex justify-between items-center mb-6 px-4 md:px-12">
+          <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-wide flex items-center gap-2">
+            <span className="w-1.5 h-8 bg-primary rounded-full"></span>
+            {title.includes("Hot") || title.includes("Mới") ? (
+              <ShinyText text={title} speed={4} />
+            ) : (
+              title
+            )}
+          </h3>
+          {viewAllLink && (
+            <Link to={viewAllLink} className="flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-all hover:gap-2 gap-1 group">
+              Xem thêm <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          )}
+        </div>
+      </SlideIn>
 
       <div className="px-4 md:px-12">
         {loading ? (

@@ -128,17 +128,13 @@ const HeroSpotlight = ({ film, trending = [] }) => {
 
                       {/* Actions */}
                       <div className="flex flex-wrap items-center gap-4 pt-4">
-                        <Button asChild size="lg" className="h-14 px-8 text-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.7)] border-none rounded-lg">
-                          <Link to={`/phim/${item.slug}`}>
-                            <Play className="w-6 h-6 mr-2 fill-current" /> Xem Ngay
-                          </Link>
-                        </Button>
+                        <Link to={firstEpisodeSlug ? `/xem-phim/${item.slug}/${firstEpisodeSlug}` : `/phim/${item.slug}`}>
+                          <PlayButton />
+                        </Link>
                         
-                        <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg font-medium bg-white/5 border-white/20 text-white hover:bg-white/20 hover:text-white hover:border-white/40 rounded-lg backdrop-blur-md transition-all">
-                           <Link to={firstEpisodeSlug ? `/xem-phim/${item.slug}/${firstEpisodeSlug}` : `/phim/${item.slug}`}>
-                            <Info className="w-6 h-6 mr-2" /> Chi tiết
-                          </Link>
-                        </Button>
+                        <Link to={`/phim/${item.slug}`}>
+                          <TrailerButton />
+                        </Link>
                       </div>
                     </div>
 
