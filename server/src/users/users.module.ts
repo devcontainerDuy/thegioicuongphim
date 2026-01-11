@@ -4,9 +4,9 @@ import { UsersService } from './users.service';
 import { MoviesModule } from '../movies/movies.module';
 
 @Module({
-    imports: [MoviesModule],
-    controllers: [UsersController],
-    providers: [UsersService],
-    exports: [UsersService],
+  imports: [MoviesModule],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

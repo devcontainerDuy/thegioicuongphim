@@ -13,7 +13,16 @@ import { SettingsModule } from './settings/settings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, MoviesModule, UsersModule, RecommendationsModule, AdminModule, SettingsModule, NotificationsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    MoviesModule,
+    UsersModule,
+    RecommendationsModule,
+    AdminModule,
+    SettingsModule,
+    NotificationsModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,
@@ -23,5 +32,4 @@ import { NotificationsModule } from './notifications/notifications.module';
     },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

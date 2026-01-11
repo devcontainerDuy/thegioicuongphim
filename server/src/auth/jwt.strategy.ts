@@ -5,24 +5,24 @@ import { AuthService } from './auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private authService: AuthService) {
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET || 'thegioicuongphim-secret-key-2026',
-        });
-    }
+  constructor(private authService: AuthService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: process.env.JWT_SECRET || 'thegioicuongphim-secret-key-2026',
+    });
+  }
 
-    async validate(payload: { sub: number; email: string }) {
-        const user = await this.authService.validateUser(payload.sub);
-        if (!user) {
-            throw new UnauthorizedException();
-        }
-        return {
-            userId: payload.sub,
-            email: payload.email,
-            role: user.role,
-            isRoot: user.isRoot
-        };
+  async validate(payload: { sub: number; email: string }) {
+    const user = await this.authService.validateUser(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException();
     }
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: user.role,
+      isRoot: user.isRoot,
+    };
+  }
 }

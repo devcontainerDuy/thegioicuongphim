@@ -5,9 +5,9 @@ import { MoviesController } from './movies.controller';
 import { MoviesService } from './movies.service';
 
 @Module({
-    imports: [PrismaModule, NotificationsModule],
-    controllers: [MoviesController],
-    providers: [MoviesService],
-    exports: [MoviesService],
+  imports: [PrismaModule, NotificationsModule],
+  controllers: [MoviesController],
+  providers: [MoviesService],
+  exports: [MoviesService],
 })
-export class MoviesModule { }
+export class MoviesModule {}

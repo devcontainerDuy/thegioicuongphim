@@ -10,17 +10,17 @@ import { AuthGuard } from '@nestjs/passport';
 @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
 @Roles('Admin')
 export class SettingsController {
-    constructor(private readonly settingsService: SettingsService) { }
+  constructor(private readonly settingsService: SettingsService) {}
 
-    @Get()
-    @Permissions('settings.manage') // Assuming we might want granularity, or just rely on Admin role
-    async getSettings() {
-        return this.settingsService.findAll();
-    }
+  @Get()
+  @Permissions('settings.manage') // Assuming we might want granularity, or just rely on Admin role
+  async getSettings() {
+    return this.settingsService.findAll();
+  }
 
-    @Put()
-    @Permissions('settings.manage')
-    async updateSettings(@Body() data: Record<string, any>) {
-        return this.settingsService.update(data);
-    }
+  @Put()
+  @Permissions('settings.manage')
+  async updateSettings(@Body() data: Record<string, any>) {
+    return this.settingsService.update(data);
+  }
 }

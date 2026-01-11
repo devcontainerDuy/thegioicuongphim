@@ -12,7 +12,11 @@ async function bootstrap(): Promise<void> {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://api.imepartner.vn/'],
+    origin: [
+      'http://localhost:3000',
+      'http://api.imepartner.vn/',
+      'https://thegioicuongphim-three.vercel.app',
+    ],
     credentials: true,
   });
 
@@ -25,9 +29,9 @@ async function bootstrap(): Promise<void> {
   );
 
   app.setGlobalPrefix('api');
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3000);
   console.log(
-    `🚀 Server running on http://localhost:${process.env.PORT ?? 3001}`,
+    `🚀 Server running on http://localhost:${process.env.PORT ?? 3000}`,
   );
 }
 bootstrap().catch((error) => {
