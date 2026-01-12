@@ -154,7 +154,7 @@ export class AuthService {
 
     if (!token) {
       throw new UnauthorizedException(
-        'Refresh token không hợp lệ hoặc đã hết hạn',
+        'Refresh token không hợp lệ hoặc đã hết hạn. IP: ' + ipAddress,
       );
     }
 

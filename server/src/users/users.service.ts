@@ -166,7 +166,8 @@ export class UsersService {
           progress,
         },
       });
-    } catch (error) {
+    } catch (err) {
+      const error = err as Error;
       console.error('Error in saveWatchProgress:', error);
       throw new BadRequestException(
         `Failed to save progress: ${error.message} `,

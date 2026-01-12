@@ -336,9 +336,10 @@ export class MoviesService {
           movie.id,
         );
       } catch (err) {
-        console.error('[MoviesService] Error during movie sync:', err);
+        const error = err as Error;
+        console.error('[MoviesService] Error during movie sync:', error);
         throw new BadRequestException(
-          'Không thể lưu thông tin phim: ' + err.message,
+          'Không thể lưu thông tin phim: ' + error.message,
         );
       }
     }
@@ -555,9 +556,10 @@ export class MoviesService {
           );
         }
       } catch (err) {
+        const error = err as Error;
         console.error(
           '[MoviesService] Failed to create reply notification:',
-          err,
+          error,
         );
       }
     }
@@ -623,7 +625,8 @@ export class MoviesService {
           views: 1,
         },
       });
-    } catch (error) {
+    } catch (err) {
+      const error = err as any; // Prisma error has code property
       // Handle race condition where two requests try to create the same log at once
       if (error.code === 'P2002') {
         console.log(
