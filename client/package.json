@@ -47,6 +47,7 @@
     "yup": "^1.7.1"
   },
   "scripts": {
+    "dev": "craco start",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
