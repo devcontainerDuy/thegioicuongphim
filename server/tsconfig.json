@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
+    "jsx": "react",
+    "module": "commonjs",
+    // "moduleResolution": "nodenext",
+    // "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -24,8 +25,7 @@
     "noFallthroughCasesInSwitch": true,
     "strictPropertyInitialization": false,
     "paths": {
-      "@/*": ["src/*"],
-      "@generated/*": ["generated/*"]
+      "@/*": ["src/*"]
     }
   }
 }
