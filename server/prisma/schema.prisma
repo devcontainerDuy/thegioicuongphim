@@ -8,7 +8,7 @@ generator client {
   provider      = "prisma-client"
   output        = "../generated/prisma"
   moduleFormat  = "cjs"
-  binaryTargets = ["native", "linux-musl", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -35,6 +35,8 @@ model User {
   sessions      Session[]
   watchlist     Watchlist[]
   notifications Notification[]
+
+  @@map("user")
 }
 
 model Role {
@@ -43,6 +45,8 @@ model Role {
   description String?
   users       User[]
   permissions Permission[]
+
+  @@map("role")
 }
 
 model Permission {
@@ -50,6 +54,8 @@ model Permission {
   slug        String  @unique // "movie.create", "user.delete"
   description String?
   roles       Role[]
+
+  @@map("permission")
 }
 
 model Movie {
@@ -83,6 +89,8 @@ model Movie {
   comments       Comment[]
   watchlists     Watchlist[]
   viewLogs       ViewLog[]
+
+  @@map("movie")
 }
 
 model Episode {
@@ -99,6 +107,7 @@ model Episode {
   watchHistory WatchHistory[]
 
   @@unique([movieId, slug])
+  @@map("episode")
 }
 
 model WatchHistory {
@@ -115,6 +124,7 @@ model WatchHistory {
 
   @@unique([userId, movieId, episodeId])
   @@index([userId])
+  @@map("watch_history")
 }
 
 model Favorite {
@@ -127,6 +137,7 @@ model Favorite {
 
   @@unique([userId, movieId])
   @@index([userId])
+  @@map("favorite")
 }
 
 model Setting {
@@ -135,6 +146,8 @@ model Setting {
   description String?
   type        String   @default("string") // "string", "boolean", "number"
   updatedAt   DateTime @updatedAt
+
+  @@map("setting")
 }
 
 model Rating {
@@ -148,6 +161,8 @@ model Rating {
   user      User         @relation(fields: [userId], references: [id])
   movie     Movie        @relation(fields: [movieId], references: [id])
   votes     ReviewVote[]
+
+  @@map("rating")
 }
 
 model ReviewVote {
@@ -158,6 +173,7 @@ model ReviewVote {
   createdAt DateTime @default(now())
 
   @@unique([ratingId, userId])
+  @@map("review_vote")
 }
 
 model Comment {
@@ -172,6 +188,8 @@ model Comment {
   movie     Movie     @relation(fields: [movieId], references: [id])
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+
+  @@map("comment")
 }
 
 model PersonalAccessToken {
@@ -186,6 +204,7 @@ model PersonalAccessToken {
 
   @@index([userId])
   @@index([tokenHash])
+  @@map("personal_access_token")
 }
 
 model Session {
@@ -200,6 +219,7 @@ model Session {
   createdAt      DateTime            @default(now())
 
   @@index([userId])
+  @@map("session")
 }
 
 model Watchlist {
@@ -212,6 +232,7 @@ model Watchlist {
 
   @@unique([userId, movieId])
   @@index([userId])
+  @@map("watchlist")
 }
 
 model ViewLog {
@@ -223,6 +244,7 @@ model ViewLog {
 
   @@unique([movieId, date])
   @@index([date])
+  @@map("view_log")
 }
 
 model Notification {
@@ -239,4 +261,5 @@ model Notification {
 
   @@index([userId])
   @@index([isRead])
+  @@map("notification")
 }
