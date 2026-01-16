@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
+import { RequestWithUser } from '@/common/interfaces/request-with-user.interface';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto';
 
@@ -63,6 +64,8 @@ export class AuthController {
 
     // Don't return tokens in body (they're in cookies)
     const { refresh_token, remember_token, ...responseData } = result;
+    void refresh_token;
+    void remember_token;
     return responseData;
   }
 
@@ -72,7 +75,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.refresh_token;
+    // Explicitly type req.cookies to avoid 'any'
+    const cookies = req.cookies as Record<string, string>;
+    const refreshToken = cookies?.refresh_token;
     if (!refreshToken) {
       return { error: 'No refresh token provided', statusCode: 401 };
     }
@@ -88,14 +93,16 @@ export class AuthController {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    const { refresh_token, ...responseData } = result;
+    const { refresh_token: rt, ...responseData } = result;
+    void rt;
     return responseData;
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refresh_token;
+    const cookies = req.cookies as Record<string, string>;
+    const refreshToken = cookies?.refresh_token;
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
@@ -110,10 +117,10 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   async logoutAll(
-    @Req() req: Request,
+    @Req() req: RequestWithUser, // Use strict interface
     @Res({ passthrough: true }) res: Response,
   ) {
-    const userId = (req.user as any).id;
+    const userId = req.user.id; // No more 'any' cast
     const result = await this.authService.logoutAll(userId);
 
     res.clearCookie('refresh_token');
@@ -128,7 +135,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const rememberToken = req.cookies?.remember_token;
+    const cookies = req.cookies as Record<string, string>;
+    const rememberToken = cookies?.remember_token;
+
     if (!rememberToken) {
       return { error: 'No remember token provided', statusCode: 401 };
     }
@@ -157,27 +166,32 @@ export class AuthController {
     });
 
     const { refresh_token, remember_token, ...responseData } = result;
+    void refresh_token;
+    void remember_token;
     return responseData;
   }
 
   @Get('sessions')
   @UseGuards(AuthGuard('jwt'))
-  async getSessions(@Req() req: Request) {
-    const userId = (req.user as any).userId;
+  async getSessions(@Req() req: RequestWithUser) {
+    const userId = req.user.id;
     return this.authService.getSessions(userId);
   }
 
   @Delete('sessions/:id')
   @UseGuards(AuthGuard('jwt'))
-  async revokeSession(@Req() req: Request, @Param('id') id: string) {
-    const userId = (req.user as any).userId;
+  async revokeSession(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const userId = req.user.id;
     return this.authService.revokeSession(userId, Number(id));
   }
 
   @Delete('sessions-bulk')
   @UseGuards(AuthGuard('jwt'))
-  async bulkRevokeSessions(@Req() req: Request, @Body('ids') ids: number[]) {
-    const userId = (req.user as any).userId;
+  async bulkRevokeSessions(
+    @Req() req: RequestWithUser,
+    @Body('ids') ids: number[],
+  ) {
+    const userId = req.user.id;
     return this.authService.bulkRevoke(userId, ids);
   }
 }

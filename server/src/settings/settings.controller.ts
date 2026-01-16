@@ -13,13 +13,13 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
-  @Permissions('settings.manage') // Assuming we might want granularity, or just rely on Admin role
+  @Permissions('setting.view')
   async getSettings() {
     return this.settingsService.findAll();
   }
 
   @Put()
-  @Permissions('settings.manage')
+  @Permissions('setting.update')
   async updateSettings(@Body() data: Record<string, any>) {
     return this.settingsService.update(data);
   }
