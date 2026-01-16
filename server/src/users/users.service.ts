@@ -282,7 +282,11 @@ export class UsersService {
     };
   }
 
-  async addFavorite(userId: number, movieId: number | string, movieData?: MovieSyncData) {
+  async addFavorite(
+    userId: number,
+    movieId: number | string,
+    movieData?: MovieSyncData,
+  ) {
     // Auto-sync movie to database first
     const localMovieId = await this.moviesService.syncMovie(movieId, movieData);
 

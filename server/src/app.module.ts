@@ -14,21 +14,24 @@ import { SettingsModule } from './settings/settings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Setting } from './settings/entities/setting.entity';
 
+import configuration from './config/configuration';
+
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
-        host: configService.get<string>('DATABASE_HOST') || 'localhost',
-        port: configService.get<number>('DATABASE_PORT') || 3306,
-        username: configService.get<string>('DATABASE_USER') || 'root',
-        password: configService.get<string>('DATABASE_PASSWORD') || '',
-        database:
-          configService.get<string>('DATABASE_NAME') ||
-          configService.get<string>('DB_DATABASE') || // Support both just in case
-          'thegioicuongphim',
+        host: configService.get<string>('database.host'),
+        port: configService.get<number>('database.port'),
+        username: configService.get<string>('database.username'),
+        password: configService.get<string>('database.password'),
+        database: configService.get<string>('database.name'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: true, // Only for development!

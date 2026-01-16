@@ -99,7 +99,7 @@ export class UsersController {
   addFavorite(
     @Req() req: RequestWithUser,
     @Param('movieId') movieId: string,
-    @Body() body?: { movieData?: any },
+    @Body() body?: { movieData?: MovieSyncData },
   ) {
     return this.usersService.addFavorite(req.user.id, movieId, body?.movieData);
   }

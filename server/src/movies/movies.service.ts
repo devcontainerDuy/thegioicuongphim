@@ -370,10 +370,13 @@ export class MoviesService {
           movie.id,
         );
       } catch (err) {
-        const error = err as any;
-        console.error('[MoviesService] Error during movie sync:', error);
+        let errorMessage = 'Unknown error';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        console.error('[MoviesService] Error during movie sync:', err);
         throw new BadRequestException(
-          'Không thể lưu thông tin phim: ' + error.message,
+          'Không thể lưu thông tin phim: ' + errorMessage,
         );
       }
     }
@@ -402,12 +405,15 @@ export class MoviesService {
       };
     }
 
-    const { average, count } = await this.ratingRepository
+    const result = await this.ratingRepository
       .createQueryBuilder('rating')
       .select('AVG(rating.score)', 'average')
       .addSelect('COUNT(rating.score)', 'count')
       .where('rating.movieId = :movieId', { movieId })
-      .getRawOne();
+      .getRawOne<{ average: string | null; count: string }>();
+
+    const average = result?.average;
+    const count = result?.count;
 
     let userRating = null;
     if (userId) {
@@ -433,7 +439,7 @@ export class MoviesService {
     if (score < 1 || score > 5)
       throw new Error('Score must be between 1 and 5');
 
-    let existing = await this.ratingRepository.findOne({
+    const existing = await this.ratingRepository.findOne({
       where: { userId, movieId },
     });
 
@@ -582,7 +588,7 @@ export class MoviesService {
       userId,
       movieId,
       parentId: parentId ? Number(parentId) : null,
-    }) as Comment;
+    });
 
     // Explicitly handle single entity save
     const savedComment = await this.commentRepository.save(newComment);
@@ -621,7 +627,7 @@ export class MoviesService {
           );
         }
       } catch (err) {
-        const error = err as any;
+        const error = err as Error;
         console.error(
           '[MoviesService] Failed to create reply notification:',
           error,
@@ -696,7 +702,7 @@ export class MoviesService {
       // Handle Race Condition (Duplicate Entry)
       // MySQL error code for duplicate entry is usually generic in TypeORM QueryFailedError
       // We can check message or code.
-      const error = err as any;
+      const error = err as Error & { code?: string };
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
         // 23505 is Postgres, ER_DUP_ENTRY MySQL
         console.log(
