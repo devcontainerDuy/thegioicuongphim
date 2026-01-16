@@ -1,16 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Setting } from './settings/entities/setting.entity';
 
 @Injectable()
 export class AppService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Setting)
+    private settingRepository: Repository<Setting>,
+  ) {}
 
   getHello(): string {
     return 'Hello World!';
   }
 
   async getSystemStatus() {
-    const maintenance = await this.prisma.setting.findUnique({
+    const maintenance = await this.settingRepository.findOne({
       where: { key: 'maintenance' },
     });
     return {

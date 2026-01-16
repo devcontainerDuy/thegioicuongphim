@@ -18,6 +18,9 @@ import type { MovieSyncData } from './dto/sync-data.dto';
 
 import { OptionalJwtAuthGuard } from '../auth/guards';
 
+import { RequestWithUser } from '@/common/interfaces/request-with-user.interface';
+import { Request } from 'express';
+
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
@@ -42,9 +45,8 @@ export class MoviesController {
   // List static routes before dynamic ones to avoid shadowing
   @UseGuards(AuthGuard('jwt'))
   @Get('watchlist')
-  async getWatchlist(@Req() req: any) {
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.getWatchlist(userId);
+  async getWatchlist(@Req() req: RequestWithUser) {
+    return this.moviesService.getWatchlist(req.user.id);
   }
 
   @Get('search')
@@ -74,25 +76,24 @@ export class MoviesController {
   // ===== RATINGS & REVIEWS =====
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/rating')
-  async getRating(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || req.user?.userId;
+  async getRating(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const userId = req.user?.id;
     const movieId = await this.moviesService.resolveMovieId(id, false);
     return this.moviesService.getMovieRating(movieId as number, userId);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/reviews')
-  async getReviews(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || req.user?.userId;
+  async getReviews(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const userId = req.user?.id;
     const movieId = await this.moviesService.resolveMovieId(id, false);
     return this.moviesService.getReviews(movieId as number, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Post('reviews/:id/vote')
-  async voteReview(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.voteReview(userId, Number(id));
+  async voteReview(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.moviesService.voteReview(req.user.id, Number(id));
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -101,10 +102,10 @@ export class MoviesController {
     @Param('id') id: string,
     @Body('score') score: number,
     @Body('content') content: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const movieId = await this.moviesService.resolveMovieId(id);
-    const userId = req.user.id || req.user.userId;
+    const userId = req.user.id;
     return this.moviesService.upsertRating(
       userId,
       movieId as number,
@@ -126,12 +127,11 @@ export class MoviesController {
     @Param('id') id: string,
     @Body('content') content: string,
     @Body('parentId') parentId: number,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const movieId = await this.moviesService.resolveMovieId(id);
-    const userId = req.user.id || req.user.userId;
     return this.moviesService.createComment(
-      userId,
+      req.user.id,
       movieId as number,
       content,
       parentId,
@@ -142,40 +142,36 @@ export class MoviesController {
   @Put('comments/:id')
   updateComment(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Body('content') content: string,
   ) {
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.updateComment(userId, Number(id), content);
+    return this.moviesService.updateComment(req.user.id, Number(id), content);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete('comments/:id')
-  deleteComment(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.deleteComment(userId, Number(id));
+  deleteComment(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.moviesService.deleteComment(req.user.id, Number(id));
   }
 
   // ===== WATCHLIST ACTIONS =====
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/watchlist')
-  async checkInWatchlist(@Param('id') id: string, @Req() req: any) {
+  async checkInWatchlist(@Param('id') id: string, @Req() req: RequestWithUser) {
     const movieId = await this.moviesService.resolveMovieId(id); // Throws if not found
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.checkInWatchlist(userId, movieId as number);
+    return this.moviesService.checkInWatchlist(req.user.id, movieId as number);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Post(':id/watchlist')
-  async toggleWatchlist(@Param('id') id: string, @Req() req: any) {
+  async toggleWatchlist(@Param('id') id: string, @Req() req: RequestWithUser) {
     const movieId = await this.moviesService.resolveMovieId(id);
-    const userId = req.user.id || req.user.userId;
-    return this.moviesService.toggleWatchlist(userId, movieId as number);
+    return this.moviesService.toggleWatchlist(req.user.id, movieId as number);
   }
 
   // ===== VIEW LOGGING =====
   @Post(':id/view')
-  async logView(@Param('id') id: string, @Body() body: any) {
+  async logView(@Param('id') id: string, @Body() body: MovieSyncData) {
     const movieId = await this.moviesService.syncMovie(id, body);
     return this.moviesService.logView(movieId);
   }

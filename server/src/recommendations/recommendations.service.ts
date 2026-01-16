@@ -1,26 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not, In } from 'typeorm';
+import { Movie } from '../movies/entities/movie.entity';
+import { Rating } from '../ratings/entities/rating.entity';
+import { WatchHistory } from '../watch-history/entities/watch-history.entity';
 
 @Injectable()
 export class RecommendationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Movie)
+    private movieRepository: Repository<Movie>,
+    @InjectRepository(Rating)
+    private ratingRepository: Repository<Rating>,
+    @InjectRepository(WatchHistory)
+    private watchHistoryRepository: Repository<WatchHistory>,
+  ) {}
 
   // Get similar movies based on type and year
   async getSimilar(movieId: number, limit = 10) {
-    const movie = await this.prisma.movie.findUnique({
+    const movie = await this.movieRepository.findOne({
       where: { id: movieId },
     });
 
     if (!movie) return [];
 
-    const similar = await this.prisma.movie.findMany({
-      where: {
-        id: { not: movieId },
-        status: 'active',
-        OR: [{ type: movie.type }, { year: movie.year }],
-      },
+    const similar = await this.movieRepository.find({
+      where: [
+        { id: Not(movieId), status: 'active', type: movie.type },
+        { id: Not(movieId), status: 'active', year: movie.year },
+      ], // OR condition: (type=X OR year=Y) AND id!=ID AND status=active
+      // TypeORM 'where' array is OR of objects. Each object must have all conditions.
       take: limit,
-      orderBy: { views: 'desc' },
+      order: { views: 'DESC' },
     });
 
     return this.attachRatingToMovies(similar);
@@ -28,20 +39,20 @@ export class RecommendationsService {
 
   // Get trending movies by views
   async getTrending(limit = 10) {
-    const movies = await this.prisma.movie.findMany({
+    const movies = await this.movieRepository.find({
       where: { status: 'active' },
       take: limit,
-      orderBy: { views: 'desc' },
+      order: { views: 'DESC' },
     });
     return this.attachRatingToMovies(movies);
   }
 
   // Get latest/new releases
   async getLatest(limit = 10) {
-    const movies = await this.prisma.movie.findMany({
+    const movies = await this.movieRepository.find({
       where: { status: 'active' },
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      order: { createdAt: 'DESC' },
     });
     return this.attachRatingToMovies(movies);
   }
@@ -49,10 +60,10 @@ export class RecommendationsService {
   // Get personalized recommendations based on watch history
   async getForYou(userId: number, limit = 10) {
     // Get user's watch history to find preferred types
-    const history = await this.prisma.watchHistory.findMany({
+    const history = await this.watchHistoryRepository.find({
       where: { userId },
-      include: { movie: { select: { type: true, year: true } } },
-      orderBy: { watchedAt: 'desc' },
+      relations: ['movie'],
+      order: { watchedAt: 'DESC' },
       take: 20,
     });
 
@@ -80,38 +91,39 @@ export class RecommendationsService {
     // Get watched movie IDs to exclude
     const watchedIds = history.map((h) => h.movieId);
 
-    const recommendations = await this.prisma.movie.findMany({
+    const recommendations = await this.movieRepository.find({
       where: {
-        id: { notIn: watchedIds },
+        id: Not(In(watchedIds.length > 0 ? watchedIds : [-1])), // exclude watched
         status: 'active',
         type: preferredType,
       },
       take: limit,
-      orderBy: { views: 'desc' },
+      order: { views: 'DESC' },
     });
 
     return this.attachRatingToMovies(recommendations);
   }
 
-  private async attachRatingToMovies(movies: any[]) {
+  private async attachRatingToMovies(movies: Movie[]) {
     const movieIds = movies.map((m) => m.id);
-    const ratingsData = await this.prisma.rating.groupBy({
-      by: ['movieId'],
-      where: { movieId: { in: movieIds } },
-      _avg: { score: true },
-      _count: { score: true },
-    });
+    if (movieIds.length === 0) return [];
 
-    const ratingMap: Record<
-      number,
-      { averageScore: number; totalRatings: number }
-    > = ratingsData.reduce(
+    const ratingsData = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('rating.movieId', 'movieId')
+      .addSelect('AVG(rating.score)', 'averageScore')
+      .addSelect('COUNT(rating.score)', 'totalRatings')
+      .where('rating.movieId IN (:...movieIds)', { movieIds })
+      .groupBy('rating.movieId')
+      .getRawMany();
+
+    const ratingMap = ratingsData.reduce(
       (acc, curr) => {
         acc[curr.movieId] = {
-          averageScore: curr._avg.score
-            ? Number(curr._avg.score.toFixed(1))
+          averageScore: curr.averageScore
+            ? Number(Number(curr.averageScore).toFixed(1))
             : 0,
-          totalRatings: curr._count.score,
+          totalRatings: Number(curr.totalRatings),
         };
         return acc;
       },

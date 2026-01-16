@@ -12,6 +12,8 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
 
+import { RequestWithUser } from '@/common/interfaces/request-with-user.interface';
+
 @Controller('notifications')
 @UseGuards(AuthGuard('jwt'))
 export class NotificationsController {
@@ -19,33 +21,32 @@ export class NotificationsController {
 
   @Get()
   getNotifications(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
-    const userId = req.user.id || req.user.userId;
     return this.notificationsService.getNotifications(
-      userId,
+      req.user.id,
       Number(page),
       Number(limit),
     );
   }
 
   @Put(':id/read')
-  markAsRead(@Req() req: any, @Param('id') id: string) {
-    const userId = req.user.id || req.user.userId;
-    return this.notificationsService.markAsRead(userId, Number(id));
+  markAsRead(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.notificationsService.markAsRead(req.user.id, Number(id));
   }
 
   @Post('read-all')
-  markAllAsRead(@Req() req: any) {
-    const userId = req.user.id || req.user.userId;
-    return this.notificationsService.markAllAsRead(userId);
+  markAllAsRead(@Req() req: RequestWithUser) {
+    return this.notificationsService.markAllAsRead(req.user.id);
   }
 
   @Delete(':id')
-  deleteNotification(@Req() req: any, @Param('id') id: string) {
-    const userId = req.user.id || req.user.userId;
-    return this.notificationsService.deleteNotification(userId, Number(id));
+  deleteNotification(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.notificationsService.deleteNotification(
+      req.user.id,
+      Number(id),
+    );
   }
 }

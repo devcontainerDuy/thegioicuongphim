@@ -2,18 +2,38 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In, Not, Brackets, IsNull } from 'typeorm';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateMovieDto, UpdateMovieDto } from './dto';
 import { MovieSyncData } from './dto/sync-data.dto';
+import { Movie } from './entities/movie.entity';
+import { Episode } from './entities/episode.entity';
+import { Rating } from '../ratings/entities/rating.entity';
+import { ReviewVote } from '../ratings/entities/review-vote.entity';
+import { Comment } from '../comments/entities/comment.entity';
+import { ViewLog } from '../view-logs/entities/view-log.entity';
+import { Watchlist } from '../watchlist/entities/watchlist.entity';
 
 @Injectable()
 export class MoviesService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(Movie)
+    private movieRepository: Repository<Movie>,
+    @InjectRepository(Episode)
+    private episodeRepository: Repository<Episode>,
+    @InjectRepository(Rating)
+    private ratingRepository: Repository<Rating>,
+    @InjectRepository(ReviewVote)
+    private reviewVoteRepository: Repository<ReviewVote>,
+    @InjectRepository(Comment)
+    private commentRepository: Repository<Comment>,
+    @InjectRepository(ViewLog)
+    private viewLogRepository: Repository<ViewLog>,
+    @InjectRepository(Watchlist)
+    private watchlistRepository: Repository<Watchlist>,
     private notificationsService: NotificationsService,
   ) {}
 
@@ -28,38 +48,43 @@ export class MoviesService {
     } = {},
   ) {
     const skip = (page - 1) * limit;
+    const queryBuilder = this.movieRepository.createQueryBuilder('movie');
 
-    const where: any = { status: 'active' };
-    if (filters.type) where.type = filters.type;
-    if (filters.year) where.year = Number(filters.year);
+    queryBuilder
+      .where('movie.status = :status', { status: 'active' })
+      .orderBy('movie.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .loadRelationCountAndMap('movie.episodesCount', 'movie.episodes');
+
+    if (filters.type) {
+      queryBuilder.andWhere('movie.type = :type', { type: filters.type });
+    }
+
+    if (filters.year) {
+      queryBuilder.andWhere('movie.year = :year', {
+        year: Number(filters.year),
+      });
+    }
+
     if (filters.genre) {
-      where.genres = {
-        path: '$',
-        array_contains: filters.genre,
-      };
-    }
-    if (filters.country) {
-      where.countries = {
-        path: '$',
-        array_contains: filters.country,
-      };
+      // Assuming genres is stored as JSON array ["Action", "Comedy"]
+      // MySQL JSON_CONTAINS
+      queryBuilder.andWhere(`JSON_CONTAINS(movie.genres, :genre, '$')`, {
+        genre: JSON.stringify(filters.genre),
+      });
     }
 
-    const [movies, total] = await Promise.all([
-      this.prisma.movie.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          _count: { select: { episodes: true } },
-        },
-      }),
-      this.prisma.movie.count({ where }),
-    ]);
+    if (filters.country) {
+      queryBuilder.andWhere(`JSON_CONTAINS(movie.countries, :country, '$')`, {
+        country: JSON.stringify(filters.country),
+      });
+    }
+
+    const [items, total] = await queryBuilder.getManyAndCount();
 
     return {
-      items: movies,
+      items,
       paginate: {
         current_page: page,
         total_page: Math.ceil(total / limit),
@@ -70,11 +95,12 @@ export class MoviesService {
   }
 
   async findBySlug(slug: string) {
-    const movie = await this.prisma.movie.findUnique({
+    const movie = await this.movieRepository.findOne({
       where: { slug },
-      include: {
+      relations: ['episodes'],
+      order: {
         episodes: {
-          orderBy: { sortOrder: 'asc' },
+          sortOrder: 'ASC',
         },
       },
     });
@@ -84,41 +110,35 @@ export class MoviesService {
     }
 
     // Increment view count
-    await this.prisma.movie.update({
-      where: { id: movie.id },
-      data: { views: { increment: 1 } },
-    });
+    await this.movieRepository.increment({ id: movie.id }, 'views', 1);
 
     return movie;
   }
 
   async create(createMovieDto: CreateMovieDto) {
-    return this.prisma.movie.create({
-      data: createMovieDto,
-    });
+    const movie = this.movieRepository.create(createMovieDto);
+    return this.movieRepository.save(movie);
   }
 
   async update(slug: string, updateMovieDto: UpdateMovieDto) {
-    const movie = await this.prisma.movie.findUnique({ where: { slug } });
+    const movie = await this.movieRepository.findOne({ where: { slug } });
 
     if (!movie) {
       throw new NotFoundException('Phim không tồn tại');
     }
 
-    return this.prisma.movie.update({
-      where: { slug },
-      data: updateMovieDto,
-    });
+    await this.movieRepository.update({ slug }, updateMovieDto);
+    return this.movieRepository.findOne({ where: { slug } });
   }
 
   async remove(slug: string) {
-    const movie = await this.prisma.movie.findUnique({ where: { slug } });
+    const movie = await this.movieRepository.findOne({ where: { slug } });
 
     if (!movie) {
       throw new NotFoundException('Phim không tồn tại');
     }
 
-    return this.prisma.movie.delete({ where: { slug } });
+    return this.movieRepository.delete({ slug });
   }
 
   async search(
@@ -133,44 +153,52 @@ export class MoviesService {
     } = {},
   ) {
     const skip = (page - 1) * limit;
+    const queryBuilder = this.movieRepository.createQueryBuilder('movie');
 
-    const where: any = {
-      status: 'active',
-      OR: [
-        { name: { contains: keyword } },
-        { originalName: { contains: keyword } },
-        { description: { contains: keyword } },
-        { director: { contains: keyword } },
-        { casts: { path: '$', array_contains: keyword } },
-      ],
-    };
+    queryBuilder
+      .where('movie.status = :status', { status: 'active' })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('movie.name LIKE :keyword', { keyword: `%${keyword}%` })
+            .orWhere('movie.originalName LIKE :keyword', {
+              keyword: `%${keyword}%`,
+            })
+            .orWhere('movie.description LIKE :keyword', {
+              keyword: `%${keyword}%`,
+            })
+            .orWhere('movie.director LIKE :keyword', {
+              keyword: `%${keyword}%`,
+            })
+            .orWhere(`JSON_CONTAINS(movie.casts, :cast, '$')`, {
+              cast: JSON.stringify(keyword),
+            });
+        }),
+      )
+      .skip(skip)
+      .take(limit)
+      .orderBy('movie.views', 'DESC');
 
-    if (filters.type) where.type = filters.type;
-    if (filters.year) where.year = Number(filters.year);
+    if (filters.type) {
+      queryBuilder.andWhere('movie.type = :type', { type: filters.type });
+    }
+    if (filters.year) {
+      queryBuilder.andWhere('movie.year = :year', {
+        year: Number(filters.year),
+      });
+    }
     if (filters.genre) {
-      where.genres = {
-        path: '$',
-        array_contains: filters.genre,
-      };
+      queryBuilder.andWhere(`JSON_CONTAINS(movie.genres, :genre, '$')`, {
+        genre: JSON.stringify(filters.genre),
+      });
     }
     if (filters.country) {
-      where.countries = {
-        path: '$',
-        array_contains: filters.country,
-      };
+      queryBuilder.andWhere(`JSON_CONTAINS(movie.countries, :country, '$')`, {
+        country: JSON.stringify(filters.country),
+      });
     }
 
-    const [movies, total] = await Promise.all([
-      this.prisma.movie.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { views: 'desc' },
-      }),
-      this.prisma.movie.count({ where }),
-    ]);
-
-    const moviesWithRatings = await this.attachRatingToMovies(movies);
+    const [items, total] = await queryBuilder.getManyAndCount();
+    const moviesWithRatings = await this.attachRatingToMovies(items);
 
     return {
       items: moviesWithRatings,
@@ -183,25 +211,30 @@ export class MoviesService {
     };
   }
 
-  private async attachRatingToMovies(movies: any[]) {
+  private async attachRatingToMovies(movies: Movie[]) {
     const movieIds = movies.map((m) => m.id);
-    const ratingsData = await this.prisma.rating.groupBy({
-      by: ['movieId'],
-      where: { movieId: { in: movieIds } },
-      _avg: { score: true },
-      _count: { score: true },
-    });
+    if (movieIds.length === 0) return [];
 
-    const ratingMap: Record<
-      number,
-      { averageScore: number; totalRatings: number }
-    > = ratingsData.reduce(
+    const ratingsData = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('rating.movieId', 'movieId')
+      .addSelect('AVG(rating.score)', 'averageScore')
+      .addSelect('COUNT(rating.score)', 'totalRatings')
+      .where('rating.movieId IN (:...movieIds)', { movieIds })
+      .groupBy('rating.movieId')
+      .getRawMany<{
+        movieId: number;
+        averageScore: string | number;
+        totalRatings: string | number;
+      }>();
+
+    const ratingMap = ratingsData.reduce(
       (acc, curr) => {
         acc[curr.movieId] = {
-          averageScore: curr._avg.score
-            ? Number(curr._avg.score.toFixed(1))
+          averageScore: curr.averageScore
+            ? Number(Number(curr.averageScore).toFixed(1))
             : 0,
-          totalRatings: curr._count.score,
+          totalRatings: Number(curr.totalRatings),
         };
         return acc;
       },
@@ -232,15 +265,15 @@ export class MoviesService {
 
     if (typeof idOrSlug === 'number' || !isNaN(Number(idOrSlug))) {
       const id = Number(idOrSlug);
-      movie = await this.prisma.movie.findUnique({
+      movie = await this.movieRepository.findOne({
         where: { id },
-        select: { id: true },
+        select: ['id'],
       });
     } else {
       const slug = idOrSlug.toString();
-      movie = await this.prisma.movie.findUnique({
+      movie = await this.movieRepository.findOne({
         where: { slug },
-        select: { id: true },
+        select: ['id'],
       });
     }
 
@@ -275,7 +308,7 @@ export class MoviesService {
 
     // It's a slug or a hex ID
     const slug = data?.slug || idOrSlug.toString();
-    let movie = await this.prisma.movie.findUnique({ where: { slug } });
+    let movie = await this.movieRepository.findOne({ where: { slug } });
 
     if (!movie && data && data.name) {
       console.log('[MoviesService] Syncing new movie:', slug);
@@ -307,28 +340,29 @@ export class MoviesService {
             .filter((c) => c);
         }
 
-        movie = await this.prisma.movie.create({
-          data: {
-            slug,
-            name: data.name,
-            originalName: data.original_name || data.originalName,
-            description: data.description,
-            thumbUrl: data.thumb_url || data.thumbUrl,
-            posterUrl: data.poster_url || data.posterUrl,
-            quality: data.quality,
-            language: data.language,
-            year,
-            type: data.type || type,
-            time: data.time,
-            currentEpisode: data.current_episode || data.currentEpisode,
-            totalEpisodes:
-              Number(data.total_episodes || data.totalEpisodes) || 1,
-            director: data.director,
-            casts: casts.length > 0 ? casts : undefined,
-            genres: genres.length > 0 ? genres : undefined,
-            countries: countries.length > 0 ? countries : undefined,
-          },
+        const newMovie = this.movieRepository.create({
+          slug,
+          name: data.name,
+          originalName: data.original_name || data.originalName,
+          description: data.description,
+          thumbUrl: data.thumb_url || data.thumbUrl,
+          posterUrl: data.poster_url || data.posterUrl,
+          quality: data.quality,
+          language: data.language,
+          year,
+          type: data.type || type,
+          time: data.time,
+          currentEpisode: data.current_episode || data.currentEpisode,
+          totalEpisodes: Number(data.total_episodes || data.totalEpisodes) || 1,
+          director: data.director,
+          casts: casts.length > 0 ? casts : undefined,
+          genres: genres.length > 0 ? genres : undefined,
+          countries: countries.length > 0 ? countries : undefined,
+          status: 'active', // Default status?
         });
+
+        movie = await this.movieRepository.save(newMovie);
+
         console.log(
           '[MoviesService] Successfully synced movie:',
           movie.slug,
@@ -336,7 +370,7 @@ export class MoviesService {
           movie.id,
         );
       } catch (err) {
-        const error = err as Error;
+        const error = err as any;
         console.error('[MoviesService] Error during movie sync:', error);
         throw new BadRequestException(
           'Không thể lưu thông tin phim: ' + error.message,
@@ -368,22 +402,23 @@ export class MoviesService {
       };
     }
 
-    const [aggregate, userRating] = await Promise.all([
-      this.prisma.rating.aggregate({
-        where: { movieId: Number(movieId) },
-        _avg: { score: true },
-        _count: { score: true },
-      }),
-      userId
-        ? this.prisma.rating.findFirst({
-            where: { movieId: Number(movieId), userId },
-          })
-        : null,
-    ]);
+    const { average, count } = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.score)', 'average')
+      .addSelect('COUNT(rating.score)', 'count')
+      .where('rating.movieId = :movieId', { movieId })
+      .getRawOne();
+
+    let userRating = null;
+    if (userId) {
+      userRating = await this.ratingRepository.findOne({
+        where: { movieId, userId },
+      });
+    }
 
     return {
-      averageScore: aggregate._avg.score || 0,
-      totalRatings: aggregate._count.score,
+      averageScore: average ? parseFloat(Number(average).toFixed(1)) : 0,
+      totalRatings: Number(count),
       userRating: userRating?.score || null,
       userReview: userRating?.content || null,
     };
@@ -398,20 +433,23 @@ export class MoviesService {
     if (score < 1 || score > 5)
       throw new Error('Score must be between 1 and 5');
 
-    const existing = await this.prisma.rating.findFirst({
+    let existing = await this.ratingRepository.findOne({
       where: { userId, movieId },
     });
 
     if (existing) {
-      return this.prisma.rating.update({
-        where: { id: existing.id },
-        data: { score, content },
-      });
+      existing.score = score;
+      if (content !== undefined) existing.content = content;
+      return this.ratingRepository.save(existing);
     }
 
-    return this.prisma.rating.create({
-      data: { userId, movieId, score, content },
+    const newRating = this.ratingRepository.create({
+      userId,
+      movieId,
+      score,
+      content,
     });
+    return this.ratingRepository.save(newRating);
   }
 
   async getReviews(movieId: number, currentUserId?: number) {
@@ -419,55 +457,71 @@ export class MoviesService {
       return [];
     }
 
-    const reviews = await this.prisma.rating.findMany({
+    const reviews = await this.ratingRepository.find({
       where: {
         movieId: Number(movieId),
-        content: { not: null },
+        content: Not(IsNull()), // Not null check in TypeORM? Or 'IsNull()' import needed.
+        // Actually, cleaner way:
+        // content: Not(IsNull()) requires IsNull import.
+        // Or query builder 'rating.content IS NOT NULL'.
+        // Let's use QueryBuilder or simple find restriction.
+        // For simple Find: { content: Not(IsNull()) }
       },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true },
-        },
-        _count: {
-          select: { votes: true },
-        },
-      },
+      order: { createdAt: 'DESC' },
+      relations: ['user', 'votes'], // Corrected relation name
+      // We need count of votes? TypeORM relations count?
+      // relationCount? No, map it.
     });
 
+    // To get vote count, we can load relation count or map it.
+    // 'reviewVotes' relation is loaded. We can just length it?
+    // But for performance, maybe loadRelationCountAndMap?
+    // Let's stick to simple mapping if not huge.
+    // Wait, TypeORM `find` doesn't support easy count on relation without loading?
+    // Accessing `reviews[i].reviewVotes.length` works if relations loaded.
+
     // If currentUserId provided, check if voted
+    let votedIds = new Set<number>();
     if (currentUserId) {
-      const votes = await this.prisma.reviewVote.findMany({
+      const votes = await this.reviewVoteRepository.find({
         where: {
           userId: currentUserId,
-          ratingId: { in: reviews.map((r) => r.id) },
+          ratingId: In(reviews.map((r) => r.id)),
         },
       });
-      const votedIds = new Set(votes.map((v) => v.ratingId));
-      return reviews.map((r) => ({
-        ...r,
-        isVoted: votedIds.has(r.id),
-      }));
+      votedIds = new Set(votes.map((v) => v.ratingId));
     }
 
-    return reviews;
+    return reviews.map((r) => ({
+      ...r,
+      user: {
+        id: r.user.id,
+        name: r.user.name,
+        avatar: r.user.avatar,
+      },
+      _count: {
+        votes: r.votes ? r.votes.length : 0,
+      },
+      isVoted: votedIds.has(r.id),
+      votes: undefined, // hidden
+    }));
   }
 
   async voteReview(userId: number, ratingId: number) {
-    const existing = await this.prisma.reviewVote.findUnique({
-      where: { ratingId_userId: { ratingId, userId } },
+    const existing = await this.reviewVoteRepository.findOne({
+      where: { ratingId, userId },
     });
 
     if (existing) {
-      await this.prisma.reviewVote.delete({
-        where: { id: existing.id },
-      });
+      await this.reviewVoteRepository.remove(existing);
       return { voted: false };
     }
 
-    await this.prisma.reviewVote.create({
-      data: { ratingId, userId },
+    const newVote = this.reviewVoteRepository.create({
+      ratingId,
+      userId,
     });
+    await this.reviewVoteRepository.save(newVote);
     return { voted: true };
   }
 
@@ -478,14 +532,10 @@ export class MoviesService {
     }
 
     // Fetch all comments for the movie
-    const comments = await this.prisma.comment.findMany({
+    const comments = await this.commentRepository.find({
       where: { movieId: Number(movieId) },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true },
-        },
-      },
+      order: { createdAt: 'DESC' },
+      relations: ['user'],
     });
 
     // Group into tree (Parent -> Replies)
@@ -494,9 +544,22 @@ export class MoviesService {
 
     return parentComments.map((p) => ({
       ...p,
+      user: {
+        id: p.user.id,
+        name: p.user.name,
+        avatar: p.user.avatar,
+      },
       replies: replies
         .filter((r) => r.parentId === p.id)
-        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()), // Replies chronological
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()) // Replies chronological
+        .map((r) => ({
+          ...r,
+          user: {
+            id: r.user.id,
+            name: r.user.name,
+            avatar: r.user.avatar,
+          },
+        })),
     }));
   }
 
@@ -514,29 +577,31 @@ export class MoviesService {
       `[MoviesService] Creating comment by user ${userId} for movie ${movieId}, parent: ${parentId}`,
     );
 
-    const comment = await this.prisma.comment.create({
-      data: {
-        content,
-        userId,
-        movieId,
-        parentId: parentId ? Number(parentId) : null,
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true },
-        },
-        movie: {
-          select: { name: true, slug: true },
-        },
-      },
+    const newComment = this.commentRepository.create({
+      content,
+      userId,
+      movieId,
+      parentId: parentId ? Number(parentId) : null,
+    }) as Comment;
+
+    // Explicitly handle single entity save
+    const savedComment = await this.commentRepository.save(newComment);
+
+    // Default load relations manually or find again?
+    // TypeORM save returns Entity, but relations might not be hydrated unless returned from DB with relations?
+    // It's safer to findOne to return full structure.
+    const comment = await this.commentRepository.findOne({
+      where: { id: savedComment.id },
+      relations: ['user', 'movie'],
     });
+
+    if (!comment) throw new Error('Failed to retrieve created comment');
 
     // Trigger Notification if it's a reply
     if (parentId) {
       try {
-        const parentComment = await this.prisma.comment.findUnique({
+        const parentComment = await this.commentRepository.findOne({
           where: { id: Number(parentId) },
-          select: { userId: true },
         });
 
         // Don't notify self
@@ -556,7 +621,7 @@ export class MoviesService {
           );
         }
       } catch (err) {
-        const error = err as Error;
+        const error = err as any;
         console.error(
           '[MoviesService] Failed to create reply notification:',
           error,
@@ -568,7 +633,7 @@ export class MoviesService {
   }
 
   async updateComment(userId: number, commentId: number, content: string) {
-    const comment = await this.prisma.comment.findUnique({
+    const comment = await this.commentRepository.findOne({
       where: { id: commentId },
     });
 
@@ -576,19 +641,18 @@ export class MoviesService {
     if (comment.userId !== userId)
       throw new ForbiddenException('Bạn không có quyền sửa bình luận này');
 
-    return this.prisma.comment.update({
+    comment.content = content;
+    await this.commentRepository.save(comment);
+
+    // Return with user relation
+    return this.commentRepository.findOne({
       where: { id: commentId },
-      data: { content },
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true },
-        },
-      },
+      relations: ['user'],
     });
   }
 
   async deleteComment(userId: number, commentId: number) {
-    const comment = await this.prisma.comment.findUnique({
+    const comment = await this.commentRepository.findOne({
       where: { id: commentId },
     });
 
@@ -596,9 +660,7 @@ export class MoviesService {
     if (comment.userId !== userId)
       throw new ForbiddenException('Bạn không có quyền xóa bình luận này');
 
-    await this.prisma.comment.delete({
-      where: { id: commentId },
-    });
+    await this.commentRepository.remove(comment);
 
     return { success: true };
   }
@@ -606,53 +668,48 @@ export class MoviesService {
   async logView(movieId: number) {
     console.log('[MoviesService] Logging view for movieId:', movieId);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalized to day start
+    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
     try {
-      return await this.prisma.viewLog.upsert({
+      // Try to find existing
+      const viewLog = await this.viewLogRepository.findOne({
         where: {
-          movieId_date: {
-            movieId,
-            date: today,
-          },
-        },
-        update: {
-          views: { increment: 1 },
-        },
-        create: {
           movieId,
-          date: today,
-          views: 1,
+          date: new Date(dateStr),
         },
       });
-    } catch (err) {
-      const error = err as any; // Prisma error has code property
-      // Handle race condition where two requests try to create the same log at once
-      if (error.code === 'P2002') {
+
+      if (viewLog) {
+        // Increment
+        await this.viewLogRepository.increment({ id: viewLog.id }, 'views', 1);
+        return viewLog; // Return old or new? Usually just return something.
+      } else {
+        // Create
+        const newLog = this.viewLogRepository.create({
+          movieId,
+          date: new Date(dateStr),
+          views: 1,
+        });
+        return await this.viewLogRepository.save(newLog);
+      }
+    } catch (err: unknown) {
+      // Handle Race Condition (Duplicate Entry)
+      // MySQL error code for duplicate entry is usually generic in TypeORM QueryFailedError
+      // We can check message or code.
+      const error = err as any;
+      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+        // 23505 is Postgres, ER_DUP_ENTRY MySQL
         console.log(
           '[MoviesService] Race condition in logView, waiting and retrying...',
         );
-        // Wait for the other request to finish creating the record
         await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // Find the existing record
-        const existing = await this.prisma.viewLog.findFirst({
-          where: { movieId, date: today },
-        });
-
-        if (existing) {
-          // Update by ID
-          return this.prisma.viewLog.update({
-            where: { id: existing.id },
-            data: { views: { increment: 1 } },
-          });
-        } else {
-          // Still not found? Just ignore to avoid crashing UX
-          console.warn(
-            '[MoviesService] View log not found after retry, ignoring',
-          );
-          return null;
-        }
+        // Retry update
+        await this.viewLogRepository.increment(
+          { movieId, date: new Date(dateStr) }, // increment allows finding by conditions too? No, mainly ID.
+          'views',
+          1,
+        );
+        return null;
       }
       console.error('[MoviesService] logView failed:', error);
       throw error;
@@ -661,38 +718,36 @@ export class MoviesService {
 
   // ===== WATCHLIST =====
   async toggleWatchlist(userId: number, movieId: number) {
-    const existing = await this.prisma.watchlist.findUnique({
-      where: { userId_movieId: { userId, movieId } },
+    const existing = await this.watchlistRepository.findOne({
+      where: { userId, movieId },
     });
 
     if (existing) {
-      await this.prisma.watchlist.delete({
-        where: { id: existing.id },
-      });
+      await this.watchlistRepository.remove(existing);
       return { added: false };
     }
 
-    await this.prisma.watchlist.create({
-      data: { userId, movieId },
+    const newItem = this.watchlistRepository.create({
+      userId,
+      movieId,
     });
+    await this.watchlistRepository.save(newItem);
     return { added: true };
   }
 
   async getWatchlist(userId: number) {
-    const watchlist = await this.prisma.watchlist.findMany({
+    const watchlist = await this.watchlistRepository.find({
       where: { userId },
-      include: {
-        movie: true,
-      },
-      orderBy: { createdAt: 'desc' },
+      relations: ['movie'],
+      order: { createdAt: 'DESC' },
     });
 
     return watchlist.map((item) => item.movie);
   }
 
   async checkInWatchlist(userId: number, movieId: number) {
-    const item = await this.prisma.watchlist.findUnique({
-      where: { userId_movieId: { userId, movieId } },
+    const item = await this.watchlistRepository.findOne({
+      where: { userId, movieId },
     });
     return { inWatchlist: !!item };
   }

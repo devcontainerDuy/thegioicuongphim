@@ -1,23 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Notification } from './entities/notification.entity';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
+  ) {}
 
   async getNotifications(userId: number, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    const [items, total] = await Promise.all([
-      this.prisma.notification.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.notification.count({ where: { userId } }),
-    ]);
+    const [items, total] = await this.notificationRepository.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
 
-    const unreadCount = await this.prisma.notification.count({
+    const unreadCount = await this.notificationRepository.count({
       where: { userId, isRead: false },
     });
 
@@ -25,7 +27,7 @@ export class NotificationsService {
   }
 
   async markAsRead(userId: number, notificationId: number) {
-    const notification = await this.prisma.notification.findUnique({
+    const notification = await this.notificationRepository.findOne({
       where: { id: notificationId },
     });
 
@@ -33,21 +35,19 @@ export class NotificationsService {
       throw new NotFoundException('Thông báo không tồn tại');
     }
 
-    return this.prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true },
-    });
+    await this.notificationRepository.update(notificationId, { isRead: true });
+    return { ...notification, isRead: true };
   }
 
   async markAllAsRead(userId: number) {
-    return this.prisma.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true },
-    });
+    return this.notificationRepository.update(
+      { userId, isRead: false },
+      { isRead: true },
+    );
   }
 
   async deleteNotification(userId: number, notificationId: number) {
-    const notification = await this.prisma.notification.findUnique({
+    const notification = await this.notificationRepository.findOne({
       where: { id: notificationId },
     });
 
@@ -55,20 +55,18 @@ export class NotificationsService {
       throw new NotFoundException('Thông báo không tồn tại');
     }
 
-    return this.prisma.notification.delete({
-      where: { id: notificationId },
-    });
+    await this.notificationRepository.delete(notificationId);
+    return { success: true };
   }
 
   async createNotification(
     userId: number,
     data: { type: string; title: string; message: string; metadata?: any },
   ) {
-    return this.prisma.notification.create({
-      data: {
-        userId,
-        ...data,
-      },
+    const notification = this.notificationRepository.create({
+      userId,
+      ...data,
     });
+    return this.notificationRepository.save(notification);
   }
 }

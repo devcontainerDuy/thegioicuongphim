@@ -4,9 +4,14 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { MoviesService } from '../movies/movies.service';
+import { User } from './entities/user.entity';
+import { WatchHistory } from '../watch-history/entities/watch-history.entity';
+import { Favorite } from '../favorites/entities/favorite.entity';
+import { Episode } from '../movies/entities/episode.entity';
 import type {
   MovieSyncData,
   EpisodeSyncData,
@@ -15,42 +20,57 @@ import type {
 @Injectable()
 export class UsersService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(WatchHistory)
+    private watchHistoryRepository: Repository<WatchHistory>,
+    @InjectRepository(Favorite)
+    private favoriteRepository: Repository<Favorite>,
+    @InjectRepository(Episode)
+    private episodeRepository: Repository<Episode>,
     private moviesService: MoviesService,
   ) {}
 
   async getProfile(userId: number) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        role: true,
-        createdAt: true,
-        _count: {
-          select: {
-            favorites: true,
-            watchHistory: true,
-          },
-        },
-      },
+      relations: ['role'], // Assuming you might want role details. If strictly select, use query builder or select: [...]
     });
 
     if (!user) throw new NotFoundException('User không tồn tại');
-    return user;
+
+    // TypeORM doesn't natively support Prisma's _count in findOne easily without loading relations or using QB.
+    // We can do separate counts or use loadRelationCountAndMap if we want to mimic it exactly,
+    // or just fetch counts separately.
+    const favoritesCount = await this.favoriteRepository.count({
+      where: { userId },
+    });
+    const watchHistoryCount = await this.watchHistoryRepository.count({
+      where: { userId },
+    });
+
+    // Return object matching the shape expected by frontend (User & {_count: ...})
+    // NOTE: If frontend strictly expects `_count`, we construct it manually.
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      role: user.role,
+      createdAt: user.createdAt,
+      _count: {
+        favorites: favoritesCount,
+        watchHistory: watchHistoryCount,
+      },
+    };
   }
 
   async updateProfile(
     userId: number,
     data: { name?: string; avatar?: string },
   ) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data,
-      select: { id: true, email: true, name: true, avatar: true, role: true },
-    });
+    await this.userRepository.update(userId, data);
+    return this.getProfile(userId);
   }
 
   async changePassword(
@@ -60,8 +80,9 @@ export class UsersService {
     const { currentPassword, newPassword } = data;
 
     // Get user with password
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepository.findOne({
       where: { id: userId },
+      select: ['id', 'password'], // select password specifically if it's hidden by default? In TypeORM Column({select: false}) hides it. Assuming it's visible or we select it.
     });
 
     if (!user) throw new NotFoundException('User không tồn tại');
@@ -76,10 +97,7 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { password: hashedPassword },
-    });
+    await this.userRepository.update(userId, { password: hashedPassword });
 
     return { message: 'Đổi mật khẩu thành công' };
   }
@@ -88,32 +106,46 @@ export class UsersService {
   async getWatchHistory(userId: number, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      this.prisma.watchHistory.findMany({
-        where: { userId },
-        skip,
-        take: limit,
-        orderBy: { watchedAt: 'desc' },
-        include: {
-          movie: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              thumbUrl: true,
-              currentEpisode: true,
-            },
-          },
-          episode: {
-            select: { id: true, slug: true, name: true },
-          },
-        },
-      }),
-      this.prisma.watchHistory.count({ where: { userId } }),
-    ]);
+    const [items, total] = await this.watchHistoryRepository.findAndCount({
+      where: { userId },
+      skip,
+      take: limit,
+      order: { watchedAt: 'DESC' },
+      relations: ['movie', 'episode'],
+      // Selects: TypeORM returns full objects by default.
+      // If we want specific fields for relation, we could use a query builder,
+      // but finding and counting with relations is simpler for migration.
+    });
+
+    // Transform items to match expected output structure if needed, or leave as is.
+    // Prisma `include: { movie: { select: ... } }` returned structure:
+    // { ...history, movie: { ...selectedFields }, episode: { ...selectedFields } }
+    // TypeORM returns:
+    // { ...history, movie: { ...allFields }, episode: { ...allFields } }
+    // This should be compatible unless sensitive fields exist.
+
+    const formattedItems = items.map((item) => ({
+      ...item,
+      movie: item.movie
+        ? {
+            id: item.movie.id,
+            slug: item.movie.slug,
+            name: item.movie.name,
+            thumbUrl: item.movie.thumbUrl,
+            currentEpisode: item.movie.currentEpisode,
+          }
+        : null,
+      episode: item.episode
+        ? {
+            id: item.episode.id,
+            slug: item.episode.slug,
+            name: item.episode.name,
+          }
+        : null,
+    }));
 
     return {
-      items,
+      items: formattedItems,
       paginate: {
         current_page: page,
         total_page: Math.ceil(total / limit),
@@ -137,9 +169,7 @@ export class UsersService {
         movieData,
       );
 
-      // 2. Sync Episode if needed - Since syncEpisode is localized to users historically,
-      // but we want consistency, we'll keep it here but we could also move it to MoviesService.
-      // For now, let's just use a simplified version here.
+      // 2. Sync Episode if needed
       const localEpisodeId = await this.syncEpisode(
         localMovieId,
         episodeId,
@@ -147,25 +177,29 @@ export class UsersService {
       );
 
       // 3. Save History
-      const existing = await this.prisma.watchHistory.findFirst({
-        where: { userId, movieId: localMovieId, episodeId: localEpisodeId },
+      const existing = await this.watchHistoryRepository.findOne({
+        where: {
+          userId,
+          movieId: localMovieId,
+          ...(localEpisodeId ? { episodeId: localEpisodeId } : {}),
+        },
       });
 
       if (existing) {
-        return await this.prisma.watchHistory.update({
-          where: { id: existing.id },
-          data: { progress, watchedAt: new Date() },
+        await this.watchHistoryRepository.update(existing.id, {
+          progress,
+          watchedAt: new Date(),
         });
+        return { ...existing, progress, watchedAt: new Date() }; // basic return
       }
 
-      return await this.prisma.watchHistory.create({
-        data: {
-          userId,
-          movieId: localMovieId,
-          episodeId: localEpisodeId,
-          progress,
-        },
+      const newItem = this.watchHistoryRepository.create({
+        userId,
+        movieId: localMovieId,
+        episodeId: localEpisodeId || null,
+        progress,
       });
+      return await this.watchHistoryRepository.save(newItem);
     } catch (err) {
       const error = err as Error;
       console.error('Error in saveWatchProgress:', error);
@@ -190,26 +224,23 @@ export class UsersService {
     const slug = data?.slug || idOrSlug?.toString();
     if (!slug) return null;
 
-    let episode = await this.prisma.episode.findUnique({
+    let episode = await this.episodeRepository.findOne({
       where: {
-        movieId_slug: {
-          movieId: localMovieId,
-          slug: slug,
-        },
+        movieId: localMovieId,
+        slug: slug,
       },
     });
 
     if (!episode && data) {
-      episode = await this.prisma.episode.create({
-        data: {
-          movieId: localMovieId,
-          name: data.name,
-          slug: data.slug,
-          embedUrl: data.embed,
-          m3u8Url: data.m3u8,
-          sortOrder: 0,
-        },
+      episode = this.episodeRepository.create({
+        movieId: localMovieId,
+        name: data.name,
+        slug: data.slug,
+        embedUrl: data.embed,
+        m3u8Url: data.m3u8,
+        sortOrder: 0,
       });
+      episode = await this.episodeRepository.save(episode);
     }
 
     return episode ? episode.id : null;
@@ -219,31 +250,30 @@ export class UsersService {
   async getFavorites(userId: number, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      this.prisma.favorite.findMany({
-        where: { userId },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          movie: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              thumbUrl: true,
-              quality: true,
-              currentEpisode: true,
-              year: true,
-            },
-          },
-        },
-      }),
-      this.prisma.favorite.count({ where: { userId } }),
-    ]);
+    const [items, total] = await this.favoriteRepository.findAndCount({
+      where: { userId },
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+      relations: ['movie'],
+    });
+
+    // Project fields like in Prisma select
+    const formattedMovies = items.map((fav) => {
+      if (!fav.movie) return null;
+      return {
+        id: fav.movie.id,
+        slug: fav.movie.slug,
+        name: fav.movie.name,
+        thumbUrl: fav.movie.thumbUrl,
+        quality: fav.movie.quality,
+        currentEpisode: fav.movie.currentEpisode,
+        year: fav.movie.year,
+      };
+    });
 
     return {
-      items: items.map((fav) => fav.movie),
+      items: formattedMovies.filter(Boolean),
       paginate: {
         current_page: page,
         total_page: Math.ceil(total / limit),
@@ -252,21 +282,23 @@ export class UsersService {
     };
   }
 
-  async addFavorite(userId: number, movieId: number | string, movieData?: any) {
+  async addFavorite(userId: number, movieId: number | string, movieData?: MovieSyncData) {
     // Auto-sync movie to database first
     const localMovieId = await this.moviesService.syncMovie(movieId, movieData);
 
-    const existing = await this.prisma.favorite.findUnique({
-      where: { userId_movieId: { userId, movieId: localMovieId } },
+    const existing = await this.favoriteRepository.findOne({
+      where: { userId, movieId: localMovieId },
     });
 
     if (existing) {
       return { message: 'Phim đã có trong danh sách yêu thích' };
     }
 
-    await this.prisma.favorite.create({
-      data: { userId, movieId: localMovieId },
+    const newFav = this.favoriteRepository.create({
+      userId,
+      movieId: localMovieId,
     });
+    await this.favoriteRepository.save(newFav);
 
     return { message: 'Đã thêm vào danh sách yêu thích' };
   }
@@ -279,16 +311,13 @@ export class UsersService {
     );
     if (!localMovieId) throw new NotFoundException('Phim không tồn tại');
 
-    const existing = await this.prisma.favorite.findUnique({
-      where: { userId_movieId: { userId, movieId: localMovieId } },
+    const result = await this.favoriteRepository.delete({
+      userId,
+      movieId: localMovieId,
     });
 
-    if (!existing)
+    if (result.affected === 0)
       throw new NotFoundException('Phim không có trong danh sách yêu thích');
-
-    await this.prisma.favorite.delete({
-      where: { userId_movieId: { userId, movieId: localMovieId } },
-    });
 
     return { message: 'Đã xóa khỏi danh sách yêu thích' };
   }
@@ -301,8 +330,8 @@ export class UsersService {
     );
     if (!localMovieId) return { isFavorite: false };
 
-    const existing = await this.prisma.favorite.findUnique({
-      where: { userId_movieId: { userId, movieId: localMovieId } },
+    const existing = await this.favoriteRepository.findOne({
+      where: { userId, movieId: localMovieId },
     });
     return { isFavorite: !!existing };
   }

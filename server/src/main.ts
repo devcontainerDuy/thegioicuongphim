@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap(): Promise<void> {
+  const port = process.env.PORT as string;
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable cookie parsing
@@ -29,10 +30,8 @@ async function bootstrap(): Promise<void> {
   );
 
   app.setGlobalPrefix('api');
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Server running on http://localhost:${process.env.PORT ?? 3000}/api`,
-  );
+  await app.listen(port);
+  console.log(`🚀 Server running on http://localhost:${port}/api`);
 }
 bootstrap().catch((error) => {
   console.error('Failed to start server:', error);

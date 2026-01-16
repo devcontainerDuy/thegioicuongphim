@@ -4,21 +4,30 @@ import {
   ExecutionContext,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Request } from 'express';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Setting } from '@/settings/entities/setting.entity';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+
+interface JwtPayload {
+  isRoot?: boolean;
+  role?: { name: string };
+}
 
 @Injectable()
 export class MaintenanceGuard implements CanActivate {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(Setting)
+    private settingRepository: Repository<Setting>,
     private reflector: Reflector,
     private jwtService: JwtService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const { path } = request;
+    const request = context.switchToHttp().getRequest<Request>();
+    const path = request.path || request.originalUrl; // Fallback
 
     // 1. Always allow Admin, Auth, Status, and User Profile routes (to check identity)
     if (
@@ -31,7 +40,7 @@ export class MaintenanceGuard implements CanActivate {
     }
 
     // 2. Check maintenance status
-    const maintenanceSetting = await this.prisma.setting.findUnique({
+    const maintenanceSetting = await this.settingRepository.findOne({
       where: { key: 'maintenance' },
     });
 
@@ -44,11 +53,18 @@ export class MaintenanceGuard implements CanActivate {
     // 3. Bypass logic if maintenance is ON
 
     // 3a. Check for Token Bypass (Header or Query)
+    const bypassTokenHeader = request.headers['x-maintenance-token'];
+    const bypassTokenQuery = request.query['x-maintenance-token'];
+
+    // Ensure we get a single string or undefined
     const bypassToken =
-      request.headers['x-maintenance-token'] ||
-      request.query['x-maintenance-token'];
+      (Array.isArray(bypassTokenHeader)
+        ? bypassTokenHeader[0]
+        : bypassTokenHeader) ||
+      (typeof bypassTokenQuery === 'string' ? bypassTokenQuery : undefined);
+
     if (bypassToken) {
-      const tokenSetting = await this.prisma.setting.findUnique({
+      const tokenSetting = await this.settingRepository.findOne({
         where: { key: 'maintenance_token' },
       });
       // If token matches config, allow
@@ -58,21 +74,18 @@ export class MaintenanceGuard implements CanActivate {
     }
 
     // 3b. Check if user is Admin/Root using JWT manually
-    // Since Global Guard runs before AuthGuard, request.user might be undefined.
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       try {
-        const payload = this.jwtService.verify(token, {
+        const payload = this.jwtService.verify<JwtPayload>(token, {
           secret: process.env.JWT_SECRET || 'thegioicuongphim-secret-key-2026',
         });
 
-        // payload contains: userId, email, role (object or name?), isRoot
-        // Based on JwtStrategy, it stores { ..., role: user.role, isRoot: user.isRoot }
         if (payload.isRoot || payload.role?.name === 'Admin') {
           return true;
         }
-      } catch (err) {
+      } catch {
         // Token invalid or expired, ignore and proceed to block
       }
     }

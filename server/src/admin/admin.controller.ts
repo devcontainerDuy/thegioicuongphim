@@ -15,6 +15,15 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Permissions } from '../auth/decorators/permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { AdminService } from './admin.service';
+import {
+  CreateMovieDto,
+  UpdateMovieDto,
+  CreateEpisodeDto,
+  UpdateEpisodeDto,
+} from '@/movies/dto';
+import { CreateRoleDto } from '@/roles/dto/create-role.dto';
+import { UpdateRoleDto } from '@/roles/dto/update-role.dto';
+import { CreatePermissionDto } from '@/roles/dto/create-permission.dto';
 
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
@@ -53,12 +62,12 @@ export class AdminController {
   }
 
   @Post('movies')
-  createMovie(@Body() data: any) {
+  createMovie(@Body() data: CreateMovieDto) {
     return this.adminService.createMovie(data);
   }
 
   @Put('movies/:id')
-  updateMovie(@Param('id') id: string, @Body() data: any) {
+  updateMovie(@Param('id') id: string, @Body() data: UpdateMovieDto) {
     return this.adminService.updateMovie(Number(id), data);
   }
 
@@ -93,15 +102,19 @@ export class AdminController {
 
   // Episodes
   @Post('movies/:movieId/episodes')
-  createEpisode(@Param('movieId') movieId: string, @Body() data: any) {
+  createEpisode(
+    @Param('movieId') movieId: string,
+    @Body() data: CreateEpisodeDto,
+  ) {
     return this.adminService.createEpisode(Number(movieId), data);
   }
 
   @Put('episodes/:id')
-  updateEpisode(@Param('id') id: string, @Body() data: any) {
+  updateEpisode(@Param('id') id: string, @Body() data: UpdateEpisodeDto) {
     return this.adminService.updateEpisode(Number(id), data);
   }
 
+  @Delete('episodes/:id') // Missing decorator in original code, assumed Delete based on name
   deleteEpisode(@Param('id') id: string) {
     return this.adminService.deleteEpisode(Number(id));
   }
@@ -114,12 +127,12 @@ export class AdminController {
   }
 
   @Post('roles')
-  createRole(@Body() data: any) {
+  createRole(@Body() data: CreateRoleDto) {
     return this.adminService.createRole(data);
   }
 
   @Put('roles/:id')
-  updateRole(@Param('id') id: string, @Body() data: any) {
+  updateRole(@Param('id') id: string, @Body() data: UpdateRoleDto) {
     return this.adminService.updateRole(Number(id), data);
   }
 
@@ -134,7 +147,7 @@ export class AdminController {
   }
 
   @Post('permissions')
-  createPermission(@Body() data: any) {
+  createPermission(@Body() data: CreatePermissionDto) {
     return this.adminService.createPermission(data);
   }
 

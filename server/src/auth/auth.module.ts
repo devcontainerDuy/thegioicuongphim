@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { User } from '../users/entities/user.entity';
+import { PersonalAccessToken } from './entities/personal-access-token.entity';
+import { Session } from './entities/session.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([User, PersonalAccessToken, Session]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'thegioicuongphim-secret-key-2026',

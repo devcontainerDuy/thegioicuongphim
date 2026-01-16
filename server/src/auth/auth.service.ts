@@ -3,16 +3,25 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, MoreThan, In } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './dto';
+import { User } from '../users/entities/user.entity';
+import { PersonalAccessToken } from './entities/personal-access-token.entity';
+import { Session } from './entities/session.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(PersonalAccessToken)
+    private tokenRepository: Repository<PersonalAccessToken>,
+    @InjectRepository(Session)
+    private sessionRepository: Repository<Session>,
     private jwtService: JwtService,
   ) {}
 
@@ -29,7 +38,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { email, password, name } = registerDto;
 
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this.userRepository.findOne({
       where: { email },
     });
 
@@ -39,24 +48,30 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-      },
-      include: { role: { include: { permissions: true } } },
+    // Create user
+    const newUser = this.userRepository.create({
+      email,
+      password: hashedPassword,
+      name,
+    });
+    
+    const savedUser = await this.userRepository.save(newUser);
+    
+    // Fetch full user with role for return
+    const user = await this.userRepository.findOne({
+        where: { id: savedUser.id },
+        relations: ['role', 'role.permissions']
     });
 
-    const accessToken = this.generateAccessToken(user.id, user.email);
+    const accessToken = this.generateAccessToken(user!.id, user!.email);
 
     return {
       message: 'Đăng ký thành công',
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+        id: user!.id,
+        email: user!.email,
+        name: user!.name,
+        role: user!.role,
       },
       access_token: accessToken,
     };
@@ -70,9 +85,9 @@ export class AuthService {
   ) {
     const { email, password } = loginDto;
 
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepository.findOne({
       where: { email },
-      include: { role: { include: { permissions: true } } },
+      relations: ['role', 'role.permissions'],
     });
 
     if (!user) {
@@ -94,33 +109,28 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const personalAccessToken = await this.prisma.personalAccessToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: refreshTokenHash,
-        expiresAt,
-      },
+    const newToken = this.tokenRepository.create({
+      userId: user.id,
+      tokenHash: refreshTokenHash,
+      expiresAt,
     });
+    const personalAccessToken = await this.tokenRepository.save(newToken);
 
     // Create session
-    await this.prisma.session.create({
-      data: {
-        userId: user.id,
-        tokenId: personalAccessToken.id,
-        ipAddress,
-        userAgent,
-      },
+    const newSession = this.sessionRepository.create({
+      userId: user.id,
+      tokenId: personalAccessToken.id,
+      ipAddress,
+      userAgent,
     });
+    await this.sessionRepository.save(newSession);
 
     // Handle remember me
     let rememberToken: string | null = null;
     if (remember) {
       rememberToken = this.generateRandomToken();
       const rememberTokenHash = this.hashToken(rememberToken);
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { rememberToken: rememberTokenHash },
-      });
+      await this.userRepository.update(user.id, { rememberToken: rememberTokenHash });
     }
 
     return {
@@ -141,15 +151,13 @@ export class AuthService {
   async refresh(refreshToken: string, ipAddress?: string) {
     const tokenHash = this.hashToken(refreshToken);
 
-    const token = await this.prisma.personalAccessToken.findFirst({
+    const token = await this.tokenRepository.findOne({
       where: {
         tokenHash,
         revoked: false,
-        expiresAt: { gt: new Date() },
+        expiresAt: MoreThan(new Date()),
       },
-      include: {
-        user: { include: { role: { include: { permissions: true } } } },
-      },
+      relations: ['user', 'user.role', 'user.role.permissions'],
     });
 
     if (!token) {
@@ -159,10 +167,7 @@ export class AuthService {
     }
 
     // Update session last activity
-    await this.prisma.session.updateMany({
-      where: { tokenId: token.id },
-      data: { lastActivityAt: new Date() },
-    });
+    await this.sessionRepository.update({ tokenId: token.id }, { lastActivityAt: new Date() });
 
     // Generate new access token
     const accessToken = this.generateAccessToken(
@@ -175,28 +180,21 @@ export class AuthService {
     const newTokenHash = this.hashToken(newRefreshToken);
 
     // Revoke old token
-    await this.prisma.personalAccessToken.update({
-      where: { id: token.id },
-      data: { revoked: true },
-    });
+    await this.tokenRepository.update(token.id, { revoked: true });
 
     // Create new token
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const newToken = await this.prisma.personalAccessToken.create({
-      data: {
-        userId: token.user.id,
-        tokenHash: newTokenHash,
-        expiresAt,
-      },
+    const newToken = this.tokenRepository.create({
+      userId: token.user.id,
+      tokenHash: newTokenHash,
+      expiresAt,
     });
+    const savedNewToken = await this.tokenRepository.save(newToken);
 
     // Update session to new token
-    await this.prisma.session.updateMany({
-      where: { tokenId: token.id },
-      data: { tokenId: newToken.id },
-    });
+    await this.sessionRepository.update({ tokenId: token.id }, { tokenId: savedNewToken.id });
 
     return {
       access_token: accessToken,
@@ -214,21 +212,16 @@ export class AuthService {
   async logout(refreshToken: string) {
     const tokenHash = this.hashToken(refreshToken);
 
-    const token = await this.prisma.personalAccessToken.findFirst({
+    const token = await this.tokenRepository.findOne({
       where: { tokenHash },
     });
 
     if (token) {
       // Revoke token
-      await this.prisma.personalAccessToken.update({
-        where: { id: token.id },
-        data: { revoked: true },
-      });
+      await this.tokenRepository.update(token.id, { revoked: true });
 
       // Delete session
-      await this.prisma.session.deleteMany({
-        where: { tokenId: token.id },
-      });
+      await this.sessionRepository.delete({ tokenId: token.id });
     }
 
     return { message: 'Đăng xuất thành công' };
@@ -236,21 +229,13 @@ export class AuthService {
 
   async logoutAll(userId: number) {
     // Revoke all tokens
-    await this.prisma.personalAccessToken.updateMany({
-      where: { userId },
-      data: { revoked: true },
-    });
+    await this.tokenRepository.update({ userId }, { revoked: true });
 
     // Delete all sessions
-    await this.prisma.session.deleteMany({
-      where: { userId },
-    });
+    await this.sessionRepository.delete({ userId });
 
     // Clear remember token
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { rememberToken: null },
-    });
+    await this.userRepository.update(userId, { rememberToken: null });
 
     return { message: 'Đã đăng xuất tất cả thiết bị' };
   }
@@ -262,9 +247,9 @@ export class AuthService {
   ) {
     const tokenHash = this.hashToken(rememberToken);
 
-    const user = await this.prisma.user.findFirst({
+    const user = await this.userRepository.findOne({
       where: { rememberToken: tokenHash },
-      include: { role: { include: { permissions: true } } },
+      relations: ['role', 'role.permissions'],
     });
 
     if (!user) {
@@ -279,29 +264,24 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const personalAccessToken = await this.prisma.personalAccessToken.create({
-      data: {
+    const newToken = this.tokenRepository.create({
         userId: user.id,
         tokenHash: refreshTokenHash,
         expiresAt,
-      },
     });
+    const personalAccessToken = await this.tokenRepository.save(newToken);
 
-    await this.prisma.session.create({
-      data: {
+    const newSession = this.sessionRepository.create({
         userId: user.id,
         tokenId: personalAccessToken.id,
         ipAddress,
         userAgent,
-      },
     });
+    await this.sessionRepository.save(newSession);
 
     // Rotate remember token
     const newRememberToken = this.generateRandomToken();
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { rememberToken: this.hashToken(newRememberToken) },
-    });
+    await this.userRepository.update(user.id, { rememberToken: this.hashToken(newRememberToken) });
 
     return {
       message: 'Đăng nhập thành công',
@@ -319,15 +299,17 @@ export class AuthService {
   }
 
   async getSessions(userId: number) {
-    return this.prisma.session.findMany({
-      where: { userId, token: { revoked: false } },
-      include: { token: { select: { expiresAt: true, createdAt: true } } },
-      orderBy: { lastActivityAt: 'desc' },
+    return this.sessionRepository.find({
+      where: { userId, token: { revoked: false } }, // relations in where conditions work since TypeORM 0.3 if relation is loaded or check if supported.
+      // Wait, filtering by relation property in `where` is supported.
+      relations: ['token'],
+      order: { lastActivityAt: 'DESC' },
+      // Select specific fields manually or via map after fetch, or use select if needed.
     });
   }
 
   async revokeSession(userId: number, sessionId: number) {
-    const session = await this.prisma.session.findFirst({
+    const session = await this.sessionRepository.findOne({
       where: { id: sessionId, userId },
     });
 
@@ -336,23 +318,18 @@ export class AuthService {
     }
 
     // Revoke token
-    await this.prisma.personalAccessToken.update({
-      where: { id: session.tokenId },
-      data: { revoked: true },
-    });
+    await this.tokenRepository.update(session.tokenId, { revoked: true });
 
     // Delete session
-    await this.prisma.session.delete({
-      where: { id: sessionId },
-    });
+    await this.sessionRepository.delete(sessionId);
 
     return { message: 'Đã thu hồi phiên đăng nhập' };
   }
 
   async bulkRevoke(userId: number, sessionIds: number[]) {
-    const sessions = await this.prisma.session.findMany({
+    const sessions = await this.sessionRepository.find({
       where: {
-        id: { in: sessionIds },
+        id: In(sessionIds),
         userId: userId,
       },
     });
@@ -360,26 +337,25 @@ export class AuthService {
     const tokenIds = sessions.map((s) => s.tokenId);
 
     // Revoke all tokens
-    await this.prisma.personalAccessToken.updateMany({
-      where: { id: { in: tokenIds } },
-      data: { revoked: true },
-    });
+    if (tokenIds.length > 0) {
+        await this.tokenRepository.update({ id: In(tokenIds) }, { revoked: true });
+    }
 
     // Delete session records
-    await this.prisma.session.deleteMany({
-      where: {
-        id: { in: sessionIds },
-        userId: userId,
-      },
-    });
+    if (sessionIds.length > 0) {
+        await this.sessionRepository.delete({
+            id: In(sessionIds),
+            userId: userId,
+        });
+    }
 
     return { message: `Đã thu hồi ${sessions.length} phiên đăng nhập` };
   }
 
   async validateUser(userId: number) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepository.findOne({
       where: { id: userId },
-      include: { role: { include: { permissions: true } } },
+      relations: ['role', 'role.permissions'],
     });
 
     if (!user) {

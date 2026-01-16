@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Setting } from './entities/setting.entity';
 
 @Injectable()
 export class SettingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Setting)
+    private settingRepository: Repository<Setting>,
+  ) {}
 
   async findAll() {
-    const settings = await this.prisma.setting.findMany();
+    const settings = await this.settingRepository.find();
     // Convert array to object { key: value }
     return settings.reduce((acc: Record<string, any>, curr) => {
       acc[curr.key] = this.parseValue(curr.value, curr.type);
@@ -27,10 +32,11 @@ export class SettingsService {
         stringValue = String(value);
       }
 
-      return this.prisma.setting.upsert({
-        where: { key },
-        update: { value: stringValue, type },
-        create: { key, value: stringValue, type },
+      // Upsert: Create or Update if key exists
+      return this.settingRepository.save({
+        key,
+        value: stringValue,
+        type,
       });
     });
 

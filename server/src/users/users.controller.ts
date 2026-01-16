@@ -10,19 +10,9 @@ import {
   Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { RequestWithUser } from '@/common/interfaces/request-with-user.interface';
 import { UsersService } from './users.service';
-
-// Define the shape of our JWT user payload
-interface JwtUser {
-  userId: number;
-  email: string;
-  role: string;
-}
-
-interface AuthenticatedRequest extends Request {
-  user: JwtUser;
-}
+import { MovieSyncData, EpisodeSyncData } from '@/movies/dto/sync-data.dto';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
@@ -30,35 +20,35 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('profile')
-  getProfile(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getProfile(req.user.userId);
+  getProfile(@Req() req: RequestWithUser) {
+    return this.usersService.getProfile(req.user.id);
   }
 
   @Post('profile')
   updateProfile(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Body() data: { name?: string; avatar?: string },
   ) {
-    return this.usersService.updateProfile(req.user.userId, data);
+    return this.usersService.updateProfile(req.user.id, data);
   }
 
   @Post('password')
   changePassword(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Body() data: { currentPassword: string; newPassword: string },
   ) {
-    return this.usersService.changePassword(req.user.userId, data);
+    return this.usersService.changePassword(req.user.id, data);
   }
 
   // ===== WATCH HISTORY =====
   @Get('history')
   getWatchHistory(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.usersService.getWatchHistory(
-      req.user.userId,
+      req.user.id,
       Number(page) || 1,
       Number(limit) || 20,
     );
@@ -66,18 +56,18 @@ export class UsersController {
 
   @Post('history')
   saveWatchProgress(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Body()
     data: {
       movieId: number | string;
       episodeId?: number | string;
       progress?: number;
-      movieData?: any;
-      episodeData?: any;
+      movieData?: MovieSyncData;
+      episodeData?: EpisodeSyncData;
     },
   ) {
     return this.usersService.saveWatchProgress(
-      req.user.userId,
+      req.user.id,
       data.movieId,
       data.episodeId,
       data.progress || 0,
@@ -89,39 +79,36 @@ export class UsersController {
   // ===== FAVORITES =====
   @Get('favorites')
   getFavorites(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.usersService.getFavorites(
-      req.user.userId,
+      req.user.id,
       Number(page) || 1,
       Number(limit) || 20,
     );
   }
 
   @Get('favorites/:movieId')
-  isFavorite(
-    @Req() req: AuthenticatedRequest,
-    @Param('movieId') movieId: string,
-  ) {
-    return this.usersService.isFavorite(req.user.userId, movieId);
+  isFavorite(@Req() req: RequestWithUser, @Param('movieId') movieId: string) {
+    return this.usersService.isFavorite(req.user.id, movieId);
   }
 
   @Post('favorites/:movieId')
   addFavorite(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Param('movieId') movieId: string,
-    @Body() body?: any,
+    @Body() body?: { movieData?: any },
   ) {
-    return this.usersService.addFavorite(req.user.userId, movieId, body);
+    return this.usersService.addFavorite(req.user.id, movieId, body?.movieData);
   }
 
   @Delete('favorites/:movieId')
   removeFavorite(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: RequestWithUser,
     @Param('movieId') movieId: string,
   ) {
-    return this.usersService.removeFavorite(req.user.userId, movieId);
+    return this.usersService.removeFavorite(req.user.id, movieId);
   }
 }
