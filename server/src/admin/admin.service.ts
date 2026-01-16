@@ -46,7 +46,7 @@ export class AdminService {
     const viewsResult = await this.movieRepository
       .createQueryBuilder('movie')
       .select('SUM(movie.views)', 'totalViews')
-      .getRawOne();
+      .getRawOne<{ totalViews: string }>();
     const totalViews = viewsResult ? Number(viewsResult.totalViews) : 0;
 
     const recentMovies = await this.movieRepository.find({
@@ -92,7 +92,7 @@ export class AdminService {
         today: today.toISOString().split('T')[0],
       })
       // Note: date column is string YYYY-MM-DD
-      .getRawOne();
+      .getRawOne<{ views: string }>();
 
     // Last 7 Days Total
     const weeklyStats = await this.viewLogRepository
@@ -101,7 +101,7 @@ export class AdminService {
       .where('viewLog.date >= :last7Days', {
         last7Days: last7Days.toISOString().split('T')[0],
       })
-      .getRawOne();
+      .getRawOne<{ views: string }>();
 
     // Last 30 Days Total
     const monthlyStats = await this.viewLogRepository
@@ -110,7 +110,7 @@ export class AdminService {
       .where('viewLog.date >= :last30Days', {
         last30Days: last30Days.toISOString().split('T')[0],
       })
-      .getRawOne();
+      .getRawOne<{ views: string }>();
 
     // Top 10 Movies in last 30 days
     const topMovies = await this.viewLogRepository
@@ -123,7 +123,7 @@ export class AdminService {
       .groupBy('viewLog.movieId')
       .orderBy('views', 'DESC')
       .limit(10)
-      .getRawMany();
+      .getRawMany<{ movieId: number; views: string }>();
 
     // Daily breakdown for chart (30 days)
     const chartDaily = await this.viewLogRepository
@@ -135,7 +135,7 @@ export class AdminService {
       })
       .groupBy('viewLog.date')
       .orderBy('viewLog.date', 'ASC')
-      .getRawMany();
+      .getRawMany<{ date: string | Date; views: string }>();
 
     // Get movie names for top movies
     const topMoviesWithNames = await Promise.all(

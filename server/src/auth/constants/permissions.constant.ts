@@ -27,6 +27,8 @@ export const PermissionResources = {
   VIEW_LOG: 'view_log',
   WATCH_HISTORY: 'watch_history',
   WATCHLIST: 'watchlist',
+  REPORT: 'report',
+  ANALYTICS: 'analytics',
 } as const;
 
 export type PermissionResourceType =

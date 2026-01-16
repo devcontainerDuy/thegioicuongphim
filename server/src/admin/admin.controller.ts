@@ -33,17 +33,20 @@ export class AdminController {
 
   // Dashboard
   @Get('dashboard')
+  @Permissions('report.view')
   getDashboard() {
     return this.adminService.getDashboardStats();
   }
 
   @Get('analytics')
+  @Permissions('report.view')
   getAnalytics() {
     return this.adminService.getAnalytics();
   }
 
   // Movies
   @Get('movies')
+  @Permissions('movie.view')
   getMovies(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -57,27 +60,32 @@ export class AdminController {
   }
 
   @Get('movies/:id')
+  @Permissions('movie.view')
   getMovie(@Param('id') id: string) {
     return this.adminService.getMovieById(Number(id));
   }
 
   @Post('movies')
+  @Permissions('movie.create')
   createMovie(@Body() data: CreateMovieDto) {
     return this.adminService.createMovie(data);
   }
 
   @Put('movies/:id')
+  @Permissions('movie.update')
   updateMovie(@Param('id') id: string, @Body() data: UpdateMovieDto) {
     return this.adminService.updateMovie(Number(id), data);
   }
 
   @Delete('movies/:id')
+  @Permissions('movie.delete')
   deleteMovie(@Param('id') id: string) {
     return this.adminService.deleteMovie(Number(id));
   }
 
   // Users
   @Get('users')
+  @Permissions('user.read')
   getUsers(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -91,17 +99,20 @@ export class AdminController {
   }
 
   @Put('users/:id/role')
+  @Permissions('user.update')
   updateUserRole(@Param('id') id: string, @Body('role') role: string) {
     return this.adminService.updateUserRole(Number(id), role);
   }
 
   @Delete('users/:id')
+  @Permissions('user.delete')
   deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(Number(id));
   }
 
   // Episodes
   @Post('movies/:movieId/episodes')
+  @Permissions('episode.create')
   createEpisode(
     @Param('movieId') movieId: string,
     @Body() data: CreateEpisodeDto,
@@ -110,54 +121,63 @@ export class AdminController {
   }
 
   @Put('episodes/:id')
+  @Permissions('episode.update')
   updateEpisode(@Param('id') id: string, @Body() data: UpdateEpisodeDto) {
     return this.adminService.updateEpisode(Number(id), data);
   }
 
   @Delete('episodes/:id') // Missing decorator in original code, assumed Delete based on name
+  @Permissions('episode.delete')
   deleteEpisode(@Param('id') id: string) {
     return this.adminService.deleteEpisode(Number(id));
   }
 
   // Role & Permission Endpoints
   @Get('roles')
-  @Permissions('role.manage') // Or just rely on Admin role via RolesGuard
+  @Permissions('role.view')
   getRoles() {
     return this.adminService.getRoles();
   }
 
   @Post('roles')
+  @Permissions('role.create')
   createRole(@Body() data: CreateRoleDto) {
     return this.adminService.createRole(data);
   }
 
   @Put('roles/:id')
+  @Permissions('role.update')
   updateRole(@Param('id') id: string, @Body() data: UpdateRoleDto) {
     return this.adminService.updateRole(Number(id), data);
   }
 
   @Delete('roles/:id')
+  @Permissions('role.delete')
   deleteRole(@Param('id') id: string) {
     return this.adminService.deleteRole(Number(id));
   }
 
   @Get('permissions')
+  @Permissions('permission.view')
   getPermissions() {
     return this.adminService.getPermissions();
   }
 
   @Post('permissions')
+  @Permissions('permission.create')
   createPermission(@Body() data: CreatePermissionDto) {
     return this.adminService.createPermission(data);
   }
 
   @Delete('permissions/:id')
+  @Permissions('permission.delete')
   deletePermission(@Param('id') id: string) {
     return this.adminService.deletePermission(Number(id));
   }
 
   // Reviews
   @Get('reviews')
+  @Permissions('rating.view')
   getReviews(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -171,6 +191,7 @@ export class AdminController {
   }
 
   @Delete('reviews/:id')
+  @Permissions('rating.delete')
   deleteReview(@Param('id') id: string) {
     return this.adminService.deleteReview(Number(id));
   }

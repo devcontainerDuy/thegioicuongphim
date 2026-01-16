@@ -56,9 +56,14 @@ function generatePermissions() {
     }
   });
 
-  // Ensure standard resources always exist if not found (optional, but safer)
-  // resources['USER'] = 'user';
-  // resources['ROLE'] = 'role';
+  // Manual resources (not backed by entities)
+  const manualResources: Record<string, string> = {
+    REPORT: 'report',
+    ANALYTICS: 'analytics',
+  };
+
+  // Merge manual resources
+  Object.assign(resources, manualResources);
 
   // Create object string with unquoted keys
   const resourcesString = Object.entries(resources)

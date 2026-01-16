@@ -17,6 +17,9 @@ import { AuthGuard } from '@nestjs/passport';
 import type { MovieSyncData } from './dto/sync-data.dto';
 
 import { OptionalJwtAuthGuard } from '../auth/guards';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 
 import { RequestWithUser } from '@/common/interfaces/request-with-user.interface';
 import { Request } from 'express';
@@ -183,20 +186,24 @@ export class MoviesController {
   }
 
   // ===== ADMIN / CRUD =====
+  // ===== ADMIN / CRUD =====
   @Post()
-  // @UseGuards(JwtAuthGuard, RolesGuard) // TODO: Add admin guard
+  @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
+  @Permissions('movie.create')
   create(@Body() createMovieDto: CreateMovieDto) {
     return this.moviesService.create(createMovieDto);
   }
 
   @Patch(':slug')
-  // @UseGuards(JwtAuthGuard, RolesGuard) // TODO: Add admin guard
+  @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
+  @Permissions('movie.update')
   update(@Param('slug') slug: string, @Body() updateMovieDto: UpdateMovieDto) {
     return this.moviesService.update(slug, updateMovieDto);
   }
 
   @Delete(':slug')
-  // @UseGuards(JwtAuthGuard, RolesGuard) // TODO: Add admin guard
+  @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
+  @Permissions('movie.delete')
   remove(@Param('slug') slug: string) {
     return this.moviesService.remove(slug);
   }
