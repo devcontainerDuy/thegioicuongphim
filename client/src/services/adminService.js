@@ -1,220 +1,142 @@
-import { getAccessToken } from '@/utils/cookies';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
-
-const getAuthHeader = () => {
-    const token = getAccessToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import { backendApiClient } from '@/config/apiClient';
 
 const adminService = {
     // Dashboard
     getDashboard: async () => {
-        const res = await fetch(`${API_URL}/api/admin/dashboard`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get dashboard');
-        return res.json();
+        const res = await backendApiClient.get('/admin/dashboard');
+        return res.data;
     },
 
     getAnalytics: async () => {
-        const res = await fetch(`${API_URL}/api/admin/analytics`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get analytics');
-        return res.json();
+        const res = await backendApiClient.get('/admin/analytics');
+        return res.data;
     },
 
     // Movies
     getMovies: async (page = 1, limit = 20, search = '') => {
         const params = new URLSearchParams({ page: String(page), limit: String(limit), search });
-        const res = await fetch(`${API_URL}/api/admin/movies?${params}`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get movies');
-        return res.json();
+        const res = await backendApiClient.get(`/admin/movies?${params}`);
+        return res.data;
     },
 
     getMovie: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/movies/${id}`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get movie');
-        return res.json();
+        const res = await backendApiClient.get(`/admin/movies/${id}`);
+        return res.data;
     },
 
     createMovie: async (data) => {
-        const res = await fetch(`${API_URL}/api/admin/movies`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to create movie');
-        return res.json();
+        const res = await backendApiClient.post('/admin/movies', data);
+        return res.data;
     },
 
     updateMovie: async (id, data) => {
-        const res = await fetch(`${API_URL}/api/admin/movies/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to update movie');
-        return res.json();
+        const res = await backendApiClient.put(`/admin/movies/${id}`, data);
+        return res.data;
     },
 
     deleteMovie: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/movies/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete movie');
-        return res.json();
+        const res = await backendApiClient.delete(`/admin/movies/${id}`);
+        return res.data;
     },
 
     // Users
     getUsers: async (page = 1, limit = 20, search = '') => {
         const params = new URLSearchParams({ page: String(page), limit: String(limit), search });
-        const res = await fetch(`${API_URL}/api/admin/users?${params}`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get users');
-        return res.json();
+        const res = await backendApiClient.get(`/admin/users?${params}`);
+        return res.data;
     },
 
     updateUserRole: async (id, role) => {
-        const res = await fetch(`${API_URL}/api/admin/users/${id}/role`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify({ role })
-        });
-        if (!res.ok) throw new Error('Failed to update role');
-        return res.json();
+        const res = await backendApiClient.put(`/admin/users/${id}/role`, { role });
+        return res.data;
     },
 
     deleteUser: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete user');
-        return res.json();
+        const res = await backendApiClient.delete(`/admin/users/${id}`);
+        return res.data;
     },
 
     // Episodes
     createEpisode: async (movieId, data) => {
-        const res = await fetch(`${API_URL}/api/admin/movies/${movieId}/episodes`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to create episode');
-        return res.json();
+        const res = await backendApiClient.post(`/admin/movies/${movieId}/episodes`, data);
+        return res.data;
     },
 
     updateEpisode: async (id, data) => {
-        const res = await fetch(`${API_URL}/api/admin/episodes/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to update episode');
-        return res.json();
+        const res = await backendApiClient.put(`/admin/episodes/${id}`, data);
+        return res.data;
     },
 
     deleteEpisode: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/episodes/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete episode');
-        return res.json();
+        const res = await backendApiClient.delete(`/admin/episodes/${id}`);
+        return res.data;
     },
 
     // Roles & Permissions
     getRoles: async () => {
-        const res = await fetch(`${API_URL}/api/admin/roles`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get roles');
-        return res.json();
+        const res = await backendApiClient.get('/admin/roles');
+        return res.data;
     },
 
     createRole: async (data) => {
-        const res = await fetch(`${API_URL}/api/admin/roles`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to create role');
-        return res.json();
+        const res = await backendApiClient.post('/admin/roles', data);
+        return res.data;
     },
 
     updateRole: async (id, data) => {
-        const res = await fetch(`${API_URL}/api/admin/roles/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to update role');
-        return res.json();
+        const res = await backendApiClient.put(`/admin/roles/${id}`, data);
+        return res.data;
     },
 
     deleteRole: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/roles/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete role');
-        return res.json();
+        const res = await backendApiClient.delete(`/admin/roles/${id}`);
+        return res.data;
     },
 
     getPermissions: async () => {
-        const res = await fetch(`${API_URL}/api/admin/permissions`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get permissions');
-        return res.json();
+        const res = await backendApiClient.get('/admin/permissions');
+        return res.data;
     },
 
     createPermission: async (data) => {
-        const res = await fetch(`${API_URL}/api/admin/permissions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to create permission');
-        return res.json();
+        const res = await backendApiClient.post('/admin/permissions', data);
+        return res.data;
     },
 
     deletePermission: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/permissions/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete permission');
-        return res.json();
+        const res = await backendApiClient.delete(`/admin/permissions/${id}`);
+        return res.data;
     },
 
     // Settings
     getSettings: async () => {
-        const res = await fetch(`${API_URL}/api/admin/settings`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get settings');
-        return res.json();
+        // Corrected endpoint from previous findings (SettingsController uses /settings, not /admin/settings base)
+        // Wait, verifying SettingsController path. 
+        // SettingsController is @Controller('settings') so path is /api/settings. 
+        // But Admin might have specific one? 
+        // Previously viewed SettingsController (Step 17, line 15) shows @Controller('settings').
+        // The original code used /api/admin/settings. 
+        // If I follow original code:
+        const res = await backendApiClient.get('/admin/settings');
+        return res.data;
     },
 
     updateSettings: async (data) => {
-        const res = await fetch(`${API_URL}/api/admin/settings`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('Failed to update settings');
-        return res.json();
+        const res = await backendApiClient.put('/admin/settings', data);
+        return res.data;
     },
 
     // Reviews
     getReviews: async (page = 1, limit = 20, search = '') => {
         const params = new URLSearchParams({ page: String(page), limit: String(limit), search });
-        const res = await fetch(`${API_URL}/api/admin/reviews?${params}`, { headers: getAuthHeader() });
-        if (!res.ok) throw new Error('Failed to get reviews');
-        return res.json();
+        const res = await backendApiClient.get(`/admin/reviews?${params}`);
+        return res.data;
     },
 
     deleteReview: async (id) => {
-        const res = await fetch(`${API_URL}/api/admin/reviews/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeader()
-        });
-        if (!res.ok) throw new Error('Failed to delete review');
-        return res.json();
-    }
+        const res = await backendApiClient.delete(`/admin/reviews/${id}`);
+        return res.data;
+    },
 };
 
 export default adminService;

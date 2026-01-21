@@ -52,12 +52,14 @@ const SearchForm = ({ trigger }) => {
             return;
         }
 
+        if (/^\s*$/.test(searchTerm)) return;
+
         setLoading(true);
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
         debounceRef.current = setTimeout(async () => {
             try {
-                const response = await movieService.searchFilms(searchTerm.trim());
+                const response = await movieService.searchFilms(searchTerm);
                 setSearchResults(response?.items || []);
             } catch (error) {
                 console.error("Search error:", error);

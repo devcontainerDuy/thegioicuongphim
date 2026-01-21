@@ -1,14 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getAccessToken, setAccessToken, removeAccessToken } from '@/utils/cookies';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { getAccessToken, setAccessToken, removeAccessToken } from "@/utils/cookies";
+import { backendApiClient } from "@/config/apiClient";
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
+        throw new Error("useAuth must be used within AuthProvider");
     }
     return context;
 };
@@ -26,20 +25,15 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/user/profile`, {
-                headers: { Authorization: `Bearer ${token}` },
-                credentials: 'include' // Include cookies in request
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setUser(data);
-            } else {
-                // Token invalid
+            const response = await backendApiClient.get("/user/profile");
+            setUser(response.data);
+        } catch (error) {
+            console.error("Failed to fetch profile:", error);
+            // If 401 logic in apiClient fails (refresh failed), it will redirect/logout automatically.
+            // But we can double check here if needed.
+            if (error.response?.status === 401) {
                 logout();
             }
-        } catch (error) {
-            console.error('Failed to fetch profile:', error);
         } finally {
             setLoading(false);
         }
@@ -50,18 +44,8 @@ export const AuthProvider = ({ children }) => {
     }, [fetchProfile]);
 
     const login = async (email, password) => {
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Đăng nhập thất bại');
-        }
+        const response = await backendApiClient.post("/auth/login", { email, password });
+        const data = response.data;
 
         // Store in cookie instead of localStorage
         setAccessToken(data.access_token);
@@ -72,18 +56,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (email, password, name) => {
-        const response = await fetch(`${API_URL}/api/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, name }),
-            credentials: 'include'
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Đăng ký thất bại');
-        }
+        const response = await backendApiClient.post("/auth/register", { email, password, name });
+        const data = response.data;
 
         // Store in cookie instead of localStorage
         setAccessToken(data.access_token);
@@ -93,7 +67,12 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await backendApiClient.post("/auth/logout");
+        } catch (e) {
+            // Ignore logout errors
+        }
         removeAccessToken();
         setToken(null);
         setUser(null);
@@ -107,15 +86,10 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        refreshProfile: fetchProfile
+        refreshProfile: fetchProfile,
     };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;
-

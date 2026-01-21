@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import movieService from "@/services/movieService";
+import { getAccessToken } from "@/utils/cookies";
 
 // Thunks
 export const fetchWatchlist = createAsyncThunk(
@@ -17,7 +18,7 @@ export const toggleWatchlist = createAsyncThunk(
     "watchlist/toggle",
     async (movie, { rejectWithValue }) => {
         try {
-            const token = document.cookie.match(/access_token=([^;]+)/)?.[1];
+            const token = getAccessToken();
             if (token) {
                 // User is logged in, sync with backend
                 const response = await movieService.toggleWatchlist(movie.id);

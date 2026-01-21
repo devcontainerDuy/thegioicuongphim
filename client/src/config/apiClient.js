@@ -26,6 +26,7 @@ movieApiClient.interceptors.response.use(
 export const backendApiClient = axios.create({
   baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`,
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },

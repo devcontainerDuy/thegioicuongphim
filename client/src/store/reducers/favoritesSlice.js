@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import userService from "@/services/userService";
+import { getAccessToken } from "@/utils/cookies";
 
 // Thunks
 export const fetchFavorites = createAsyncThunk(
@@ -20,7 +21,7 @@ export const addFavorite = createAsyncThunk(
 		// Always return the film for local state update
 		// Backend sync will happen only if authenticated
 		try {
-			const token = document.cookie.match(/access_token=([^;]+)/)?.[1];
+			const token = getAccessToken();
 			if (token) {
 				await userService.addFavorite(film.id);
 			}
@@ -37,7 +38,7 @@ export const removeFavorite = createAsyncThunk(
 	async (filmId, { rejectWithValue }) => {
 		// Always return the filmId for local state update
 		try {
-			const token = document.cookie.match(/access_token=([^;]+)/)?.[1];
+			const token = getAccessToken();
 			if (token) {
 				await userService.removeFavorite(filmId);
 			}

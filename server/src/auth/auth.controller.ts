@@ -48,7 +48,7 @@ export class AuthController {
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
@@ -57,7 +57,7 @@ export class AuthController {
       res.cookie('remember_token', result.remember_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
       });
     }
@@ -75,9 +75,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // Explicitly type req.cookies to avoid 'any'
     const cookies = req.cookies as Record<string, string>;
     const refreshToken = cookies?.refresh_token;
+
     if (!refreshToken) {
       return { error: 'No refresh token provided', statusCode: 401 };
     }
@@ -89,7 +89,7 @@ export class AuthController {
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
@@ -154,14 +154,14 @@ export class AuthController {
     res.cookie('refresh_token', result.refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.cookie('remember_token', result.remember_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 90 * 24 * 60 * 60 * 1000,
     });
 

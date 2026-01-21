@@ -27,13 +27,17 @@ const movieService = {
     searchFilms: async (keyword, page = 1, filters = {}) => {
         try {
             const { type, genre, year, country } = filters;
-            let url = `/movies/search?keyword=${keyword}&page=${page}`;
-            if (type) url += `&type=${type}`;
-            if (genre) url += `&genre=${encodeURIComponent(genre)}`;
-            if (year) url += `&year=${year}`;
-            if (country) url += `&country=${encodeURIComponent(country)}`;
+            const query = [];
 
-            const response = await apiClient.get(url);
+            query.push(`keyword=${encodeURIComponent(keyword ?? "")}`);
+            query.push(`page=${encodeURIComponent(String(page))}`);
+
+            if (type) query.push(`type=${encodeURIComponent(type)}`);
+            if (genre) query.push(`genre=${encodeURIComponent(genre)}`);
+            if (year) query.push(`year=${encodeURIComponent(String(year))}`);
+            if (country) query.push(`country=${encodeURIComponent(country)}`);
+
+            const response = await apiClient.get(`/films/search?${query.join("&")}`);
             return response.data;
         } catch (error) {
             console.error("Error searching films:", error);
@@ -64,7 +68,8 @@ const movieService = {
 
     getForYouMovies: async (limit = 10) => {
         try {
-            const response = await apiClient.get(`/recommendations/for-you?limit=${limit}`);
+            // Personal recommendations should go to our Backend (NestJS), not the external movie API
+            const response = await backendApiClient.get(`/recommendations/for-you?limit=${limit}`);
             return response.data;
         } catch (error) {
             console.error("Error fetching personal recommendations:", error);
