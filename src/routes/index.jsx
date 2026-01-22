@@ -26,7 +26,7 @@ import UserList from "@/admin/pages/UserList";
 import RoleManager from "@/admin/pages/RoleManager";
 import ReviewList from "@/admin/pages/ReviewList";
 import Settings from "@/admin/pages/Settings";
-import { MaintenanceProvider } from "@/context/MaintenanceContext";
+import { MaintenanceProvider } from "@/contexts/MaintenanceContext";
 import { Outlet } from "react-router-dom";
 
 // Wrapper to provide Maintenance Context to all routes

@@ -326,6 +326,18 @@ function Detail() {
                                              )}
                                          </span>
                                      </div>
+                                     <div className="grid grid-cols-3 gap-2">
+                                         <span className="text-muted-foreground">Quốc gia</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                             {country}
+                                         </span>
+                                     </div>
+                                     <div className="grid grid-cols-3 gap-2">
+                                         <span className="text-muted-foreground">Khởi Chiếu</span>
+                                         <span className="col-span-2 text-foreground dark:text-zinc-300">
+                                             {releaseYear}
+                                         </span>
+                                     </div>
                                  </div>
                             </div>
                         </div>

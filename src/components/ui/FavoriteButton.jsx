@@ -8,7 +8,7 @@ export const FavoriteButton = ({ isFavorite = false, onClick, className = "" }) 
   return (
     <button
       onClick={onClick}
-      className={`group relative inline-flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 ${
+      className={`group relative inline-flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 ${
         isFavorite
           ? "bg-red-500 text-white"
           : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"

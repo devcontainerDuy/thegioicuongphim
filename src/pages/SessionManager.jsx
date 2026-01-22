@@ -46,8 +46,8 @@ function SessionManager() {
     };
 
     const toggleSelectAll = () => {
-        // Only select sessions that are NOT the current one (index 0)
-        const otherSessions = sessions.slice(1);
+        // Only select sessions that are NOT the current one
+        const otherSessions = sessions.filter(s => !s.isCurrent);
         if (selectedIds.length === otherSessions.length && otherSessions.length > 0) {
             setSelectedIds([]);
         } else {
@@ -247,7 +247,7 @@ function SessionManager() {
                                 type="checkbox" 
                                 id="select-all"
                                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary bg-background cursor-pointer"
-                                checked={selectedIds.length === sessions.length - 1 && sessions.length > 1}
+                                checked={selectedIds.length === sessions.filter(s => !s.isCurrent).length && sessions.filter(s => !s.isCurrent).length > 0}
                                 onChange={toggleSelectAll}
                             />
                             <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
@@ -282,12 +282,12 @@ function SessionManager() {
                                 <div 
                                     key={session.id} 
                                     className={`bg-card border border-border rounded-xl p-4 transition-all hover:shadow-md relative overflow-hidden group ${
-                                        index === 0 ? 'ring-2 ring-primary/50' : selectedIds.includes(session.id) ? 'ring-2 ring-primary/30 bg-primary/5' : ''
+                                        session.isCurrent ? 'ring-2 ring-primary/50' : selectedIds.includes(session.id) ? 'ring-2 ring-primary/30 bg-primary/5' : ''
                                     }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         {/* Multi-select Checkbox */}
-                                        {index !== 0 && (
+                                        {!session.isCurrent && (
                                             <input 
                                                 type="checkbox" 
                                                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary bg-background cursor-pointer"
@@ -297,7 +297,7 @@ function SessionManager() {
                                         )}
 
                                         {/* Device Icon */}
-                                        <div className={`p-3 rounded-lg ${index === 0 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                        <div className={`p-3 rounded-lg ${session.isCurrent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                                             {getDeviceIcon(session.userAgent)}
                                         </div>
 
@@ -307,7 +307,7 @@ function SessionManager() {
                                                 <h3 className="font-semibold truncate">
                                                     {getDeviceName(session.userAgent)}
                                                 </h3>
-                                                {index === 0 && (
+                                                {session.isCurrent && (
                                                     <span className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded uppercase">
                                                         Hiện tại
                                                     </span>
@@ -328,7 +328,7 @@ function SessionManager() {
                                         </div>
 
                                         {/* Individual Revoke Action */}
-                                        {index !== 0 && (
+                                        {!session.isCurrent && (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button 

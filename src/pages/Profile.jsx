@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Settings, History, LogOut, Bell, Moon, Shield, Play, Loader2 } from 'lucide-react';
+import { User, Settings, History, LogOut, Bell, Moon, Shield, Play, Loader2, LayoutDashboard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -186,6 +186,13 @@ function Profile() {
                                         <Shield className="w-4 h-4 mr-3" /> Quản lý phiên đăng nhập
                                     </Link>
                                 </Button>
+                                {(user.isRoot || user.role?.name === 'Admin') && (
+                                    <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                                        <Link to="/admin">
+                                            <LayoutDashboard className="w-4 h-4 mr-3" /> Đăng nhập vào quản trị
+                                        </Link>
+                                    </Button>
+                                )}
                                 
                                 <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
                                     <DialogTrigger asChild>

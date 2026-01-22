@@ -2,15 +2,33 @@ import React, { useState, useEffect, useCallback } from 'react';
 import adminService from '@/services/adminService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Trash2, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Trash2, Loader2, Crown, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminHeader from '@/admin/components/AdminHeader';
 
 function UserList() {
     const [users, setUsers] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [rolesLoading, setRolesLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+
+    // Fetch roles on mount
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const rolesData = await adminService.getRoles();
+                setRoles(rolesData || []);
+            } catch (error) {
+                toast.error('Lỗi tải danh sách roles');
+            } finally {
+                setRolesLoading(false);
+            }
+        };
+        fetchRoles();
+    }, []);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -28,15 +46,21 @@ function UserList() {
         fetchUsers();
     }, [fetchUsers]);
 
-    const handleRoleChange = async (id, currentRole) => {
-        const newRole = (currentRole === 'Admin' || currentRole === 'admin') ? 'User' : 'Admin';
-        if (!window.confirm(`Đổi role thành "${newRole}"?`)) return;
+    const handleRoleChange = async (userId, newRoleName, currentUser) => {
+        // Prevent changing root user's role
+        if (currentUser?.isRoot) {
+            toast.error('Không thể thay đổi role của Root user');
+            return;
+        }
+
+        if (!window.confirm(`Đổi role thành "${newRoleName}"?`)) return;
+        
         try {
-            await adminService.updateUserRole(id, newRole);
+            await adminService.updateUserRole(userId, newRoleName);
             toast.success('Đã cập nhật role');
             fetchUsers();
         } catch (error) {
-            toast.error('Lỗi cập nhật role');
+            toast.error(error.response?.data?.message || 'Lỗi cập nhật role');
         }
     };
 
@@ -101,14 +125,20 @@ function UserList() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 hidden md:table-cell">
-                                            <span className={`px-2.5 py-1 text-xs rounded-full border font-medium inline-flex items-center gap-1.5
-                                                ${user.role?.name === 'Admin' || user.role === 'Admin' 
-                                                    ? 'bg-primary/10 text-primary border-primary/20' 
-                                                    : 'bg-zinc-800 text-zinc-400 border-zinc-700'}
-                                            `}>
-                                                {(user.role?.name === 'Admin' || user.role === 'Admin') && <ShieldCheck className="w-3 h-3" />}
-                                                {user.role?.name || user.role}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {user.isRoot && (
+                                                    <Crown className="w-4 h-4 text-yellow-500" title="Root User" />
+                                                )}
+                                                <span className={`px-2.5 py-1 text-xs rounded-full border font-medium inline-flex items-center gap-1.5 ${
+                                                    user.role?.name === 'Admin' ? 'bg-primary/10 text-primary border-primary/20' :
+                                                    user.role?.name === 'VIP' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                    user.role?.name === 'Moderator' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    'bg-zinc-800 text-zinc-400 border-zinc-700'
+                                                }`}>
+                                                    {user.role?.name === 'Admin' && <ShieldCheck className="w-3 h-3" />}
+                                                    {user.role?.name || 'User'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell text-sm">
                                             {user._count?.favorites || 0} phim
@@ -118,15 +148,22 @@ function UserList() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Button 
-                                                    size="icon" 
-                                                    variant="ghost" 
-                                                    className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                                                    onClick={() => handleRoleChange(user.id, user.role?.name || user.role)}
-                                                    title="Đổi role"
+                                                <Select
+                                                    value={user.role?.name || 'User'}
+                                                    onValueChange={(newRole) => handleRoleChange(user.id, newRole, user)}
+                                                    disabled={rolesLoading || user.isRoot}
                                                 >
-                                                    <Shield className="w-4 h-4" />
-                                                </Button>
+                                                    <SelectTrigger className="w-32 h-8 text-xs bg-zinc-900 border-zinc-800">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {roles.map((role) => (
+                                                            <SelectItem key={role.id} value={role.name}>
+                                                                {role.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                                 <Button 
                                                     size="icon" 
                                                     variant="ghost" 

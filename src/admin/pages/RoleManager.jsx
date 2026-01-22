@@ -145,7 +145,7 @@ function RoleManager() {
                 description="Danh sách Roles và Permissions của hệ thống"
             >
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsPermissionModalOpen(true)} className="border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800">
+                    <Button variant="purple" onClick={() => setIsPermissionModalOpen(true)} className="border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800">
                         Quản lý Permissions
                     </Button>
                     <Button onClick={() => handleOpenModal()} className="bg-primary hover:bg-primary/90">

@@ -8,7 +8,7 @@ export const WatchlistButton = ({ isInWatchlist = false, onClick, className = ""
   return (
     <button
       onClick={onClick}
-      className={`group relative inline-flex items-center justify-center gap-2 px-4 py-2 md:px-5 md:py-2.5 font-medium rounded-lg transition-all duration-300 overflow-hidden active:scale-95 ${
+      className={`group relative inline-flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-2.5 font-medium rounded-lg transition-all duration-300 overflow-hidden active:scale-95 min-h-[44px] ${
         isInWatchlist
           ? "bg-primary text-primary-foreground"
           : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
