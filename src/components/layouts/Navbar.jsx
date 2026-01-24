@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Search, Bell, Menu, X, User, Heart, Film, LogOut, Settings } from "lucide-react";
+import { Search, Bell, Menu, X, User, Bookmark, Film, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,10 +117,10 @@ const Navbar = () => {
             <Bell className="w-5 h-5" />
           </button>
           
-          <Link to="/danh-sach-yeu-thich" className="relative hover:text-primary transition-colors hidden md:block" aria-label="Favorites">
-             <Heart className={cn("w-5 h-5", favoriteCount > 0 && "text-red-500 fill-red-500")} />
+          <Link to="/danh-sach-phim-da-luu" className="relative hover:text-primary transition-colors hidden md:block" aria-label="Movies">
+             <Bookmark className={cn("w-5 h-5", favoriteCount > 0 && "text-primary fill-primary")} />
              {favoriteCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                     {favoriteCount}
                 </span>
              )}
@@ -152,7 +152,7 @@ const Navbar = () => {
                         <Link to="/ca-nhan"><User className="w-4 h-4 mr-2" /> Hồ sơ cá nhân</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link to="/danh-sach-yeu-thich"><Heart className="w-4 h-4 mr-2" /> Yêu thích</Link>
+                        <Link to="/danh-sach-phim-da-luu"><Bookmark className="w-4 h-4 mr-2" /> Danh sách của tôi</Link>
                     </DropdownMenuItem>
                     {user?.role === 'admin' && (
                       <DropdownMenuItem className="cursor-pointer" asChild>
@@ -210,9 +210,9 @@ const Navbar = () => {
             ))}
             {/* Mobile Actions */}
              <div className="flex items-center gap-4 mt-2 pt-4 border-t border-border">
-                <Link to="/danh-sach-yeu-thich" className="flex items-center gap-2 text-foreground/80 hover:text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Heart className="w-5 h-5" />
-                    <span>Yêu thích ({favoriteCount})</span>
+                <Link to="/danh-sach-phim-da-luu" className="flex items-center gap-2 text-foreground/80 hover:text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Bookmark className="w-5 h-5" />
+                    <span>Danh sách của tôi ({favoriteCount})</span>
                 </Link>
              </div>
         </div>

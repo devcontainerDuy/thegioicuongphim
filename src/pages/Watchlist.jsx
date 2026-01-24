@@ -30,7 +30,7 @@ function Watchlist() {
             <div className="lg:col-span-3">
                 <SavedMoviesLayout
                     title="Danh Sách Xem Sau"
-                    icon={<Bookmark className="w-6 h-6 md:w-8 md:h-8 text-primary fill-primary" />}
+                    icon={Bookmark}
                     items={watchlistItems}
                     emptyMessage="Chưa có phim nào"
                     emptyDescription="Bạn chưa lưu bộ phim nào để xem sau. Hãy khám phá và lưu lại những phim thú vị nhé!"

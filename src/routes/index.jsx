@@ -8,7 +8,7 @@ import Cate from "@/pages/Cate";
 
 import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
-import Favorites from "@/pages/Favorites";
+
 import Watchlist from "@/pages/Watchlist";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
       { path: "tim-kiem", element: <Search /> },
       { path: "bang-gia", element: <Pricing /> },
       // Protected routes - require authentication
-      { path: "danh-sach-yeu-thich", element: <PrivateRoute><Favorites /></PrivateRoute> },
+
       { path: "danh-sach-phim-da-luu", element: <PrivateRoute><Watchlist /></PrivateRoute> },
       { path: "lich-su-xem", element: <PrivateRoute><History /></PrivateRoute> },
       { path: "ca-nhan", element: <PrivateRoute><Profile /></PrivateRoute> },

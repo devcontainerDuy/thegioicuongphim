@@ -12,6 +12,8 @@ import { Play } from "lucide-react";
  * Reduces code duplication between similar pages
  */
 export const SavedMoviesLayout = ({ title, icon, items = [], emptyMessage, emptyDescription, viewMode = "grid", onViewModeChange, isLoading = false }) => {
+    console.log(items);
+
     return (
         <div className="min-h-screen bg-background text-foreground pt-24 pb-12">
             <div className="container mx-auto px-4 md:px-12">
@@ -50,9 +52,11 @@ export const SavedMoviesLayout = ({ title, icon, items = [], emptyMessage, empty
                     viewMode === "grid" ? (
                         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                             {items.map((film, index) => (
-                                <div key={film.id || index} className="animate-in fade-in zoom-in duration-500" style={{ animationDelay: `${index * 50}ms` }}>
-                                    <MovieCard name={film.name} slug={film.slug} image={film.poster_url || film.thumb_url} time={film.time} quality={film.quality} originalName={film.original_name || film.originalName} />
-                                </div>
+                                <>
+                                    <div key={film.id || index} className="animate-in fade-in zoom-in duration-500" style={{ animationDelay: `${index * 50}ms` }}>
+                                        <MovieCard name={film.name} slug={film.slug} image={film.thumbUrl || film.posterUrl} time={film.time} quality={film.quality} originalName={film.original_name || film.originalName} />
+                                    </div>
+                                </>
                             ))}
                         </div>
                     ) : (
@@ -66,7 +70,7 @@ export const SavedMoviesLayout = ({ title, icon, items = [], emptyMessage, empty
                                     className="group flex gap-4 bg-zinc-900/40 p-3 rounded-2xl border border-zinc-800/50 hover:border-primary/50 transition-all"
                                 >
                                     <Link to={`/phim/${film.slug}`} className="w-20 sm:w-24 h-28 sm:h-36 rounded-xl overflow-hidden shrink-0 border border-zinc-800">
-                                        <img src={film.thumb_url} alt={film.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        <img src={film.thumbUrl} alt={film.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     </Link>
                                     <div className="flex-1 py-1 flex flex-col justify-between min-w-0">
                                         <div>
