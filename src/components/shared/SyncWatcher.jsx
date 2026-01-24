@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchFavorites } from '@/store/reducers/favoritesSlice';
+import { fetchWatchlist } from '@/store/reducers/watchlistSlice';
 
 /**
  * SyncWatcher Component
  * - Lắng nghe trạng thái đăng nhập
- * - Khi user đăng nhập thành công, tự động fetch favorites từ cloud
+ * - Khi user đăng nhập thành công, tự động fetch watchlist từ cloud
  */
 const SyncWatcher = () => {
     const dispatch = useDispatch();
@@ -14,8 +14,8 @@ const SyncWatcher = () => {
 
     useEffect(() => {
         if (!loading && isAuthenticated) {
-            console.log('User authenticated, syncing data...');
-            dispatch(fetchFavorites());
+            console.log('User authenticated, syncing watchlist...');
+            dispatch(fetchWatchlist());
         }
     }, [isAuthenticated, loading, dispatch]);
 
@@ -23,3 +23,4 @@ const SyncWatcher = () => {
 };
 
 export default SyncWatcher;
+

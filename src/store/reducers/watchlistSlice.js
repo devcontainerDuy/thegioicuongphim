@@ -21,7 +21,8 @@ export const toggleWatchlist = createAsyncThunk(
             const token = getAccessToken();
             if (token) {
                 // User is logged in, sync with backend
-                const response = await movieService.toggleWatchlist(movie.id);
+                // Use slug instead of id (id is external hash, backend needs slug)
+                const response = await movieService.toggleWatchlist(movie.slug);
                 return { movie, added: response.added };
             } else {
                 // Guest user, toggle in localStorage only

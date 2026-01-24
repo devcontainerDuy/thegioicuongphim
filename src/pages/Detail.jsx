@@ -1,10 +1,9 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useFilmDetail } from "@/hooks/useFilmDetail";
-import { addFavorite, removeFavorite } from "@/store/reducers/favoritesSlice";
 import { toggleWatchlist } from "@/store/reducers/watchlistSlice";
 import { cn } from "@/lib/utils";
 import SEO from "@/components/common/SEO";
@@ -27,15 +26,7 @@ function Detail() {
     const { film: data, loading, error } = useFilmDetail(slug);
     const dispatch = useDispatch();
     
-    // Favorites
-    const favoriteList = useSelector((state) => state.favorites.items);
-    const isFavorite = useMemo(() => favoriteList.some((film) => film.id === data?.id), [favoriteList, data]);
-
-    const handleFavoriteClick = useCallback(() => {
-        if (data) {
-            dispatch(isFavorite ? removeFavorite(data.id) : addFavorite(data));
-        }
-    }, [data, isFavorite, dispatch]);
+    // FavoriteButton is now self-contained with watchlist logic
 
     // Watchlist
     const watchlist = useSelector((state) => state.watchlist.items);
@@ -172,11 +163,8 @@ function Detail() {
                                         <PlayButton />
                                     </Link>
 
-                                    {/* Favorite Button */}
-                                    <FavoriteButton 
-                                        isFavorite={isFavorite}
-                                        onClick={handleFavoriteClick}
-                                    />
+                                    {/* Favorite Button (uses watchlist internally) */}
+                                    <FavoriteButton movie={data} />
 
                                     {/* Watchlist Button */}
                                     <WatchlistButton 

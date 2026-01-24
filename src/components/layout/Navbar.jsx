@@ -28,8 +28,8 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const favoriteItems = useSelector((state) => state.favorites.items) || [];
-  const favoriteCount = favoriteItems.length;
+  const watchlistItems = useSelector((state) => state.watchlist.items) || [];
+  const favoriteCount = watchlistItems.length;
   
   // Auth state
   const { user, isAuthenticated, logout } = useAuth();
