@@ -22,11 +22,17 @@ const userService = {
     },
 
     // ===== FAVORITES =====
+    /**
+     * @deprecated Use Watchlist instead
+     */
     getFavorites: async (page = 1, limit = 20) => {
         const response = await backendApiClient.get(`/user/favorites?page=${page}&limit=${limit}`);
         return response.data;
     },
 
+    /**
+     * @deprecated Use Watchlist instead
+     */
     isFavorite: async (movieId) => {
         try {
             const response = await backendApiClient.get(`/user/favorites/${movieId}`);
@@ -36,11 +42,17 @@ const userService = {
         }
     },
 
+    /**
+     * @deprecated Use Watchlist instead
+     */
     addFavorite: async (movieId) => {
         const response = await backendApiClient.post(`/user/favorites/${movieId}`);
         return response.data;
     },
 
+    /**
+     * @deprecated Use Watchlist instead
+     */
     removeFavorite: async (movieId) => {
         const response = await backendApiClient.delete(`/user/favorites/${movieId}`);
         return response.data;

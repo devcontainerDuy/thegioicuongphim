@@ -36,7 +36,7 @@ function Login() {
             toast.success("Đăng nhập thành công!");
             navigate("/");
         } catch (error) {
-            toast.error(error.message || "Đăng nhập thất bại");
+            toast.error(error.response.data.message || "Đăng nhập thất bại");
         } finally {
             setLoading(false);
         }

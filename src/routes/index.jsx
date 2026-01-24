@@ -1,17 +1,18 @@
 import { createBrowserRouter } from "react-router-dom";
-import MainLayout from "@/components/layout/MainLayout";
+import MainLayout from "@/components/layouts/MainLayout";
 import PrivateRoute from "@/components/common/PrivateRoute";
 import Home from "@/pages/Home";
 import Detail from "@/pages/Detail";
 import Watch from "@/pages/Watch";
 import Cate from "@/pages/Cate";
-import Category from "@/pages/Category";
+
 import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import Favorites from "@/pages/Favorites";
 import Watchlist from "@/pages/Watchlist";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
+import History from "@/pages/History";
 import SessionManager from "@/pages/SessionManager";
 import Pricing from "@/pages/Pricing";
 import ErrorPage from "@/pages/errors/Error";
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
       { path: "dang-nhap", element: <Login /> },
       { path: "bao-tri", element: <Maintenance /> }, // New Route
       { path: "danh-sach-phim", element: <Cate /> },
-      { path: "danh-sach-phim/:slug", element: <Category /> },
+      { path: "danh-sach-phim/:slug", element: <Cate /> },
       { path: "phim/:slug", element: <Detail /> },
       { path: "xem-phim/:slug/:episode", element: <Watch /> },
       { path: "tim-kiem", element: <Search /> },
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       // Protected routes - require authentication
       { path: "danh-sach-yeu-thich", element: <PrivateRoute><Favorites /></PrivateRoute> },
       { path: "danh-sach-phim-da-luu", element: <PrivateRoute><Watchlist /></PrivateRoute> },
+      { path: "lich-su-xem", element: <PrivateRoute><History /></PrivateRoute> },
       { path: "ca-nhan", element: <PrivateRoute><Profile /></PrivateRoute> },
       { path: "quan-ly-phien", element: <PrivateRoute><SessionManager /></PrivateRoute> },
       { path: "*", element: <ErrorPage /> },

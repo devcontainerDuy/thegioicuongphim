@@ -71,7 +71,7 @@ function Profile() {
             toast.success("Cập nhật hồ sơ thành công!");
             setIsEditing(false);
         } catch (error) {
-            toast.error("Cập nhật thất bại: " + error.message);
+            toast.error("Cập nhật thất bại: " + error.response.data.message);
         } finally {
             setIsSaving(false);
         }
@@ -93,7 +93,7 @@ function Profile() {
             setIsChangingPassword(false);
             setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (error) {
-            toast.error(error.message);
+            toast.error(error.response.data.message);
         } finally {
             setIsSaving(false);
         }
@@ -266,6 +266,9 @@ function Profile() {
                                 <h3 className="text-xl font-bold flex items-center gap-2">
                                     <History className="w-5 h-5 text-primary" /> Tiếp tục xem
                                 </h3>
+                                <Button variant="link" asChild className="text-primary p-0 h-auto">
+                                    <Link to="/lich-su-xem">Xem tất cả</Link>
+                                </Button>
                             </div>
                             
                             {isLoadingHistory ? (

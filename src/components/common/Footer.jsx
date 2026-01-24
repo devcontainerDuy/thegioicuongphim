@@ -1,43 +1,103 @@
-import React from "react";
-import { Col, Container, Nav, Row } from "react-bootstrap";
-import Logo from "components/specific/Logo";
-import NavLink from "components/ui/NavLink";
+import { Link } from "react-router-dom";
 
-const FOOTER_LINKS = [
-  { label: "Trang chủ", to: "/" },
-  { label: "Danh sách phim", to: "/danh-sach-phim" },
-  { label: "Phim lẻ", to: "/danh-sach-phim?category=danh-sach&sub=phim-le&page=1" },
-  { label: "Phim bộ", to: "/danh-sach-phim?category=danh-sach&sub=phim-bo&page=1" },
-];
-
-function Footer() {
-  return (
-    <footer className="app-footer border-top">
-      <Container className="py-4">
-        <Row className="gy-4 align-items-center">
-          <Col md={6}>
-            <Logo />
-            <p className="text-body-secondary mb-0 mt-3">
-              Thế Giới Cuồng Phim – nơi tụi mình tuyển chọn phim mới mỗi ngày, hạn chế ồn ào và tập trung vào trải nghiệm xem chill nhất.
-            </p>
-          </Col>
-          <Col md={6} className="d-flex justify-content-md-end">
-            <Nav className="gap-3 flex-wrap footer-links">
-              {FOOTER_LINKS.map((link) => (
-                <NavLink key={link.to} to={link.to} className="text-body-secondary px-0">
-                  {link.label}
-                </NavLink>
-              ))}
-            </Nav>
-          </Col>
-        </Row>
-        <div className="d-flex flex-column flex-sm-row justify-content-between text-body-secondary mt-4 small">
-          <span>© {new Date().getFullYear()} The Gioi Cuong Phim. All rights reserved.</span>
-          <span className="mt-2 mt-sm-0">Build with React + Bootstrap</span>
-        </div>
-      </Container>
-    </footer>
-  );
-}
+const Footer = () => {
+    return (
+        <footer className="bg-card dark:bg-zinc-950 text-muted-foreground py-12 px-4 md:px-12 text-sm border-t border-border">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <ul className="space-y-3">
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            FAQ
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Investor Relations
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Privacy
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Speed Test
+                        </Link>
+                    </li>
+                </ul>
+                <ul className="space-y-3">
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Help Center
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Jobs
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Cookie Preferences
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Legal Notices
+                        </Link>
+                    </li>
+                </ul>
+                <ul className="space-y-3">
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Account
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Ways to Watch
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Corporate Information
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Only on Cuong Phim
+                        </Link>
+                    </li>
+                </ul>
+                <ul className="space-y-3">
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Media Center
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Terms of Use
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/" className="hover:underline">
+                            Contact Us
+                        </Link>
+                    </li>
+                </ul>
+            </div>
+            <div className="mt-10 pt-8 border-t border-gray-800 text-center text-gray-400 text-sm">
+                <div className="flex justify-center mb-4">
+                    <p>© {new Date().getFullYear()} Thế Giới Cuồng Phim. All rights reserved.</p>
+                </div>
+                <small className="block max-w-4xl mx-auto leading-relaxed">
+                    Tất cả nội dung của trang web này được thu thập từ các trang web video chính thống trên Internet và không cung cấp phát trực tuyến chính hãng. Nếu quyền lợi của bạn bị vi phạm, vui lòng thông báo cho chúng tôi, chúng tôi sẽ xóa nội dung vi phạm kịp thời, cảm ơn sự hợp tác của bạn!
+                </small>
+            </div>
+        </footer>
+    );
+};
 
 export default Footer;

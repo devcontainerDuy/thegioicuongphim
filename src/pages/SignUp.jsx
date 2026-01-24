@@ -35,7 +35,7 @@ const SignUp = () => {
         toast.success('Đăng ký thành công!');
         navigate('/');
       } catch (error) {
-        toast.error(error.message || 'Đăng ký thất bại');
+        toast.error(error.response.data.message || 'Đăng ký thất bại');
       } finally {
         setLoading(false);
       }
